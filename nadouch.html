@@ -1,0 +1,314 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>nadouch — The Secret Garden</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Noto+Naskh+Arabic:wght@400;500;600&display=swap');
+:root{--rose:#e7a5bb;--gold:#e7c78b;--ink:#100b12;--glass:#171018b8}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#0d0910;color:#fff}
+body{font-family:"Noto Naskh Arabic",Tahoma,sans-serif;touch-action:none}
+#stage{position:fixed;inset:0;overflow:hidden;background:#110b13}
+canvas{position:absolute;inset:0;width:100%;height:100%}
+.vignette{position:absolute;inset:0;pointer-events:none;background:radial-gradient(circle at 50% 42%,transparent 28%,rgba(0,0,0,.5) 100%);z-index:4}
+.noise{position:absolute;inset:0;opacity:.035;z-index:5;pointer-events:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.35'/%3E%3C/svg%3E")}
+#hud{position:absolute;top:calc(18px + env(safe-area-inset-top));left:18px;right:18px;display:flex;align-items:center;justify-content:space-between;z-index:10;pointer-events:none}
+.hudBox{min-width:120px;padding:9px 14px;border:1px solid rgba(255,255,255,.16);border-radius:14px;background:rgba(13,9,15,.42);backdrop-filter:blur(14px);box-shadow:0 12px 40px #0005}
+.hudBox small{display:block;color:#b9aeb7;font-size:10px;letter-spacing:2px;text-transform:uppercase}
+.hudBox b{font-size:14px;font-weight:500}
+#centerBrand{position:absolute;z-index:6;top:15%;left:0;right:0;text-align:center;pointer-events:none}
+#centerBrand .eyebrow{font-size:10px;letter-spacing:5px;color:#d6c1cb}
+#centerBrand h1{margin:3px 0 2px;font:600 clamp(36px,11vw,68px)/.9 "Cormorant Garamond",Georgia,serif;letter-spacing:3px;background:linear-gradient(110deg,#fff,#eab0c4 55%,#e8cf98);-webkit-background-clip:text;color:transparent;white-space:nowrap;}
+#centerBrand p{margin:8px 20px;color:#e6dbe1;font-size:14px}
+#controls{position:absolute;z-index:12;bottom:calc(18px + env(safe-area-inset-top));left:50%;transform:translateX(-50%);width:min(92vw,520px);display:flex;justify-content:center}
+.control{padding:11px 18px;border-radius:999px;border:1px solid rgba(255,255,255,.12);background:rgba(12,8,14,.6);backdrop-filter:blur(14px);font-size:12px;color:#ddd;box-shadow:0 12px 35px #0006}
+#items{position:absolute;inset:0;z-index:8}
+.collect{position:absolute;width:68px;height:68px;border:0;background:none;color:white;font-size:39px;filter:drop-shadow(0 8px 12px #0008);cursor:pointer;transition:transform .2s cubic-bezier(.34,1.56,.64,1)}
+.collect:before{content:"";position:absolute;inset:10px;border-radius:50%;background:radial-gradient(circle,#fff6 0 4%,transparent 48%);opacity:.45}
+.collect span{display:block;animation:luxFloat 2.3s ease-in-out infinite}
+.collect.taken{transform:scale(0);opacity:0;pointer-events:none}
+@keyframes luxFloat{0%,100%{transform:translateY(0) rotate(-3deg)}50%{transform:translateY(-9px) rotate(3deg)}}
+#toast{position:absolute;z-index:30;top:38%;left:50%;transform:translate(-50%,-50%) translateY(12px);opacity:0;padding:13px 20px;border-radius:15px;background:rgba(13,9,15,.88);border:1px solid rgba(255,255,255,.15);box-shadow:0 20px 70px #0008;color:#f5e9ef;white-space:nowrap;transition:.35s;font-size:15px}
+#toast.show{opacity:1;transform:translate(-50%,-50%)}
+#intro,#end{position:absolute;z-index:50;inset:0;display:flex;align-items:center;justify-content:center;padding:15px;background:radial-gradient(circle at 50% 30%,#4c293f 0,#170d18 55%,#09070b 100%);overflow-y:auto;}
+.modal{width:min(450px,100%);max-height:90vh;overflow-y:auto;padding:26px 20px;border:1px solid rgba(255,255,255,.17);border-radius:26px;background:linear-gradient(145deg,rgba(38,21,34,.9),rgba(12,8,14,.9));backdrop-filter:blur(20px);box-shadow:0 35px 120px #0009;text-align:center}
+.modal .mark{font-size:24px;letter-spacing:8px;color:#d9bd9c}
+.modal h2{margin:6px 0;font:600 clamp(36px,10vw,52px)/1 "Cormorant Garamond",Georgia,serif;letter-spacing:3px;background:linear-gradient(100deg,#fff,#e8b0c3,#e6cb91);-webkit-background-clip:text;color:transparent;white-space:nowrap;}
+.modal .line{width:46px;height:1px;margin:12px auto;background:linear-gradient(90deg,transparent,#e5c38f,transparent)}
+.modal p{margin:0 auto 20px;max-width:390px;color:#e5dce1;font-size:14px;line-height:1.8}
+.btn{border:1px solid rgba(255,255,255,.2);border-radius:12px;padding:12px 22px;background:linear-gradient(135deg,#e8b1c4,#e4c993);color:#21111a;font-weight:600;font-family:inherit;font-size:14px;box-shadow:0 12px 35px #0005;cursor:pointer}
+#end{display:none}
+#giftScene{height:100px;position:relative;margin-bottom:6px}
+#gift{font-size:68px;display:inline-block;filter:drop-shadow(0 15px 18px #0008);animation:giftFloat 2.2s ease-in-out infinite}
+@keyframes giftFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+#finalText{display:none;animation:appear .9s ease}
+@keyframes appear{from{opacity:0;transform:translateY(22px)}to{opacity:1;transform:none}}
+#finalText p{font-size:14px;line-height:1.9}
+#burst{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.spark{position:absolute;font-size:20px;animation:burst 1.2s ease-out forwards}
+@keyframes burst{to{transform:translate(var(--x),var(--y)) scale(.5) rotate(240deg);opacity:0}}
+.teddy{position:absolute;z-index:3;font-size:54px;filter:drop-shadow(0 12px 15px #0007);animation:luxFloat 3s ease-in-out infinite}
+.hidden{display:none!important}
+</style>
+</head>
+<body>
+<div id="stage">
+<canvas id="scene"></canvas>
+<div class="vignette"></div><div class="noise"></div>
+
+<div id="hud">
+  <div class="hudBox"><small>LEVEL</small><b id="chapter">01 · CATCH THE STARS</b></div>
+  <div class="hudBox" style="text-align:right"><small>SCORE</small><b id="counter">00 / 05</b></div>
+</div>
+
+<div id="centerBrand">
+  <div class="eyebrow">A LITTLE SECRET FOR</div>
+  <h1>nadouch</h1>
+  <p id="subtitle">أمسكي النجوم المتحركة لتتقدمي 🤍</p>
+</div>
+
+<div id="items"></div>
+<div id="toast"></div>
+<div id="controls"><div class="control">اضغطي على العناصر قبل ما تهرب! (5 نقاط لكل مرحلة)</div></div>
+
+<div id="intro">
+ <div class="modal">
+   <div class="mark">✦ ✦ ✦</div>
+   <h2>nadouch</h2>
+   <div class="line"></div>
+   <p>هادي ماشي لعبة عادية، وماشي غير هدية تتفتح وتسال.<br>
+   حبيت نديرلك طريق صغير فيه تفاصيل، ألوان، مفاجآت، وفي الآخر حاجة معمولة مخصوص على خاطرك.<br>
+   خذي وقتك... وخلي كل مرحلة تحكيلك وحدها. 🤍</p>
+   <button class="btn" id="start">نبدأو الحكاية</button>
+ </div>
+</div>
+
+<div id="end">
+ <div class="modal">
+   <div id="giftScene"><div id="gift">🎁</div><div id="burst"></div></div>
+   <div id="beforeOpen">
+     <h2 style="font-size:36px">آخر تفصيلة</h2>
+     <div class="line"></div>
+     <p>وصلتي للصندوق... بصح الرسالة ما تخرجش حتى تفتحيه.</p>
+     <button class="btn" id="open">نفتحوه ✦</button>
+   </div>
+   <div id="finalText">
+     <div style="font-size:30px">🧸　🌹　✦</div>
+     <h2 style="font-size:36px">يا nadouch</h2>
+     <div class="line"></div>
+     <p>والله ما لقيتش طريقة نقدر نقول بيها كلش كيما راه في قلبي، قلت نديرلك حاجة تبقى عندك وتفكرك بلي كاين واحد حب يفرحك حتى بالتفاصيل الصغيرة.<br><br>
+     من أول قلب لآخر وردة، كل خطوة درتيها كانت غير حجة باش توصلي لهاذ الصندوق. والهدية الحقيقية ماشي اللي داخلو... الهدية هي الضحكة اللي نتمنى نشوفها في وجهك كل مرة تفتكري هاذ اللحظة. 🤍<br><br>
+     يا nadouch، ربي يديم عليك الفرحة، ويبعد عليك التعب، ويعطيك أيام تليق بقلبك. وكي تكون الدنيا شوية ثقيلة، تفكري بلي حتى أبسط حاجة تقدر تكون معمولة بحب كبير.<br><br>
+     <b>هاذي صغيرة مقارنة باللي تستاهليه... بصح معمولة ليك انتي، بالتفاصيل كامل. 🌹</b></p>
+     <button class="btn" onclick="location.reload()">من البداية ✦</button>
+   </div>
+ </div>
+</div>
+</div>
+
+<script>
+const canvas=document.getElementById('scene'),ctx=canvas.getContext('2d');
+const itemsEl=document.getElementById('items');
+let W,H,D,stage=1,collected=0,time=0,gameInterval=null,activeItems=[];
+
+const themes=[
+ {chapter:'01 · LEVEL 1',sub:'أمسكي 5 قلوب متحركة 🤍',item:'♡',a:'#e9a8bf',b:'#6c3554'},
+ {chapter:'02 · LEVEL 2',sub:'أمسكي 5 نجوم هاربة ✦',item:'✦',a:'#9bcde2',b:'#244866'},
+ {chapter:'03 · LEVEL 3',sub:'أمسكي 5 ورود الأخيرة 🌹',item:'🌹',a:'#e6c78e',b:'#69401f'}
+];
+
+function resize(){
+  D=Math.min(devicePixelRatio||1,2);
+  W=innerWidth; H=innerHeight;
+  canvas.width=W*D; canvas.height=H*D;
+  ctx.setTransform(D,0,0,D,0,0);
+}
+addEventListener('resize',resize);resize();
+
+function toast(t){
+  const e=document.getElementById('toast');
+  e.textContent=t; e.classList.add('show');
+  clearTimeout(toast.t);
+  toast.t=setTimeout(()=>e.classList.remove('show'),1500);
+}
+
+function setup(n){
+  stage=n; collected=0; itemsEl.innerHTML=''; activeItems=[];
+  clearInterval(gameInterval);
+
+  const th=themes[n-1];
+  document.getElementById('chapter').textContent=th.chapter;
+  document.getElementById('counter').textContent='00 / 05';
+  document.getElementById('subtitle').textContent=th.sub;
+
+  for(let i=0; i<5; i++){
+    spawnItem(th.item);
+  }
+
+  if(n===3){
+    [[24,23],[77,23],[24,77],[77,77]].forEach((p)=>{
+      const t=document.createElement('div');
+      t.className='teddy'; t.textContent='🧸';
+      t.style.left=p[0]+'%'; t.style.top=p[1]+'%';
+      itemsEl.appendChild(t);
+    })
+  }
+}
+
+function spawnItem(symbol){
+  const b=document.createElement('button');
+  b.className='collect';
+
+  let x = Math.random() * (W - 100) + 50;
+  let y = Math.random() * (H - 250) + 120;
+
+  b.style.left = (x - 34) + 'px';
+  b.style.top = (y - 34) + 'px';
+  b.innerHTML='<span>'+symbol+'</span>';
+
+  let vx = (Math.random() - 0.5) * 2;
+  let vy = (Math.random() - 0.5) * 2;
+
+  const itemObj = { el: b, x: x, y: y, vx: vx, vy: vy };
+
+  b.onclick = () => {
+    if(b.classList.contains('taken')) return;
+    b.classList.add('taken');
+    collected++;
+    document.getElementById('counter').textContent = String(collected).padStart(2,'0')+' / 05';
+    burstAt(b.getBoundingClientRect());
+
+    activeItems = activeItems.filter(item => item !== itemObj);
+
+    if(collected === 5){
+      clearInterval(gameInterval);
+      if(stage < 3){
+        toast(stage === 1 ? 'ممتاز! ارحلي للمستوى الثاني ✦' : 'رائع! المرحلة الأخيرة 🌹');
+        setTimeout(() => setup(stage + 1), 900);
+      } else {
+        toast('كلشي كمل... الصندوق راه يستناك 🎁');
+        setTimeout(() => showEnd(), 700);
+      }
+    } else {
+      setTimeout(() => {
+        if(collected < 5) spawnItem(themes[stage-1].item);
+      }, 400);
+    }
+  };
+
+  itemsEl.appendChild(b);
+  activeItems.push(itemObj);
+}
+
+function updateGame(){
+  activeItems.forEach(item => {
+    item.x += item.vx;
+    item.y += item.vy;
+
+    if(item.x < 50 || item.x > W - 50) item.vx *= -1;
+    if(item.y < 120 || item.y > H - 100) item.vy *= -1;
+
+    item.el.style.left = (item.x - 34) + 'px';
+    item.el.style.top = (item.y - 34) + 'px';
+  });
+}
+
+gameInterval = setInterval(updateGame, 30);
+
+function burstAt(r){
+  for(let i=0; i<8; i++){
+    const s=document.createElement('span');
+    s.className='spark';
+    s.textContent = stage===1 ? '✦' : stage===2 ? '·' : '🌸';
+    s.style.left = (r.left + r.width/2) + 'px';
+    s.style.top = (r.top + r.height/2) + 'px';
+    s.style.setProperty('--x', (Math.random()*130-65) + 'px');
+    s.style.setProperty('--y', (Math.random()*130-65) + 'px');
+    document.body.appendChild(s);
+    setTimeout(() => s.remove(), 1200);
+  }
+}
+
+function showEnd(){ document.getElementById('end').style.display = 'flex'; }
+
+document.getElementById('start').onclick = () => {
+  document.getElementById('intro').style.display = 'none';
+  setup(1);
+  toast('✦ الحكاية بدات يا nadouch');
+};
+
+document.getElementById('open').onclick = () => {
+  const gift = document.getElementById('gift');
+  gift.textContent = '💥';
+  gift.style.animation = 'none';
+  for(let i=0; i<28; i++) setTimeout(() => {
+    const s = document.createElement('span');
+    s.className = 'spark';
+    s.textContent = ['✦','♡','🌹','🧸'][i%4];
+    s.style.left = '50%'; s.style.top = '35%';
+    s.style.setProperty('--x', (Math.random()*420-210) + 'px');
+    s.style.setProperty('--y', (Math.random()*430-215) + 'px');
+    document.getElementById('burst').appendChild(s);
+    setTimeout(() => s.remove(), 1200);
+  }, i*14);
+
+  setTimeout(() => {
+    document.getElementById('beforeOpen').classList.add('hidden');
+    document.getElementById('giftScene').classList.add('hidden');
+    document.getElementById('finalText').style.display = 'block';
+  }, 650);
+};
+
+function draw(){
+  time += .012;
+  const th = themes[stage-1];
+  const g = ctx.createRadialGradient(W*.5, H*.35, 20, W*.5, H*.6, Math.max(W,H)*.85);
+  g.addColorStop(0, th.b);
+  g.addColorStop(.5, '#171019');
+  g.addColorStop(1, '#08070b');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, W, H);
+
+  const horizon = H*.58;
+  const pg = ctx.createLinearGradient(0, horizon, 0, H);
+  pg.addColorStop(0, 'rgba(255,255,255,.02)');
+  pg.addColorStop(1, 'rgba(0,0,0,.35)');
+  ctx.fillStyle = pg;
+  ctx.fillRect(0, horizon, W, H-horizon);
+
+  ctx.save();
+  if(stage === 1){
+    for(let i=0; i<7; i++){
+      let x = (i*190 + 60)%W, y = horizon - 20 - (i%3)*55;
+      ctx.fillStyle = 'rgba(231,165,187,.13)';
+      ctx.beginPath(); ctx.arc(x, y, 38 + (i%2)*18, 0, 7); ctx.fill();
+    }
+  } else if(stage === 2){
+    ctx.strokeStyle = 'rgba(155,205,226,.14)';
+    ctx.lineWidth = 2;
+    for(let i=0; i<9; i++){
+      let x = (i+1)*W/10;
+      ctx.beginPath(); ctx.moveTo(x, horizon); ctx.lineTo(W/2 + (x-W/2)*.45, H*.33); ctx.stroke();
+    }
+  } else {
+    ctx.strokeStyle = 'rgba(230,199,142,.17)';
+    ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.ellipse(W/2, horizon+15, Math.min(W*.38, 220), 55, 0, 0, 7); ctx.stroke();
+  }
+
+  for(let i=0; i<24; i++){
+    let x = (i*137 + time*10)%W, y = (i*71 + time*6)%(H*.8);
+    ctx.fillStyle = `rgba(255,255,255,${.05 + .04*Math.sin(time+i)})`;
+    ctx.fillRect(x, y, 2, 2);
+  }
+  ctx.restore();
+  requestAnimationFrame(draw);
+}
+
+setup(1);
+draw();
+</script>
+</body>
+</html>
