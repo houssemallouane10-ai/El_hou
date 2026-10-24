@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { after, before, describe, it } from 'node:test';
-import { ADMIN_PHONE, PASSWORD, nextPhone, signUp, startTestServer, validJob } from './helpers.js';
+import { OWNER_CODE, PASSWORD, nextPhone, signUp, startTestServer, validJob } from './helpers.js';
 
 describe('accounts', () => {
   let server;
@@ -77,11 +77,23 @@ describe('accounts', () => {
     assert.equal((await client.get('/api/me/summary')).status, 401);
   });
 
-  it('grants admin rights to phones listed in ADMIN_PHONES', async () => {
-    const { user } = await signUp(server, { phone: ADMIN_PHONE, name: 'المشرف' });
-    assert.equal(user.isAdmin, true);
-    const { user: regular } = await signUp(server);
-    assert.equal(regular.isAdmin, false);
+  it('makes owners only with the owner code, at sign-up or later from settings', async () => {
+    const phone = nextPhone();
+    const body = { name: 'صاحب المنصة', phone, password: PASSWORD, role: 'employer', wilayaCode: 62, acceptTerms: true };
+    const wrong = await server.client().post('/api/auth/register', { ...body, ownerCode: 'not-the-code' });
+    assert.deepEqual(wrong.data.error.fields, { ownerCode: 'wrong_code' });
+    const owner = await server.client().post('/api/auth/register', { ...body, ownerCode: ` ${OWNER_CODE} ` });
+    assert.equal(owner.status, 201, 'a wrong code creates nothing, so the phone is still free');
+    assert.deepEqual([owner.data.user.isOwner, owner.data.user.isAdmin], [true, true]);
+
+    const { client, user } = await signUp(server);
+    assert.deepEqual([user.isOwner, user.isAdmin], [false, false]);
+    assert.deepEqual((await client.post('/api/me/owner', { ownerCode: 'guess-guess' })).data.error.fields, { ownerCode: 'wrong_code' });
+    assert.deepEqual((await client.post('/api/me/owner', {})).data.error.fields, { ownerCode: 'required' });
+    const claimed = await client.post('/api/me/owner', { ownerCode: OWNER_CODE });
+    assert.deepEqual([claimed.data.user.isOwner, claimed.data.user.isAdmin], [true, true]);
+    assert.equal((await client.get('/api/admin/dashboard')).status, 200);
+    assert.equal((await server.client().post('/api/me/owner', { ownerCode: OWNER_CODE })).status, 401);
   });
 
   it('requires a headline and a category before listing a worker profile', async () => {

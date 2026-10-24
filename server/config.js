@@ -17,9 +17,24 @@ const readPositiveInt = (value, fallback) => {
   return Number.isInteger(number) && number > 0 ? number : fallback;
 };
 
+const readNonNegativeInt = (value, fallback) => {
+  if (value === undefined || value === '') return fallback;
+  const number = Number(value);
+  return Number.isInteger(number) && number >= 0 ? number : fallback;
+};
+
 const ANDROID_PACKAGE = /^[a-zA-Z][a-zA-Z0-9_]*(\.[a-zA-Z][a-zA-Z0-9_]*)+$/;
 const SHA256_FINGERPRINT = /^([0-9A-F]{2}:){31}[0-9A-F]{2}$/;
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const OWNER_CODE_MIN_LENGTH = 8;
+
+// The secret that turns an account into an owner (at sign-up or from Settings). Short codes are
+// refused at start-up: phone numbers are not verified, so the code is what proves ownership.
+const readOwnerCode = (value) => {
+  const code = String(value ?? '').trim();
+  if (code && code.length < OWNER_CODE_MIN_LENGTH) throw new Error(`OWNER_CODE must be at least ${OWNER_CODE_MIN_LENGTH} characters`);
+  return code;
+};
 
 // The Android app (a Trusted Web Activity) proves it belongs to this site through
 // /.well-known/assetlinks.json. Fingerprints are the SHA-256 of the signing certificates: the
@@ -45,13 +60,18 @@ export const loadConfig = (env = process.env) => {
     sharedDir: path.join(rootDir, 'shared'),
     dataDir,
     databaseFile: env.DATABASE_FILE || path.join(dataDir, 'khedmati.db'),
-    publicUrl: String(env.PUBLIC_URL || '').replace(/\/+$/, ''),
+    // Render provides RENDER_EXTERNAL_URL (https://<service>.onrender.com) to every web service.
+    publicUrl: String(env.PUBLIC_URL || env.RENDER_EXTERNAL_URL || '').replace(/\/+$/, ''),
     trustProxy: readTrustProxy(env.TRUST_PROXY),
-    adminPhones: readList(env.ADMIN_PHONES).map(normalizePhone).filter(isMobilePhone),
+    ownerCode: readOwnerCode(env.OWNER_CODE),
+    // No longer used (owners now prove themselves with OWNER_CODE); kept to warn old setups.
+    legacyAdminPhones: readList(env.ADMIN_PHONES).length > 0,
     supportWhatsapp: isMobilePhone(normalizePhone(env.SUPPORT_WHATSAPP)) ? normalizePhone(env.SUPPORT_WHATSAPP) : '',
     supportEmail: EMAIL.test(String(env.SUPPORT_EMAIL ?? '').trim()) ? String(env.SUPPORT_EMAIL).trim() : '',
     androidApp: readAndroidApp(env),
     sessionDays: readPositiveInt(env.SESSION_DAYS, 60),
+    // Daily database copies kept in DATA_DIR/backups; 0 turns backups off.
+    backupDays: readNonNegativeInt(env.BACKUP_DAYS, 7),
     rateLimits: env.RATE_LIMITS !== 'off',
     logRequests: env.LOG_REQUESTS !== 'off',
   };

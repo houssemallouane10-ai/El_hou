@@ -335,6 +335,7 @@ export default {
     logout: 'تسجيل الخروج',
     logoutConfirm: 'هل تريد تسجيل الخروج من هذا الجهاز؟',
     loggedOut: 'تم تسجيل الخروج',
+    ownerBadge: 'مالك المنصة',
   },
 
   editProfile: {
@@ -492,6 +493,10 @@ export default {
     deleteForever: 'حذف نهائي',
     accountDeleted: 'تم حذف حسابك. نتمنى لك التوفيق!',
     version: 'خدمتي — الإصدار {version}',
+    ownerClaim: 'صاحب المنصة؟ أدخل رمز المالك',
+    ownerTitle: 'رمز المالك',
+    ownerText: 'أدخل الرمز السري الموجود في إعدادات الخادم (OWNER_CODE) لتحصل على كل صلاحيات الإدارة.',
+    ownerDone: 'أصبحت مالك المنصة 👑 هذه لوحة الإدارة',
   },
 
   auth: {
@@ -521,6 +526,10 @@ export default {
     agreePrefix: 'قرأت وأوافق على',
     agreeAnd: ' و',
     agreeSuffix: '',
+    ownerToggle: 'أنا صاحب المنصة (عندي رمز المالك)',
+    ownerCode: 'رمز المالك',
+    ownerCodeHint: 'الرمز السري الموجود في إعدادات الخادم (OWNER_CODE). اتركه فارغًا إن لم تكن صاحب المنصة.',
+    ownerWelcome: 'مرحبًا {name}! أنت الآن مالك المنصة 👑',
     wilaya: 'ولايتك',
     wilayaHint: 'نعرض لك عروض ولايتك أولًا، ويمكنك تغييرها في أي وقت.',
     welcome: 'مرحبًا {name}! تم إنشاء حسابك 🎉',
@@ -822,6 +831,7 @@ export default {
     required_for_listing: 'مطلوب لإظهار ملفك في دليل العمّال',
     wrong_password: 'كلمة السر غير صحيحة',
     must_accept: 'يجب الموافقة على شروط الاستخدام وسياسة الخصوصية للمتابعة',
+    wrong_code: 'الرمز غير صحيح',
     wrong_wilaya: 'هذه البلدية لا تتبع الولاية المختارة',
   },
 };

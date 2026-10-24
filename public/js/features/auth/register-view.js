@@ -59,6 +59,10 @@ export default {
             </label>
             <p class="field-error" hidden></p>
           </div>
+          <details class="owner-claim">
+            <summary>${icon('shield')}<span>${t('auth.ownerToggle')}</span></summary>
+            ${field({ name: 'ownerCode', label: t('auth.ownerCode'), hint: t('auth.ownerCodeHint'), control: passwordInput({ name: 'ownerCode', autocomplete: 'off' }) })}
+          </details>
           <button class="btn btn-primary btn-lg btn-block" type="submit">${t('auth.registerButton')}</button>
         </form>
         <p class="auth-switch">${t('auth.haveAccount')} <a href="/login${next ? `?next=${encodeURIComponent(next)}` : ''}">${t('auth.login')}</a></p>
@@ -74,7 +78,13 @@ export default {
           const values = readForm(form);
           const { user } = await api.post('/api/auth/register', { ...values, wilayaCode: values.wilayaCode ? Number(values.wilayaCode) : null });
           await loadSession();
-          toast(t('auth.welcome', { name: user.name.split(' ')[0] }), { type: 'success', duration: 5000 });
+          const firstName = user.name.split(' ')[0];
+          if (user.isOwner) {
+            toast(t('auth.ownerWelcome', { name: firstName }), { type: 'success', duration: 6000 });
+            navigate('/admin', { replace: true });
+            return;
+          }
+          toast(t('auth.welcome', { name: firstName }), { type: 'success', duration: 5000 });
           const destination = next ?? (user.role === 'employer' ? '/jobs/new?welcome=1' : '/me/edit?listing=1&welcome=1');
           navigate(destination, { replace: true });
         } catch (error) {

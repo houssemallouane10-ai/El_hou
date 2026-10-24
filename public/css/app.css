@@ -1982,6 +1982,23 @@ body.no-tabbar .offline-bar { bottom: calc(env(safe-area-inset-bottom) + 86px); 
 .check-row a { color: var(--primary-ink); font-weight: 600; }
 .check-row:has(input[aria-invalid='true']) { color: var(--danger-ink); }
 
+/* ---------- Owner code ---------- */
+
+.owner-claim summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-3);
+  font-size: 13.5px;
+  cursor: pointer;
+  list-style: none;
+}
+.owner-claim summary::-webkit-details-marker { display: none; }
+.owner-claim summary .icon { width: 16px; height: 16px; }
+.owner-claim[open] summary { margin-bottom: 10px; color: var(--primary-ink); }
+.owner-link { display: inline-flex; align-items: center; gap: 6px; justify-self: center; padding: 6px; border: 0; background: none; color: var(--text-3); font: inherit; font-size: 13.5px; cursor: pointer; }
+.owner-link .icon { width: 16px; height: 16px; }
+
 /* ---------- Blocking ---------- */
 
 button.list-item { width: 100%; border: 0; background: none; font: inherit; text-align: start; cursor: pointer; }

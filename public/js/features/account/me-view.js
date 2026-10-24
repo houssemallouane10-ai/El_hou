@@ -66,7 +66,10 @@ const memberMarkup = (user) => html`
       <h1 class="me-name">${user.name}${verifiedMark(user)}</h1>
       ${user.companyName ? html`<p class="muted">${user.companyName}</p>` : null}
       <p class="muted text-sm" dir="ltr">${formatPhone(user.phone)}</p>
-      <span class="badge badge-muted">${label(findById(ROLES, user.role))}</span>
+      <span class="tags">
+        <span class="badge badge-muted">${label(findById(ROLES, user.role))}</span>
+        ${user.isOwner ? html`<span class="badge badge-featured">${icon('star')}${t('me.ownerBadge')}</span>` : null}
+      </span>
     </div>
     <a class="btn btn-secondary btn-sm" href="${user.isListed || user.role === 'employer' ? `/u/${user.id}` : '/me/edit'}">${t('me.viewProfile')}</a>
   </section>

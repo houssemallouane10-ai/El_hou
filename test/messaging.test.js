@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { after, before, describe, it } from 'node:test';
-import { ADMIN_PHONE, signUp, startTestServer, validJob } from './helpers.js';
+import { signUp, signUpOwner, startTestServer, validJob } from './helpers.js';
 
 describe('messaging', () => {
   let server;
@@ -62,7 +62,7 @@ describe('messaging', () => {
   });
 
   it('stops delivering messages to banned accounts', async () => {
-    const admin = await signUp(server, { phone: ADMIN_PHONE });
+    const admin = await signUpOwner(server);
     const sender = await signUp(server);
     const target = await signUp(server);
     const { id } = (await sender.client.post('/api/conversations', { userId: target.user.id })).data.conversation;

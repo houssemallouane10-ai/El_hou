@@ -92,7 +92,7 @@ const reportItem = (report) => html`
   </article>
 `;
 
-// Owners (ADMIN_PHONES) appoint and remove moderators; moderators handle everyone else.
+// Owners appoint and remove moderators; moderators handle everyone else.
 const userActions = (user, viewerIsOwner) => {
   if (user.isOwner) return null;
   const adminToggle = viewerIsOwner && !user.isBanned

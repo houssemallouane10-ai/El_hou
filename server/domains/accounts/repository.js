@@ -47,16 +47,19 @@ export const createAccountsRepository = (db) => {
     byPhone: db.prepare('SELECT * FROM users WHERE phone = ?'),
     insert: db.prepare(`
       INSERT INTO users (
-        name, phone, password_hash, role, is_admin, wilaya_code, alert_wilaya, terms_accepted_at,
+        name, phone, password_hash, role, is_admin, is_owner, wilaya_code, alert_wilaya, terms_accepted_at,
         created_at, updated_at, last_seen_at
       ) VALUES (
-        @name, @phone, @passwordHash, @role, @isAdmin, @wilayaCode, @wilayaCode, @now, @now, @now, @now
+        @name, @phone, @passwordHash, @role, @isOwner, @isOwner, @wilayaCode, @wilayaCode, @now, @now, @now, @now
       )
     `),
     setPassword: db.prepare('UPDATE users SET password_hash = ?, updated_at = ? WHERE id = ?'),
     setSearchText: db.prepare('UPDATE users SET search_text = ? WHERE id = ?'),
     setAlerts: db.prepare('UPDATE users SET alert_categories = ?, alert_wilaya = ?, updated_at = ? WHERE id = ?'),
     setAdmin: db.prepare('UPDATE users SET is_admin = ? WHERE id = ?'),
+    grantOwner: db.prepare('UPDATE users SET is_owner = 1, is_admin = 1 WHERE id = ?'),
+    revokeOwner: db.prepare('UPDATE users SET is_owner = 0 WHERE id = ?'),
+    hasOwner: db.prepare('SELECT EXISTS (SELECT 1 FROM users WHERE is_owner = 1 AND is_banned = 0) AS found'),
     setBanned: db.prepare('UPDATE users SET is_banned = ?, updated_at = ? WHERE id = ?'),
     setVerified: db.prepare('UPDATE users SET is_verified = ?, updated_at = ? WHERE id = ?'),
     touch: db.prepare('UPDATE users SET last_seen_at = ? WHERE id = ?'),
@@ -102,8 +105,8 @@ export const createAccountsRepository = (db) => {
       return db.prepare(`SELECT * FROM users WHERE id IN (${placeholders})`).all(...ids);
     },
 
-    insert({ name, phone, passwordHash, role, isAdmin, wilayaCode, now }) {
-      const id = Number(statements.insert.run({ name, phone, passwordHash, role, isAdmin: toFlag(isAdmin), wilayaCode, now }).lastInsertRowid);
+    insert({ name, phone, passwordHash, role, isOwner, wilayaCode, now }) {
+      const id = Number(statements.insert.run({ name, phone, passwordHash, role, isOwner: toFlag(isOwner), wilayaCode, now }).lastInsertRowid);
       statements.setSearchText.run(userSearchText(statements.byId.get(id)), id);
       return id;
     },
@@ -130,6 +133,9 @@ export const createAccountsRepository = (db) => {
     setPassword: (id, passwordHash, now) => statements.setPassword.run(passwordHash, now, id),
     setAlerts: (id, { categories, wilayaCode }, now) => statements.setAlerts.run(JSON.stringify(categories), wilayaCode, now, id),
     setAdmin: (id, isAdmin) => statements.setAdmin.run(toFlag(isAdmin), id),
+    grantOwner: (id) => statements.grantOwner.run(id),
+    revokeOwner: (id) => statements.revokeOwner.run(id),
+    hasOwner: () => Boolean(statements.hasOwner.get().found),
     setBanned: (id, isBanned, now) => statements.setBanned.run(toFlag(isBanned), now, id),
     setVerified: (id, isVerified, now) => statements.setVerified.run(toFlag(isVerified), now, id),
     touch: (id, now) => statements.touch.run(now, id),

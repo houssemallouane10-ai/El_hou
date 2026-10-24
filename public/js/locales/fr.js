@@ -335,6 +335,7 @@ export default {
     logout: 'Se déconnecter',
     logoutConfirm: 'Se déconnecter de cet appareil ?',
     loggedOut: 'Vous êtes déconnecté',
+    ownerBadge: 'Propriétaire',
   },
 
   editProfile: {
@@ -492,6 +493,10 @@ export default {
     deleteForever: 'Supprimer définitivement',
     accountDeleted: 'Votre compte a été supprimé. Bonne continuation !',
     version: 'Khedmati — version {version}',
+    ownerClaim: 'Propriétaire ? Saisissez le code propriétaire',
+    ownerTitle: 'Code propriétaire',
+    ownerText: 'Saisissez le code secret défini sur le serveur (OWNER_CODE) pour obtenir tous les droits d’administration.',
+    ownerDone: 'Vous êtes propriétaire de la plateforme 👑 Voici la console d’administration',
   },
 
   auth: {
@@ -521,6 +526,10 @@ export default {
     agreePrefix: 'J’ai lu et j’accepte les',
     agreeAnd: ' et la ',
     agreeSuffix: '.',
+    ownerToggle: 'Je suis le propriétaire (j’ai le code propriétaire)',
+    ownerCode: 'Code propriétaire',
+    ownerCodeHint: 'Le code secret défini sur le serveur (OWNER_CODE). Laissez vide si vous n’êtes pas le propriétaire.',
+    ownerWelcome: 'Bienvenue {name} ! Vous êtes maintenant propriétaire de la plateforme 👑',
     wilaya: 'Votre wilaya',
     wilayaHint: 'Nous affichons d’abord les offres de votre wilaya ; vous pourrez en changer à tout moment.',
     welcome: 'Bienvenue {name} ! Votre compte est créé 🎉',
@@ -822,6 +831,7 @@ Vous pouvez consulter et modifier vos informations à tout moment, et supprimer 
     required_for_listing: 'Requis pour apparaître dans l’annuaire',
     wrong_password: 'Mot de passe incorrect',
     must_accept: 'Vous devez accepter les conditions d’utilisation et la politique de confidentialité',
+    wrong_code: 'Code incorrect',
     wrong_wilaya: 'Cette commune n’appartient pas à la wilaya choisie',
   },
 };

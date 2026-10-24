@@ -46,8 +46,11 @@ format) and are imported by both the server and the browser.
 
 ## Owners, moderators and store requirements
 
-- Owners are the phones in `ADMIN_PHONES`: always admins, never demotable from the app, and the only
-  accounts that appoint or remove moderators (`accounts.adminSetAdmin`).
+- Owners are accounts with `is_owner`, set by entering the deployment's `OWNER_CODE` at sign-up or in
+  Settings (constant-time comparison, rate limited), or from the command line (`npm run make-owner`).
+  Phone numbers are not verified, so ownership is never derived from a phone number. Owners are always
+  admins, cannot be demoted or banned from the app, and are the only accounts that appoint or remove
+  moderators (`accounts.adminSetAdmin`).
 - Google Play's user-generated content rules are met in the domains, not just the UI: explicit terms
   acceptance at registration, reports on offers and users, and blocks that stop messages both ways
   (`messaging`), plus in-app and web account deletion.
@@ -55,6 +58,16 @@ format) and are imported by both the server and the browser.
   the Arabic locale, so reviewers and crawlers can read them without JavaScript.
 - `/.well-known/assetlinks.json` is built from `ANDROID_PACKAGE_NAME` and
   `ANDROID_SHA256_FINGERPRINTS`; malformed fingerprints stop the server at start-up.
+
+## Operations
+
+- `render.yaml` describes the production service on Render: Node 22 (`.node-version`), a 1 GB disk on
+  `/data`, the `/api/health` check, a generated `OWNER_CODE`. `PUBLIC_URL` falls back to Render's
+  `RENDER_EXTERNAL_URL`.
+- `server/shared/db/backups.js` writes one online SQLite backup per day to `DATA_DIR/backups` from the
+  hourly maintenance tick and keeps `BACKUP_DAYS` copies; shutdown waits for a running backup.
+- `server/startup-checks.js` prints what is still missing at start-up (no owner yet, no support
+  contact, no `PUBLIC_URL`, the retired `ADMIN_PHONES`).
 
 ## Key decisions
 
@@ -80,6 +93,7 @@ Checked on 2026-10-24 against the current tree.
 | Conversations, unread counts, read receipts, privacy, banned recipients | `test/messaging.test.js` | verified |
 | Reports, hide/feature offers, ban/unban, verify, temporary passwords, admin-only access | `test/moderation.test.js` | verified |
 | Security headers, cross-site write rejection, JSON-only bodies, login rate limit, bookmarks, shell, sitemap, service worker | `test/platform.test.js` | verified |
+| Owner code at sign-up and from settings, command-line owners, hosting settings, start-up warnings, daily backups and their retention | `test/operations.test.js`, `test/accounts.test.js` | verified |
 | Wilaya/commune rules on offers and profiles, place filters and bilingual place search, alerts per wilaya, regional home figures, blocking, terms acceptance, owners and moderators, per-wilaya admin views, assetlinks, server-rendered legal pages, upgrade from version 1 | `test/national.test.js` | verified |
 | Browser flows for the national version (region picker with search, region-aware home/jobs/workers, commune filters, register with wilaya and terms, dependent selects, post an offer, alerts scope, block/unblock from chat and settings, owner admin, French/dark, desktop, no horizontal overflow at 360 px) | Playwright run against a seeded database | verified |
 | Browser flows (apply, save, message, accept, publish with Arabic-Indic digits, validation, admin, FR/dark, desktop) | Playwright run against a seeded database | verified |

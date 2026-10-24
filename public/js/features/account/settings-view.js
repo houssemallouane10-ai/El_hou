@@ -85,6 +85,11 @@ const passwordSection = () => html`
   </section>
 `;
 
+// Discreet on purpose: only the platform owner has the code (OWNER_CODE on the server).
+const ownerSection = () => html`
+  <button class="text-link owner-link" type="button" data-action="claim-owner">${icon('shield')}${t('settings.ownerClaim')}</button>
+`;
+
 const dangerSection = () => html`
   <section class="form-section danger-zone">
     <h2 class="form-section-title">${icon('triangle-alert')}${t('settings.dangerZone')}</h2>
@@ -107,6 +112,7 @@ export default {
         ${user ? blockedSection() : null}
         <div data-install hidden></div>
         ${user ? dangerSection() : null}
+        ${user && !user.isOwner ? ownerSection() : null}
         <p class="center muted text-xs">${t('settings.version', { version: '2.0' })}</p>
       </div>
     `);
@@ -167,6 +173,41 @@ export default {
           } catch (error) {
             handleFormError(passwordForm, error);
           }
+        });
+      });
+
+      on(root, 'click', '[data-action="claim-owner"]', () => {
+        openLayer({
+          kind: 'dialog',
+          title: t('settings.ownerTitle'),
+          body: html`
+            <form class="form" id="owner-form" novalidate>
+              <p class="dialog-message">${t('settings.ownerText')}</p>
+              ${field({ name: 'ownerCode', label: t('auth.ownerCode'), control: passwordInput({ name: 'ownerCode', autocomplete: 'off' }) })}
+            </form>
+          `,
+          footer: html`
+            <button class="btn btn-secondary" type="button" data-layer-close>${t('common.cancel')}</button>
+            <button class="btn btn-primary" type="submit" form="owner-form">${t('common.confirm')}</button>
+          `,
+          onMount: (panel, layer) => {
+            const form = $(panel, '#owner-form');
+            bindPasswordToggles(form);
+            form.addEventListener('submit', (event) => {
+              event.preventDefault();
+              withBusy($(panel, 'button[type="submit"]'), async () => {
+                try {
+                  const { user: owner } = await api.post('/api/me/owner', readForm(form));
+                  store.setUser(owner);
+                  layer.close();
+                  toast(t('settings.ownerDone'), { type: 'success', duration: 6000 });
+                  navigate('/admin');
+                } catch (error) {
+                  handleFormError(form, error);
+                }
+              });
+            });
+          },
         });
       });
 

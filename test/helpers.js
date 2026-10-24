@@ -4,7 +4,7 @@ import { createServices } from '../server/services.js';
 import { DAY_MS } from '../server/shared/clock.js';
 import { openDatabase } from '../server/shared/db/database.js';
 
-export const ADMIN_PHONE = '0660000000';
+export const OWNER_CODE = 'test-owner-code';
 export const PASSWORD = 'password123';
 
 export const createTestClock = (start = '2026-10-01T09:00:00.000Z') => {
@@ -28,7 +28,7 @@ export const startTestServer = async ({ env = {}, clock = createTestClock() } = 
     DATABASE_FILE: ':memory:',
     RATE_LIMITS: 'off',
     LOG_REQUESTS: 'off',
-    ADMIN_PHONES: ADMIN_PHONE,
+    OWNER_CODE,
     ...env,
   });
   const db = openDatabase(':memory:');
@@ -107,12 +107,15 @@ export const PLACES = {
   algiers: { wilayaCode: 16, communeId: 554 },
 };
 
-export const signUp = async (server, { name = 'مستخدم تجريبي', role = 'seeker', phone = nextPhone(), wilayaCode = 62 } = {}) => {
+export const signUp = async (server, { name = 'مستخدم تجريبي', role = 'seeker', phone = nextPhone(), wilayaCode = 62, ownerCode } = {}) => {
   const client = server.client();
-  const response = await client.post('/api/auth/register', { name, phone, password: PASSWORD, role, wilayaCode, acceptTerms: true });
+  const response = await client.post('/api/auth/register', { name, phone, password: PASSWORD, role, wilayaCode, acceptTerms: true, ownerCode });
   if (response.status !== 201) throw new Error(`sign up failed: ${response.status} ${JSON.stringify(response.data)}`);
   return { client, user: response.data.user, phone };
 };
+
+// An owner (and therefore admin) of the test deployment.
+export const signUpOwner = (server, options = {}) => signUp(server, { ...options, ownerCode: OWNER_CODE });
 
 export const validJob = (overrides = {}) => ({
   title: 'مطلوب بائع في محل مواد غذائية',

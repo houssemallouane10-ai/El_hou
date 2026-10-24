@@ -77,7 +77,7 @@ const workers = {
 };
 
 const admin = await createUser({ name: 'إدارة خدمتي', role: 'employer', communeId: PLACES.birElAter });
-accounts.grantAdminByPhone(admin.phone);
+accounts.setOwnerByPhone(admin.phone, true);
 accounts.setAlerts(workers.driver.id, { categories: ['transport'], wilayaCode: 12 });
 
 const job = (hoursAgo, employer, data) => {
@@ -145,4 +145,4 @@ db.close();
 console.log('✔ Demo data ready. Every demo account uses the password', PASSWORD);
 console.log('  Employer : 0555000001  (مقاولة الواحة للبناء، بئر العاتر)');
 console.log('  Worker   : 0555000011  (محمد الطاهر، بئر العاتر)');
-console.log(`  Admin    : ${admin.phone}`);
+console.log(`  Owner    : ${admin.phone}`);

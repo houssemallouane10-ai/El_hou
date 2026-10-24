@@ -203,6 +203,11 @@ const MIGRATIONS = [
       `);
     },
   },
+  {
+    version: 3,
+    name: 'owners recorded on the account',
+    sql: 'ALTER TABLE users ADD COLUMN is_owner INTEGER NOT NULL DEFAULT 0;',
+  },
 ];
 
 // `upTo` stops at a given version (used by tests to build an older schema).

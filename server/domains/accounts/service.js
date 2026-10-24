@@ -6,16 +6,18 @@ import {
   parseAlertSettings,
   parseDirectoryQuery,
   parseLogin,
+  parseOwnerClaim,
   parsePasswordChange,
   parsePasswordConfirmation,
   parseProfileUpdate,
   parseRegistration,
+  readOwnerCodeInput,
   toAdminView,
   toCardView,
   toProfileView,
   toSelfView,
 } from './contracts.js';
-import { burnPasswordCheck, generateTemporaryPassword, hashPassword, verifyPassword } from './passwords.js';
+import { burnPasswordCheck, generateTemporaryPassword, hashPassword, matchesSecret, verifyPassword } from './passwords.js';
 import { createAccountsRepository } from './repository.js';
 import { createSessionStore } from './sessions.js';
 
@@ -24,10 +26,10 @@ const LAST_SEEN_RESOLUTION_MS = 5 * 60 * 1000;
 export const createAccountsService = ({ db, clock, config }) => {
   const repository = createAccountsRepository(db);
   const sessions = createSessionStore({ db, clock, ttlDays: config.sessionDays });
-  // Owners are the phones in ADMIN_PHONES: always admins, and the only ones who appoint admins.
-  const adminPhones = new Set(config.adminPhones);
+  // Owners proved they know the deployment's OWNER_CODE (or were named from the server's command
+  // line). They are always admins, and the only ones who appoint or remove admins.
   const now = () => clock.now().toISOString();
-  const isOwner = (user) => adminPhones.has(user.phone);
+  const isOwner = (user) => Boolean(user.is_owner);
   const self = (user) => toSelfView(user, { isOwner: isOwner(user) });
   const adminView = (user) => toAdminView(user, { isOwner: isOwner(user) });
 
@@ -35,12 +37,6 @@ export const createAccountsService = ({ db, clock, config }) => {
     const user = repository.findById(id);
     if (!user || user.is_banned) throw notFound('USER_NOT_FOUND');
     return user;
-  };
-
-  const promoteConfiguredAdmin = (user) => {
-    if (!adminPhones.has(user.phone) || user.is_admin) return user;
-    repository.setAdmin(user.id, true);
-    return repository.findById(user.id);
   };
 
   // Sending only a new wilaya clears a commune that belonged to the old one; sending only a
@@ -70,11 +66,13 @@ export const createAccountsService = ({ db, clock, config }) => {
     async register(input, { userAgent } = {}) {
       const data = parseRegistration(input);
       const { wilayaCode } = resolvePlace({ wilayaCode: data.wilayaCode });
+      const ownerCode = readOwnerCodeInput(input);
+      if (ownerCode && !matchesSecret(ownerCode, config.ownerCode)) throw invalid({ ownerCode: 'wrong_code' });
       if (repository.findByPhone(data.phone)) throw conflict('PHONE_TAKEN');
       const passwordHash = await hashPassword(data.password);
       let id;
       try {
-        id = repository.insert({ ...data, wilayaCode, passwordHash, isAdmin: adminPhones.has(data.phone), now: now() });
+        id = repository.insert({ ...data, wilayaCode, passwordHash, isOwner: Boolean(ownerCode), now: now() });
       } catch (error) {
         if (error.code === 'SQLITE_CONSTRAINT_UNIQUE') throw conflict('PHONE_TAKEN');
         throw error;
@@ -89,9 +87,8 @@ export const createAccountsService = ({ db, clock, config }) => {
       const valid = user ? await verifyPassword(password, user.password_hash) : await burnPasswordCheck(password);
       if (!valid) throw unauthenticated('INVALID_CREDENTIALS');
       if (user.is_banned) throw forbidden('ACCOUNT_BANNED');
-      const current = promoteConfiguredAdmin(user);
-      repository.touch(current.id, now());
-      return { user: self(current), token: sessions.open(current.id, userAgent) };
+      repository.touch(user.id, now());
+      return { user: self(user), token: sessions.open(user.id, userAgent) };
     },
 
     logout(token) {
@@ -145,6 +142,17 @@ export const createAccountsService = ({ db, clock, config }) => {
       if (!(await verifyPassword(password, user.password_hash))) throw invalid({ password: 'wrong_password' });
       repository.remove(id);
     },
+
+    // An existing account becomes an owner with the deployment's owner code.
+    claimOwnership(id, input) {
+      const { ownerCode } = parseOwnerClaim(input);
+      const user = requireActiveUser(id);
+      if (!matchesSecret(ownerCode, config.ownerCode)) throw invalid({ ownerCode: 'wrong_code' });
+      if (!user.is_owner) repository.grantOwner(id);
+      return self(repository.findById(id));
+    },
+
+    hasOwner: () => repository.hasOwner(),
 
     // Alerts follow the chosen categories, in one wilaya or (wilayaCode null) the whole country.
     setAlerts(id, input) {
@@ -268,6 +276,15 @@ export const createAccountsService = ({ db, clock, config }) => {
       repository.setPassword(user.id, await hashPassword(temporaryPassword), now());
       sessions.closeAllForUser(user.id);
       return { user: self(repository.findById(user.id)), temporaryPassword };
+    },
+
+    // Command-line recovery: name or remove an owner by phone number.
+    setOwnerByPhone(phone, isOwnerAccount) {
+      const user = repository.findByPhone(phone);
+      if (!user) throw notFound('USER_NOT_FOUND');
+      if (isOwnerAccount) repository.grantOwner(user.id);
+      else repository.revokeOwner(user.id);
+      return self(repository.findById(user.id));
     },
 
     grantAdminByPhone(phone) {
