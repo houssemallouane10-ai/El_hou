@@ -1,5 +1,6 @@
-import { CATEGORIES, JOB_TYPES, LOCATIONS, findById } from '../../../shared/catalog.js';
+import { CATEGORIES, JOB_TYPES, findById } from '../../../shared/catalog.js';
 import { toFlag } from '../../shared/db/database.js';
+import { placeSearchText } from '../../shared/places.js';
 import { buildSearchText, createFilter, searchTerms } from '../../shared/search.js';
 
 // Poster columns are a read-only projection of the accounts table, used for display and to keep
@@ -21,7 +22,8 @@ const JOB_COLUMNS = {
   title: 'title',
   category: 'category',
   jobType: 'job_type',
-  location: 'location',
+  wilayaCode: 'wilaya_code',
+  communeId: 'commune_id',
   address: 'address',
   description: 'description',
   requirements: 'requirements',
@@ -59,7 +61,7 @@ const jobSearchText = (job) => {
     job.address,
     label(CATEGORIES, job.category),
     label(JOB_TYPES, job.job_type),
-    label(LOCATIONS, job.location),
+    placeSearchText({ wilayaCode: job.wilaya_code, communeId: job.commune_id }),
   );
 };
 
@@ -68,16 +70,17 @@ export const createJobsRepository = (db) => {
     byId: db.prepare(`${SELECT_JOB} WHERE j.id = ?`),
     insert: db.prepare(`
       INSERT INTO jobs (
-        user_id, title, category, job_type, location, address, description, requirements,
+        user_id, title, category, job_type, wilaya_code, commune_id, address, description, requirements,
         salary_min, salary_max, salary_period, positions, contact_phone, contact_whatsapp,
         is_urgent, search_text, created_at, published_at, updated_at, expires_at
       ) VALUES (
-        @userId, @title, @category, @jobType, @location, @address, @description, @requirements,
+        @userId, @title, @category, @jobType, @wilayaCode, @communeId, @address, @description, @requirements,
         @salaryMin, @salaryMax, @salaryPeriod, @positions, @contactPhone, @contactWhatsapp,
         @isUrgent, '', @now, @now, @now, @expiresAt
       )
     `),
     setSearchText: db.prepare('UPDATE jobs SET search_text = ? WHERE id = ?'),
+    unindexed: db.prepare("SELECT * FROM jobs WHERE search_text = '' LIMIT 500"),
     setStatus: db.prepare(`
       UPDATE jobs SET status = @status,
         published_at = COALESCE(@publishedAt, published_at),
@@ -95,7 +98,11 @@ export const createJobsRepository = (db) => {
     ) AS found`),
     categoryCounts: db.prepare(`
       SELECT j.category AS category, COUNT(*) AS total FROM jobs j JOIN users u ON u.id = j.user_id
-      WHERE ${PUBLIC_VISIBILITY} GROUP BY j.category
+      WHERE ${PUBLIC_VISIBILITY} AND (@wilayaCode IS NULL OR j.wilaya_code = @wilayaCode) GROUP BY j.category
+    `),
+    countsByWilaya: db.prepare(`
+      SELECT j.wilaya_code AS wilayaCode, COUNT(*) AS total FROM jobs j JOIN users u ON u.id = j.user_id
+      WHERE ${PUBLIC_VISIBILITY} AND j.wilaya_code IS NOT NULL GROUP BY j.wilaya_code
     `),
     stats: db.prepare(`
       SELECT
@@ -110,9 +117,11 @@ export const createJobsRepository = (db) => {
       SELECT j.id, j.updated_at FROM jobs j JOIN users u ON u.id = j.user_id
       WHERE ${PUBLIC_VISIBILITY} ORDER BY j.published_at DESC LIMIT @limit
     `),
+    // Same trade, nearest first: same commune, then same wilaya, then the rest of the country.
     similar: db.prepare(`
       ${SELECT_JOB} WHERE ${PUBLIC_VISIBILITY} AND j.category = @category AND j.id != @id
-      ORDER BY j.published_at DESC LIMIT @limit
+      ORDER BY (j.commune_id IS @communeId) DESC, (j.wilaya_code IS @wilayaCode) DESC, j.published_at DESC
+      LIMIT @limit
     `),
   };
 
@@ -161,16 +170,27 @@ export const createJobsRepository = (db) => {
     remove: (id) => statements.remove.run(id),
     countCreatedSince: (userId, since) => statements.countCreatedSince.get(userId, since).total,
     hasActive: (userId, now) => Boolean(statements.hasActive.get(userId, now).found),
-    categoryCounts: (now) => Object.fromEntries(statements.categoryCounts.all({ now }).map((row) => [row.category, row.total])),
+    categoryCounts: (now, wilayaCode) => Object.fromEntries(statements.categoryCounts.all({ now, wilayaCode }).map((row) => [row.category, row.total])),
+    countsByWilaya: (now) => statements.countsByWilaya.all({ now }),
     stats: (now, since) => statements.stats.get({ now, since }),
     sitemapEntries: (now, limit) => statements.sitemap.all({ now, limit }),
-    similar: (job, now, limit) => statements.similar.all({ now, category: job.category, id: job.id, limit }),
+    similar: (job, now, limit) => statements.similar.all({
+      now, category: job.category, id: job.id, communeId: job.commune_id, wilayaCode: job.wilaya_code, limit,
+    }),
+
+    // Rows migrated or imported without search text get it on the next maintenance pass.
+    indexMissingSearchText() {
+      const rows = statements.unindexed.all();
+      for (const row of rows) statements.setSearchText.run(jobSearchText(row) || ' ', row.id);
+      return rows.length;
+    },
 
     listPublic(query, paging, now) {
       const filter = createFilter().add(PUBLIC_VISIBILITY, { now });
       if (query.category) filter.add('j.category = @category', { category: query.category });
       if (query.jobType) filter.add('j.job_type = @jobType', { jobType: query.jobType });
-      if (query.location) filter.add('j.location = @location', { location: query.location });
+      if (query.wilayaCode) filter.add('j.wilaya_code = @wilayaCode', { wilayaCode: query.wilayaCode });
+      if (query.communeId) filter.add('j.commune_id = @communeId', { communeId: query.communeId });
       if (query.urgentOnly) filter.add('j.is_urgent = 1');
       if (query.withSalary) filter.add("j.salary_period != 'negotiable'");
       if (query.since) filter.add('j.published_at >= @since', { since: query.since });
@@ -185,10 +205,11 @@ export const createJobsRepository = (db) => {
       return page(filter, 'j.created_at DESC, j.id DESC', paging);
     },
 
-    listForAdmin({ q, state }, paging, now) {
+    listForAdmin({ q, state, wilayaCode }, paging, now) {
       const filter = createFilter().add('1 = 1', { now });
       if (OWNER_STATE_CLAUSES[state]) filter.add(OWNER_STATE_CLAUSES[state]);
       if (state === 'featured') filter.add('j.is_featured = 1');
+      if (wilayaCode) filter.add('j.wilaya_code = @wilayaCode', { wilayaCode });
       filter.addSearch('j.search_text', searchTerms(q));
       return page(filter, 'j.created_at DESC, j.id DESC', paging);
     },

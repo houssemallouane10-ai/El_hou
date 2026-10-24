@@ -2,8 +2,8 @@
 export default {
   common: {
     appName: 'Khedmati',
-    tagline: 'Emploi et recrutement à Bir El Ater',
-    city: 'Bir El Ater',
+    tagline: 'Emploi et recrutement en Algérie',
+    country: 'Algérie',
     currency: 'DA',
     listSeparator: ', ',
     loading: 'Chargement…',
@@ -58,6 +58,23 @@ export default {
     justNow: 'à l’instant',
   },
 
+  places: {
+    wilaya: 'Wilaya',
+    commune: 'Commune',
+    unknown: 'Lieu non précisé',
+    chooseWilaya: 'Choisir la wilaya…',
+    chooseCommune: 'Choisir la commune…',
+    chooseWilayaFirst: 'Choisissez d’abord la wilaya',
+    anyCommune: 'Toutes les communes',
+    allWilayas: 'Toutes les wilayas',
+    pickRegion: 'Choisir la wilaya',
+    searchWilaya: 'Nom ou numéro de wilaya…',
+    noMatch: 'Aucune wilaya ne correspond',
+    regionLabel: 'Région : {region}. Touchez pour changer',
+    browseAll: 'Voir toutes les wilayas',
+    communeNeedsWilaya: 'Choisissez une wilaya en haut de la page pour filtrer par commune.',
+  },
+
   salary: {
     negotiable: 'Salaire à négocier',
   },
@@ -65,8 +82,9 @@ export default {
   home: {
     welcome: 'Bienvenue sur Khedmati 👋',
     greeting: 'Bonjour {name} 👋',
-    heroTitle: 'Trouvez un emploi ou un travailleur à Bir El Ater',
-    heroText: 'Des offres locales, des artisans de la région et un contact direct par téléphone ou WhatsApp.',
+    heroTitle: 'Trouvez un emploi ou un travailleur près de chez vous',
+    heroTitleIn: 'Trouvez un emploi ou un travailleur à {region}',
+    heroText: 'Des offres, des travailleurs et des artisans dans toutes les wilayas d’Algérie, avec un contact direct par téléphone ou WhatsApp.',
     searchPlaceholder: 'Ex. : vendeur, chauffeur, maçon…',
     postJob: 'Publier une offre',
     createProfile: 'Créer mon profil pro',
@@ -84,12 +102,13 @@ export default {
     latest: 'Dernières offres',
     workers: 'Travailleurs et artisans disponibles',
     noJobsTitle: 'Aucune offre pour le moment',
-    noJobsText: 'Publiez la première offre de la région, c’est gratuit.',
+    noJobsInTitle: 'Aucune offre à {region} pour le moment',
+    noJobsText: 'Publiez la première offre de votre wilaya, c’est gratuit.',
     noWorkersTitle: 'Aucun talent dans l’annuaire pour l’instant',
     safetyTitle: 'Restez prudent',
     safetyText: 'Ne payez jamais pour obtenir un emploi et rencontrez les employeurs dans des lieux publics.',
     safetyLink: 'Conseils de sécurité',
-    footer: '© {year} Khedmati — fait à Bir El Ater, wilaya de Tébessa',
+    footer: '© {year} Khedmati — une plateforme algérienne née à Bir El Ater',
   },
 
   jobs: {
@@ -106,8 +125,6 @@ export default {
     filters: {
       category: 'Domaine',
       jobType: 'Type de contrat',
-      location: 'Commune',
-      anywhere: 'Toutes les communes',
       postedWithin: 'Date de publication',
     },
     posted: {
@@ -124,7 +141,7 @@ export default {
     emptyTitle: 'Aucune offre ne correspond',
     emptyText: 'Essayez d’autres mots ou retirez des filtres. Vous pouvez aussi activer une alerte pour les nouvelles offres.',
     alertCta: 'M’alerter des nouvelles offres',
-    alertOn: 'Vous serez notifié de chaque nouvelle offre en « {category} »',
+    alertOn: 'Vous serez notifié de chaque nouvelle offre en « {category} » — {scope}',
     urgent: 'Urgent',
     featured: 'À la une',
     state: {
@@ -198,7 +215,6 @@ export default {
     jobType: 'Type de contrat',
     positions: 'Nombre de postes',
     place: 'Lieu',
-    location: 'Commune',
     address: 'Quartier ou adresse',
     addressPlaceholder: 'Ex. : centre-ville, près du marché',
     pay: 'Rémunération',
@@ -268,7 +284,7 @@ export default {
     availableOnly: 'Disponibles uniquement',
     experience: { one: '{count} an d’expérience', other: '{count} ans d’expérience' },
     emptyTitle: 'Aucun profil ne correspond',
-    emptyText: 'Essayez un autre domaine ou une autre commune.',
+    emptyText: 'Essayez un autre domaine ou une autre commune, ou élargissez à toutes les wilayas.',
     ctaTitle: 'Proposez vos services',
     ctaText: 'Créez votre profil pro pour être contacté directement par les employeurs.',
   },
@@ -329,7 +345,6 @@ export default {
     role: 'Type de compte',
     companyName: 'Entreprise ou commerce',
     companyPlaceholder: 'Ex. : Entreprise Al Amel BTP',
-    location: 'Commune',
     workProfile: 'Profil professionnel',
     workProfileHint: 'Ces informations sont visibles par les employeurs quand vous postulez.',
     isListed: 'Afficher mon profil dans l’annuaire',
@@ -431,6 +446,23 @@ export default {
     sent: 'Envoyé',
     read: 'Lu',
     unavailable: 'Ce compte ne peut plus recevoir de messages.',
+    options: 'Options de la conversation',
+    viewProfile: 'Voir le profil',
+    reportUser: 'Signaler cette personne',
+  },
+
+  blocking: {
+    block: 'Bloquer cette personne',
+    unblock: 'Débloquer',
+    confirmTitle: 'Bloquer {name} ?',
+    confirmText: 'Cette personne ne pourra plus vous écrire, vous ne recevrez plus ses messages et la conversation disparaîtra de votre messagerie. Elle n’en sera pas informée ; vous pouvez débloquer à tout moment depuis les paramètres.',
+    blocked: '{name} est bloqué',
+    unblocked: '{name} est débloqué',
+    youBlocked: 'Vous avez bloqué cette personne.',
+    cannotReply: 'Vous ne pouvez pas envoyer de message dans cette conversation.',
+    listTitle: 'Personnes bloquées',
+    listHint: 'Ces personnes ne peuvent pas vous écrire et vous ne recevez pas leurs messages.',
+    listEmpty: 'Vous n’avez bloqué personne.',
   },
 
   settings: {
@@ -443,9 +475,10 @@ export default {
       dark: 'Sombre',
     },
     alerts: 'Alertes emploi',
-    alertsHint: 'Choisissez vos domaines : vous serez notifié de chaque nouvelle offre.',
+    alertsHint: 'Choisissez vos domaines et la wilaya : vous serez notifié de chaque nouvelle offre.',
+    alertsWhere: 'Alertes pour',
     saveAlerts: 'Enregistrer les alertes',
-    alertsSaved: { one: 'Alertes activées pour {count} domaine', other: 'Alertes activées pour {count} domaines' },
+    alertsSaved: { one: 'Alertes activées pour {count} domaine — {scope}', other: 'Alertes activées pour {count} domaines — {scope}' },
     alertsOff: 'Alertes emploi désactivées',
     password: 'Mot de passe',
     currentPassword: 'Mot de passe actuel',
@@ -485,8 +518,11 @@ export default {
     forgot: 'Mot de passe oublié ?',
     noAccount: 'Pas encore de compte ?',
     haveAccount: 'Déjà inscrit ?',
-    agreePrefix: 'En créant un compte, vous acceptez les',
-    agreeAnd: 'et la',
+    agreePrefix: 'J’ai lu et j’accepte les',
+    agreeAnd: ' et la ',
+    agreeSuffix: '.',
+    wilaya: 'Votre wilaya',
+    wilayaHint: 'Nous affichons d’abord les offres de votre wilaya ; vous pourrez en changer à tout moment.',
     welcome: 'Bienvenue {name} ! Votre compte est créé 🎉',
     welcomeBack: 'Bon retour {name}',
     loginToSave: 'Connectez-vous pour enregistrer des favoris',
@@ -565,10 +601,16 @@ export default {
       featured: 'À la une',
     },
     flags: {
+      owner: 'Propriétaire',
       admin: 'Admin',
       banned: 'Banni',
       listed: 'Annuaire',
     },
+    byWilaya: 'Activité par wilaya',
+    makeAdmin: 'Nommer modérateur',
+    removeAdmin: 'Retirer la modération',
+    makeAdminConfirm: 'Cette personne pourra traiter les signalements, masquer des offres et bannir des comptes. Continuer ?',
+    removeAdminConfirm: 'Ce compte perdra ses droits de modération. Continuer ?',
     searchUsers: 'Nom ou téléphone…',
     searchJobs: 'Rechercher une offre…',
     empty: 'Rien à afficher',
@@ -599,78 +641,120 @@ export default {
   pages: {
     about: {
       title: 'À propos de Khedmati',
-      body: `Khedmati est une plateforme locale et gratuite qui rapproche employeurs et chercheurs d’emploi à Bir El Ater et dans les communes de la wilaya de Tébessa.
+      body: `Khedmati est une plateforme algérienne gratuite qui réunit employeurs et chercheurs d’emploi dans toutes les wilayas et communes du pays, de Bir El Ater à Tamanrasset.
 
 ## Ce que propose Khedmati
-- Des offres locales dans tous les domaines : bâtiment, commerce, agriculture, transport, mines et artisanat.
+- Des offres d’emploi dans tous les domaines : bâtiment, commerce, agriculture, transport, mines, industrie et artisanat.
+- Une recherche par wilaya et par commune : 69 wilayas et 1 541 communes.
 - Un annuaire où travailleurs et artisans présentent leurs services.
-- La candidature en un geste et le suivi de chaque demande.
-- Le contact direct par téléphone, WhatsApp ou messagerie intégrée.
-- Des alertes instantanées pour les nouvelles offres de vos domaines.
+- Une candidature en un geste et le suivi de chaque demande.
+- Un contact direct par téléphone, WhatsApp ou messagerie intégrée.
+- Des alertes pour les nouvelles offres dans vos domaines et votre wilaya.
 
 ## Pourquoi Khedmati ?
-Parce que la plupart des opportunités de notre région se perdent entre publications Facebook et groupes WhatsApp. Khedmati les réunit en un seul endroit, clair et facile à chercher.
+Parce que les offres d’emploi se perdent entre les publications Facebook et les groupes WhatsApp. Khedmati les rassemble en un seul endroit, clair, facile à fouiller et proche de chez vous.
 
 ## Nous contacter
-Pour toute suggestion ou problème, utilisez le bouton Signaler ou écrivez à l’équipe.`,
+Pour une suggestion ou un problème, utilisez le bouton de signalement ou écrivez à l’administration.`,
     },
     safety: {
       title: 'Conseils de sécurité',
-      body: `Votre sécurité passe avant tout. Suivez ces conseils pour chercher un emploi ou recruter sereinement.
+      body: `Votre sécurité passe avant tout. Suivez ces conseils pour chercher un emploi ou recruter.
 
 ## Pour les chercheurs d’emploi
-- Ne payez jamais pour obtenir un emploi ou « réserver » un poste : c’est une arnaque.
-- Ne remettez jamais vos documents originaux. Une copie suffit si nécessaire.
-- Pour un premier rendez-vous, choisissez un lieu public ou les locaux annoncés.
-- Mettez-vous d’accord clairement sur le salaire et les horaires avant de commencer.
+- Ne payez jamais pour obtenir un emploi ou « réserver » un poste : une offre qui demande de l’argent est une arnaque.
+- Ne remettez pas vos documents originaux (carte d’identité, passeport) ; une copie suffit.
+- Pour un premier rendez-vous, choisissez un lieu public ou l’adresse annoncée de l’entreprise.
+- Mettez-vous d’accord sur le salaire et les horaires avant de commencer.
 
 ## Pour les employeurs
-- Vérifiez l’identité et l’expérience du candidat avant tout accord.
-- Ne demandez jamais d’informations bancaires ou de documents sensibles par message.
-- Respectez les droits des travailleurs et la législation du travail.
+- Vérifiez l’identité et l’expérience du candidat avant de vous engager.
+- Ne demandez pas de données bancaires ni de documents sensibles par message.
+- Respectez les droits du travailleur et la législation du travail.
 
-## En cas de doute
-Utilisez le bouton « Signaler » sur l’offre ou le profil. L’équipe examine chaque signalement et masque les contenus abusifs.`,
+## Si quelqu’un vous importune
+- Touchez « Bloquer cette personne » dans la conversation ou sur son profil : elle ne pourra plus vous écrire.
+- Utilisez « Signaler » sur l’offre, le profil ou la conversation. L’administration examine chaque signalement, masque les contenus abusifs et bannit leurs auteurs.`,
     },
     terms: {
       title: 'Conditions d’utilisation',
       body: `En utilisant Khedmati, vous acceptez les conditions suivantes.
 
-## Votre compte
-- Les informations fournies doivent être exactes et le numéro de téléphone doit vous appartenir.
-- Vous êtes responsable de la confidentialité de votre mot de passe et de l’activité de votre compte.
+## Le compte
+- Vous devez avoir au moins 18 ans.
+- Les informations fournies doivent être exactes et le numéro de téléphone doit être le vôtre.
+- Vous êtes responsable de la confidentialité de votre mot de passe et de toute activité sur votre compte.
 
-## Contenus publiés
-- Il est interdit de publier des offres fictives, trompeuses ou demandant de l’argent aux candidats.
-- Les contenus offensants, discriminatoires ou contraires à la loi algérienne sont interdits.
-- L’équipe peut masquer tout contenu abusif et bannir les comptes concernés sans préavis.
+## Les contenus publiés
+- Vous êtes responsable des offres, profils et messages que vous publiez.
+- Les offres fictives, trompeuses ou demandant de l’argent aux candidats sont interdites.
+- Le harcèlement, les menaces et les contenus offensants, discriminatoires ou contraires à la loi algérienne sont interdits.
+- La promotion d’activités illégales ou du travail de mineurs contraire à la loi est interdite.
+
+## Signalement et blocage
+- Vous pouvez signaler toute offre, tout compte ou toute conversation abusive, et bloquer toute personne.
+- L’administration examine les signalements et peut masquer tout contenu abusif et bannir les comptes en infraction sans préavis.
 
 ## Responsabilité
-Khedmati est un intermédiaire qui facilite la mise en relation et n’est partie à aucun accord de travail entre utilisateurs. Vérifiez toujours avant de vous engager.
+Khedmati facilite seulement la mise en relation et n’est partie à aucun accord de travail entre utilisateurs. Vérifiez avant tout engagement.
 
 ## Modifications
 Ces conditions peuvent évoluer ; continuer à utiliser la plateforme vaut acceptation de la version à jour.`,
     },
     privacy: {
       title: 'Politique de confidentialité',
-      body: `Nous respectons votre vie privée et collectons le minimum de données, conformément à la loi 18-07 relative à la protection des personnes physiques dans le traitement des données à caractère personnel.
+      body: `Nous respectons votre vie privée et collectons le minimum de données, conformément à la loi 18-07 modifiée et complétée relative à la protection des personnes physiques dans le traitement des données à caractère personnel.
 
 ## Ce que nous collectons
-- Votre nom, votre numéro de téléphone et votre mot de passe (stocké chiffré).
-- Les informations de profil que vous choisissez d’ajouter.
-- Les offres, candidatures et messages que vous créez sur la plateforme.
+- Votre nom, votre numéro de téléphone et votre mot de passe (stocké chiffré, illisible par quiconque).
+- Votre wilaya et votre commune, et les informations de profil que vous choisissez d’ajouter.
+- Les offres, candidatures, messages et signalements que vous créez sur la plateforme.
+- Des données techniques nécessaires au service et à sa sécurité : type de navigateur, adresse IP et date de dernière activité.
+
+## Pourquoi nous les utilisons
+- Pour faire fonctionner votre compte, afficher offres et profils, acheminer messages et alertes.
+- Pour protéger les utilisateurs : lutter contre la fraude et le harcèlement, traiter les signalements.
+- Nous ne les utilisons pas à des fins publicitaires et ne les vendons à personne.
 
 ## Qui voit vos données ?
 - Votre profil n’est public que si vous activez « Afficher mon profil dans l’annuaire ».
 - Quand vous postulez, l’employeur voit votre profil et votre numéro.
-- Les messages ne sont visibles que par les deux participants.
+- Les messages ne sont visibles que par les deux participants ; les modérateurs ne les consultent que pour traiter un signalement.
 
-## Ce que nous ne faisons pas
-- Nous ne vendons ni ne partageons vos données avec des tiers commerciaux.
-- Nous n’utilisons aucun traceur publicitaire.
+## Protection et conservation
+- Les données transitent chiffrées entre votre appareil et nos serveurs (HTTPS).
+- Nous les conservons tant que votre compte existe ; les anciennes notifications sont supprimées automatiquement.
+- À la suppression du compte, ses données sont effacées immédiatement de la base, et des sauvegardes sous 30 jours.
 
 ## Vos droits
-Vous pouvez modifier vos informations à tout moment et supprimer définitivement votre compte depuis les paramètres.`,
+Vous pouvez consulter et modifier vos informations à tout moment, et supprimer définitivement votre compte depuis les paramètres ou sur demande (voir la page « Supprimer le compte »).`,
+    },
+    accountDeletion: {
+      title: 'Supprimer le compte',
+      body: `Vous pouvez supprimer définitivement votre compte Khedmati à tout moment.
+
+## Depuis l’application
+- Ouvrez « Mon compte » puis « Paramètres et alertes ».
+- Touchez « Supprimer mon compte » en bas de la page.
+- Confirmez avec votre mot de passe : le compte est supprimé immédiatement.
+
+## Sans ouvrir l’application
+Écrivez à l’administration depuis le numéro de téléphone de votre compte et demandez sa suppression. Après vérification du numéro, le compte est supprimé sous 7 jours au plus.
+
+## Ce qui est supprimé
+- Votre compte, votre profil et votre mot de passe.
+- Les offres que vous avez publiées et les candidatures associées.
+- Vos candidatures, messages, favoris, notifications et votre liste de blocage.
+
+## Ce qui est conservé
+- Les signalements que vous avez envoyés restent, sans votre nom, pour protéger les autres utilisateurs.
+- Les traces éventuelles dans les sauvegardes sont effacées sous 30 jours.`,
+      action: 'Supprimer mon compte',
+    },
+    contact: {
+      title: 'Nous contacter',
+      whatsapp: 'WhatsApp',
+      email: 'E-mail',
     },
   },
 
@@ -715,6 +799,12 @@ Vous pouvez modifier vos informations à tout moment et supprimer définitivemen
     REPORT_NOT_FOUND: 'Signalement introuvable',
     BAD_ORIGIN: 'Requête non autorisée',
     PAYLOAD_TOO_LARGE: 'Contenu trop long',
+    BLOCKED: 'Impossible d’écrire : l’un de vous a bloqué l’autre',
+    CANNOT_BLOCK_SELF: 'Vous ne pouvez pas vous bloquer vous-même',
+    BLOCK_LIMIT_REACHED: 'Nombre maximal de blocages atteint',
+    OWNER_ONLY: 'Action réservée au propriétaire de la plateforme',
+    CANNOT_CHANGE_OWNER: 'Les droits du propriétaire ne peuvent pas être modifiés',
+    USER_BANNED: 'Ce compte est banni',
   },
 
   fieldErrors: {
@@ -731,5 +821,7 @@ Vous pouvez modifier vos informations à tout moment et supprimer définitivemen
     less_than_min: 'Doit être supérieur au minimum',
     required_for_listing: 'Requis pour apparaître dans l’annuaire',
     wrong_password: 'Mot de passe incorrect',
+    must_accept: 'Vous devez accepter les conditions d’utilisation et la politique de confidentialité',
+    wrong_wilaya: 'Cette commune n’appartient pas à la wilaya choisie',
   },
 };

@@ -3,13 +3,15 @@ import { LIMITS } from '/shared/limits.js';
 import { clearPrivateCaches } from '../../app/pwa.js';
 import { store } from '../../app/store.js';
 import { THEMES, getTheme, setTheme } from '../../app/theme.js';
-import { api } from '../../shared/api.js';
-import { appBar } from '../../shared/components.js';
-import { bindPasswordToggles, field, handleFormError, passwordInput, readForm } from '../../shared/forms.js';
+import { api, isAbort } from '../../shared/api.js';
+import { appBar, avatar, displayName } from '../../shared/components.js';
+import { bindPasswordToggles, field, handleFormError, passwordInput, readForm, select } from '../../shared/forms.js';
 import { $, html, on, render } from '../../shared/html.js';
 import { LANGUAGES, getLang, label, setLang, t } from '../../shared/i18n.js';
 import { icon } from '../../shared/icons.js';
+import { placeLabel, wilayaOptions } from '../../shared/places.js';
 import { openLayer, toast, toastError, withBusy } from '../../shared/ui.js';
+import { unblockUser } from '../messages/blocking.js';
 import { mountInstallCard } from '../pwa/install-card.js';
 
 const THEME_ICONS = { system: 'monitor', light: 'sun', dark: 'moon' };
@@ -44,10 +46,33 @@ const alertsSection = (user) => html`
           </label>
         `)}
       </div>
+      ${field({
+        name: 'alertWilaya',
+        label: t('settings.alertsWhere'),
+        control: select({ name: 'alertWilaya', value: user.alertWilaya ? String(user.alertWilaya) : '', placeholder: t('places.allWilayas'), options: wilayaOptions() }),
+      })}
       <button class="btn btn-secondary" type="submit">${icon('check')}${t('settings.saveAlerts')}</button>
     </form>
   </section>
 `;
+
+const blockedSection = () => html`
+  <section class="form-section">
+    <h2 class="form-section-title">${icon('user-x')}${t('blocking.listTitle')}</h2>
+    <p class="muted text-sm">${t('blocking.listHint')}</p>
+    <div class="blocked-list" data-blocked><p class="muted text-sm">${t('common.loading')}</p></div>
+  </section>
+`;
+
+const blockedItems = (items) => (items.length
+  ? items.map(({ user }) => html`
+    <div class="blocked-item">
+      ${avatar(user, 'sm')}
+      <span class="blocked-name">${displayName(user)}</span>
+      <button class="btn btn-sm btn-secondary" type="button" data-unblock="${user.id}" data-name="${displayName(user)}">${t('blocking.unblock')}</button>
+    </div>
+  `)
+  : html`<p class="muted text-sm">${t('blocking.listEmpty')}</p>`);
 
 const passwordSection = () => html`
   <section class="form-section">
@@ -69,7 +94,7 @@ const dangerSection = () => html`
 `;
 
 export default {
-  mount(root, { navigate, setTitle }) {
+  mount(root, { navigate, setTitle, signal }) {
     const user = store.user;
     setTitle(t('settings.title'));
 
@@ -79,9 +104,10 @@ export default {
         ${appearanceSection()}
         ${user ? alertsSection(user) : null}
         ${user ? passwordSection() : null}
+        ${user ? blockedSection() : null}
         <div data-install hidden></div>
         ${user ? dangerSection() : null}
-        <p class="center muted text-xs">${t('settings.version', { version: '1.0' })}</p>
+        <p class="center muted text-xs">${t('settings.version', { version: '2.0' })}</p>
       </div>
     `);
 
@@ -102,14 +128,32 @@ export default {
         event.preventDefault();
         withBusy($(alertsForm, 'button[type="submit"]'), async () => {
           try {
-            const { categories } = await api.put('/api/me/alerts', { categories: readForm(alertsForm).categories ?? [] });
-            store.setUser({ ...store.user, alertCategories: categories });
-            toast(categories.length ? t('settings.alertsSaved', { count: categories.length }) : t('settings.alertsOff'), { type: 'success' });
+            const values = readForm(alertsForm);
+            const { categories, wilayaCode } = await api.put('/api/me/alerts', {
+              categories: values.categories ?? [],
+              wilayaCode: values.alertWilaya ? Number(values.alertWilaya) : null,
+            });
+            store.setUser({ ...store.user, alertCategories: categories, alertWilaya: wilayaCode });
+            const scope = wilayaCode ? placeLabel({ wilayaCode }) : t('places.allWilayas');
+            toast(categories.length ? t('settings.alertsSaved', { count: categories.length, scope }) : t('settings.alertsOff'), { type: 'success' });
           } catch (error) {
             toastError(error);
           }
         });
       });
+
+      const loadBlocked = async () => {
+        try {
+          const { items } = await api.get('/api/blocks', null, { signal });
+          render($(root, '[data-blocked]'), blockedItems(items));
+        } catch (error) {
+          if (!isAbort(error)) render($(root, '[data-blocked]'), html`<p class="muted text-sm">${t('errors.default')}</p>`);
+        }
+      };
+      on(root, 'click', '[data-unblock]', async (event, button) => {
+        if (await unblockUser({ userId: Number(button.dataset.unblock), name: button.dataset.name })) loadBlocked();
+      });
+      loadBlocked();
 
       const passwordForm = $(root, '#password-form');
       bindPasswordToggles(passwordForm);

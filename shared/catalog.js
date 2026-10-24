@@ -1,5 +1,6 @@
 // Reference data shared by the server (validation) and the browser (labels, pickers).
 // Every entry carries its Arabic and French label so both languages stay in one place.
+// Places (wilayas and communes) live in shared/geo.js.
 
 export const CATEGORIES = [
   { id: 'construction', icon: 'hard-hat', ar: 'البناء والأشغال', fr: 'Bâtiment et travaux' },
@@ -35,41 +36,6 @@ export const SALARY_PERIODS = [
   { id: 'negotiable', ar: 'حسب الاتفاق', fr: 'à négocier' },
 ];
 
-// The 28 communes of the wilaya of Tébessa plus "outside". Pickers keep the first two pinned
-// (home city, wilaya seat) and `outside` last, and sort the rest by label in the active language.
-export const PINNED_LOCATION_IDS = ['bir-el-ater', 'tebessa'];
-export const LOCATIONS = [
-  { id: 'bir-el-ater', ar: 'بئر العاتر', fr: 'Bir El Ater' },
-  { id: 'tebessa', ar: 'تبسة', fr: 'Tébessa' },
-  { id: 'oum-ali', ar: 'أم علي', fr: 'Oum Ali' },
-  { id: 'bedjene', ar: 'بجن', fr: 'Bedjene' },
-  { id: 'bekkaria', ar: 'بكارية', fr: 'Bekkaria' },
-  { id: 'boukhadra', ar: 'بوخضرة', fr: 'Boukhadra' },
-  { id: 'boulhaf-dyr', ar: 'بولحاف الدير', fr: 'Boulhaf Dyr' },
-  { id: 'bir-dheb', ar: 'بئر الذهب', fr: 'Bir Dheb' },
-  { id: 'bir-mokkadem', ar: 'بئر مقدم', fr: 'Bir Mokkadem' },
-  { id: 'thlidjene', ar: 'ثليجان', fr: 'Thlidjene' },
-  { id: 'el-hammamet', ar: 'الحمامات', fr: 'El Hammamet' },
-  { id: 'el-houidjbet', ar: 'الحويجبات', fr: 'El Houidjbet' },
-  { id: 'cheria', ar: 'الشريعة', fr: 'Cheria' },
-  { id: 'stah-guentis', ar: 'سطح قنطيس', fr: 'Stah Guentis' },
-  { id: 'safsaf-el-ouesra', ar: 'صفصاف الوسرى', fr: 'Safsaf El Ouesra' },
-  { id: 'el-ogla', ar: 'العقلة', fr: 'El Ogla' },
-  { id: 'el-ogla-el-malha', ar: 'العقلة المالحة', fr: 'El Ogla El Malha' },
-  { id: 'el-aouinet', ar: 'العوينات', fr: 'El Aouinet' },
-  { id: 'ain-zerga', ar: 'عين الزرقاء', fr: 'Aïn Zerga' },
-  { id: 'ferkane', ar: 'فركان', fr: 'Ferkane' },
-  { id: 'gorriguer', ar: 'قريقر', fr: 'Gorriguer' },
-  { id: 'el-kouif', ar: 'الكويف', fr: 'El Kouif' },
-  { id: 'el-ma-labiodh', ar: 'الماء الأبيض', fr: 'El Ma Labiodh' },
-  { id: 'morsott', ar: 'مرسط', fr: 'Morsott' },
-  { id: 'el-meridj', ar: 'المريج', fr: 'El Meridj' },
-  { id: 'el-mezeraa', ar: 'المزرعة', fr: 'El Mezeraa' },
-  { id: 'negrine', ar: 'نقرين', fr: 'Negrine' },
-  { id: 'ouenza', ar: 'الونزة', fr: 'Ouenza' },
-  { id: 'outside', ar: 'خارج ولاية تبسة', fr: 'Hors wilaya de Tébessa' },
-];
-
 export const ROLES = [
   { id: 'seeker', ar: 'أبحث عن عمل', fr: 'Je cherche un emploi' },
   { id: 'employer', ar: 'أبحث عن عمّال', fr: 'Je recrute' },
@@ -98,7 +64,6 @@ const ids = (list) => new Set(list.map((item) => item.id));
 export const CATEGORY_IDS = ids(CATEGORIES);
 export const JOB_TYPE_IDS = ids(JOB_TYPES);
 export const SALARY_PERIOD_IDS = ids(SALARY_PERIODS);
-export const LOCATION_IDS = ids(LOCATIONS);
 export const ROLE_IDS = ids(ROLES);
 export const APPLICATION_STATUS_IDS = ids(APPLICATION_STATUSES);
 export const REPORT_REASON_IDS = ids(REPORT_REASONS);

@@ -10,6 +10,7 @@ import { createNotificationsRoutes } from '../domains/notifications/index.js';
 import { apiNotFound } from '../shared/http/errors.js';
 import { createRateLimiter, limitBy } from '../shared/http/rate-limit.js';
 import { requireJsonBody, sameOriginOnly } from '../shared/http/security.js';
+import { readWilayaFilter } from '../shared/places.js';
 
 const MINUTE = 60_000;
 
@@ -64,12 +65,18 @@ export const createApiRouter = ({ config, services, logger }) => {
     res.json({ ok: true });
   });
 
+  // Home page figures for one wilaya (`?wilaya=12`) or the whole country, plus live offers per
+  // wilaya for the region picker.
   router.get('/meta', (req, res) => {
-    const people = accounts.stats();
+    const wilayaCode = readWilayaFilter(req.query.wilaya);
+    const categories = jobs.categoryCounts(wilayaCode);
+    const activeJobs = Object.values(categories).reduce((sum, total) => sum + total, 0);
     res.json({
-      stats: { activeJobs: jobs.stats().active, availableWorkers: people.availableWorkers, employers: people.employers },
-      categories: jobs.categoryCounts(),
-      support: { whatsapp: config.supportWhatsapp || null },
+      wilayaCode,
+      stats: { activeJobs, ...accounts.publicStats(wilayaCode) },
+      categories,
+      jobsByWilaya: jobs.countsByWilaya(),
+      support: { whatsapp: config.supportWhatsapp || null, email: config.supportEmail || null },
     });
   });
 
@@ -83,7 +90,7 @@ export const createApiRouter = ({ config, services, logger }) => {
     res.json(summaryFor(req.user.id));
   });
 
-  router.use(createAccountsRoutes({ accounts, applications, jobs, cookie, limits }));
+  router.use(createAccountsRoutes({ accounts, applications, jobs, messaging, cookie, limits }));
   router.use(createJobsRoutes({ jobs, applications, limits }));
   router.use(createApplicationsRoutes({ applications, limits }));
   router.use(createBookmarksRoutes({ bookmarks }));

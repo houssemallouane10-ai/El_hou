@@ -12,11 +12,15 @@ describe('accounts', () => {
   it('registers a user, sets a session cookie and returns the profile', async () => {
     const client = server.client();
     const phone = nextPhone();
-    const response = await client.post('/api/auth/register', { name: '  أحمد   بن علي ', phone, password: PASSWORD, role: 'seeker' });
+    const response = await client.post('/api/auth/register', {
+      name: '  أحمد   بن علي ', phone, password: PASSWORD, role: 'seeker', wilayaCode: 62, acceptTerms: true,
+    });
     assert.equal(response.status, 201);
     assert.equal(response.data.user.name, 'أحمد بن علي');
     assert.equal(response.data.user.phone, phone);
-    assert.equal(response.data.user.location, 'bir-el-ater');
+    assert.equal(response.data.user.wilayaCode, 62);
+    assert.equal(response.data.user.communeId, null);
+    assert.equal(response.data.user.alertWilaya, 62, 'job alerts start in the home wilaya');
     assert.equal(response.data.user.passwordHash, undefined);
     const cookie = response.headers.getSetCookie().find((header) => header.startsWith('kh_session='));
     assert.match(cookie, /HttpOnly/i);
@@ -32,7 +36,9 @@ describe('accounts', () => {
     const response = await server.client().post('/api/auth/register', { name: 'x', phone: '12345', password: 'short', role: 'boss' });
     assert.equal(response.status, 422);
     assert.equal(response.data.error.code, 'VALIDATION_FAILED');
-    assert.deepEqual(response.data.error.fields, { name: 'too_short', phone: 'invalid_mobile', password: 'too_short', role: 'invalid' });
+    assert.deepEqual(response.data.error.fields, {
+      name: 'too_short', phone: 'invalid_mobile', password: 'too_short', role: 'invalid', wilayaCode: 'required', acceptTerms: 'must_accept',
+    });
   });
 
   it('normalizes international and Arabic-Indic phone numbers', async () => {
@@ -41,6 +47,8 @@ describe('accounts', () => {
       phone: '+213 ٧٧٠ ١٢ ٣٤ ٥٦',
       password: PASSWORD,
       role: 'seeker',
+      wilayaCode: '16',
+      acceptTerms: true,
     });
     assert.equal(response.status, 201);
     assert.equal(response.data.user.phone, '0770123456');
@@ -50,7 +58,9 @@ describe('accounts', () => {
 
   it('rejects a phone number that is already registered', async () => {
     const { phone } = await signUp(server);
-    const response = await server.client().post('/api/auth/register', { name: 'مكرر', phone, password: PASSWORD, role: 'seeker' });
+    const response = await server.client().post('/api/auth/register', {
+      name: 'مكرر', phone, password: PASSWORD, role: 'seeker', wilayaCode: 62, acceptTerms: true,
+    });
     assert.equal(response.status, 409);
     assert.equal(response.data.error.code, 'PHONE_TAKEN');
   });
@@ -100,12 +110,15 @@ describe('accounts', () => {
 
   it('finds listed workers with spelling-tolerant Arabic search', async () => {
     const { client, user } = await signUp(server, { name: 'عمر' });
-    await client.patch('/api/me', { isListed: true, headline: 'أستاذ رياضيات للدروس الخصوصية', category: 'education', location: 'cheria' });
+    await client.patch('/api/me', { isListed: true, headline: 'أستاذ رياضيات للدروس الخصوصية', category: 'education', communeId: 366 });
     const found = await server.client().get(`/api/workers?q=${encodeURIComponent('استاذ رياضيات')}`);
     assert.ok(found.data.items.some((worker) => worker.id === user.id));
-    const filtered = await server.client().get('/api/workers?category=education&location=cheria');
-    assert.ok(filtered.data.items.every((worker) => worker.category === 'education' && worker.location === 'cheria'));
-    const other = await server.client().get('/api/workers?location=ouenza');
+    const filtered = await server.client().get('/api/workers?category=education&commune=366');
+    assert.ok(filtered.data.items.some((worker) => worker.id === user.id));
+    assert.ok(filtered.data.items.every((worker) => worker.category === 'education' && worker.communeId === 366 && worker.wilayaCode === 12));
+    const byWilaya = await server.client().get('/api/workers?wilaya=12');
+    assert.ok(byWilaya.data.items.some((worker) => worker.id === user.id), 'choosing a commune moves the profile to its wilaya');
+    const other = await server.client().get('/api/workers?commune=382');
     assert.ok(!other.data.items.some((worker) => worker.id === user.id));
   });
 

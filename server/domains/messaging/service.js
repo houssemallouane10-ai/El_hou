@@ -1,12 +1,14 @@
 import { LIMITS } from '../../../shared/limits.js';
 import { addDays } from '../../shared/clock.js';
-import { forbidden, notFound, rateLimited } from '../../shared/errors.js';
+import { conflict, forbidden, notFound, rateLimited } from '../../shared/errors.js';
 import { createValidator, parseId } from '../../shared/validation.js';
+import { createBlockStore } from './blocks.js';
 
 const MAX_NEW_CONVERSATIONS_PER_DAY = 30;
 const MAX_MESSAGES_PER_MINUTE = 20;
 const PAGE_SIZE = 50;
 const PREVIEW_LENGTH = 120;
+const MAX_BLOCKS = 1000;
 
 const parseStart = (input) => {
   const userId = parseId(input?.userId);
@@ -27,6 +29,7 @@ const toMessageView = (row, viewerId) => ({
 });
 
 export const createMessagingService = ({ db, clock, accounts, jobs }) => {
+  const blocks = createBlockStore({ db, clock });
   const statements = {
     byId: db.prepare('SELECT * FROM conversations WHERE id = ?'),
     byPair: db.prepare('SELECT * FROM conversations WHERE user_low = ? AND user_high = ?'),
@@ -41,6 +44,10 @@ export const createMessagingService = ({ db, clock, accounts, jobs }) => {
         (SELECT COUNT(*) FROM messages m WHERE m.conversation_id = c.id AND m.sender_id != @me AND m.read_at IS NULL) AS unread
       FROM conversations c
       WHERE (c.user_low = @me OR c.user_high = @me) AND c.last_message_at IS NOT NULL
+        AND NOT EXISTS (
+          SELECT 1 FROM blocks b
+          WHERE b.blocker_id = @me AND b.blocked_id = CASE WHEN c.user_low = @me THEN c.user_high ELSE c.user_low END
+        )
       ORDER BY c.last_message_at DESC
       LIMIT 100
     `),
@@ -54,6 +61,7 @@ export const createMessagingService = ({ db, clock, accounts, jobs }) => {
     unread: db.prepare(`
       SELECT COUNT(*) AS total FROM messages m JOIN conversations c ON c.id = m.conversation_id
       WHERE (c.user_low = @me OR c.user_high = @me) AND m.sender_id != @me AND m.read_at IS NULL
+        AND NOT EXISTS (SELECT 1 FROM blocks b WHERE b.blocker_id = @me AND b.blocked_id = m.sender_id)
     `),
     sentSince: db.prepare('SELECT COUNT(*) AS total FROM messages WHERE sender_id = ? AND created_at >= ?'),
     total: db.prepare('SELECT COUNT(*) AS total FROM messages'),
@@ -77,6 +85,7 @@ export const createMessagingService = ({ db, clock, accounts, jobs }) => {
     start(userId, input) {
       const { userId: otherId, jobId } = parseStart(input);
       if (!otherId || otherId === userId || !accounts.isActiveUser(otherId)) throw notFound('USER_NOT_FOUND');
+      if (blocks.between(userId, otherId)) throw forbidden('BLOCKED');
       const context = jobContext(jobId);
       const [low, high] = userId < otherId ? [userId, otherId] : [otherId, userId];
       const existing = statements.byPair.get(low, high);
@@ -118,11 +127,14 @@ export const createMessagingService = ({ db, clock, accounts, jobs }) => {
       else rows = statements.latest.all(conversationId, PAGE_SIZE);
       statements.markRead.run(clock.now().toISOString(), conversationId, userId);
       const otherId = otherParticipant(conversation, userId);
+      const otherIsActive = accounts.isActiveUser(otherId);
       return {
         conversation: {
           id: conversation.id,
           other: accounts.cardsByIds([otherId]).get(otherId) ?? null,
-          otherIsActive: accounts.isActiveUser(otherId),
+          otherIsActive,
+          iBlocked: blocks.has(userId, otherId),
+          canSend: otherIsActive && !blocks.between(userId, otherId),
           job: jobContext(conversation.job_id),
         },
         messages: rows.map((row) => toMessageView(row, userId)),
@@ -133,7 +145,9 @@ export const createMessagingService = ({ db, clock, accounts, jobs }) => {
     send(userId, conversationId, input) {
       const { body } = parseMessage(input);
       const conversation = requireParticipant(userId, conversationId);
-      if (!accounts.isActiveUser(otherParticipant(conversation, userId))) throw forbidden('RECIPIENT_UNAVAILABLE');
+      const otherId = otherParticipant(conversation, userId);
+      if (!accounts.isActiveUser(otherId)) throw forbidden('RECIPIENT_UNAVAILABLE');
+      if (blocks.between(userId, otherId)) throw forbidden('BLOCKED');
       const now = clock.now();
       if (statements.sentSince.get(userId, new Date(now.getTime() - 60_000).toISOString()).total >= MAX_MESSAGES_PER_MINUTE) throw rateLimited();
       const id = db.transaction(() => {
@@ -146,6 +160,26 @@ export const createMessagingService = ({ db, clock, accounts, jobs }) => {
 
     unreadCount: (userId) => statements.unread.get({ me: userId }).total,
 
-    stats: () => ({ total: statements.total.get().total }),
+    block(userId, targetId) {
+      if (targetId === userId) throw forbidden('CANNOT_BLOCK_SELF');
+      if (!accounts.cardsByIds([targetId]).has(targetId)) throw notFound('USER_NOT_FOUND');
+      if (!blocks.has(userId, targetId) && blocks.listByBlocker(userId).length >= MAX_BLOCKS) throw conflict('BLOCK_LIMIT_REACHED');
+      blocks.add(userId, targetId);
+    },
+
+    unblock(userId, targetId) {
+      blocks.remove(userId, targetId);
+    },
+
+    // The people this user blocked, newest first, for the settings page.
+    blockedList(userId) {
+      const rows = blocks.listByBlocker(userId);
+      const people = accounts.cardsByIds(rows.map((row) => row.userId));
+      return rows.filter((row) => people.has(row.userId)).map((row) => ({ user: people.get(row.userId), blockedAt: row.createdAt }));
+    },
+
+    hasBlocked: (blockerId, blockedId) => blocks.has(blockerId, blockedId),
+
+    stats: () => ({ total: statements.total.get().total, blocks: blocks.count() }),
   };
 };

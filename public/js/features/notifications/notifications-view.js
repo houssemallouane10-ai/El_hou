@@ -1,10 +1,11 @@
 import { refreshSummary, store } from '../../app/store.js';
 import { api, isAbort } from '../../shared/api.js';
 import { appBar, emptyState, errorState, loadMore, skeletonCards } from '../../shared/components.js';
-import { categoryLabel, locationLabel, timeAgo } from '../../shared/format.js';
+import { categoryLabel, timeAgo } from '../../shared/format.js';
 import { $, html, on, render } from '../../shared/html.js';
 import { t } from '../../shared/i18n.js';
 import { icon } from '../../shared/icons.js';
+import { placeLabel } from '../../shared/places.js';
 import { toastError } from '../../shared/ui.js';
 
 // Each notification type knows its icon, its sentence and where it leads.
@@ -21,7 +22,7 @@ const TYPES = {
   },
   'job.alert': {
     icon: 'bell',
-    text: (data) => t('notifications.jobAlert', { category: categoryLabel(data.category), job: data.title, place: locationLabel(data.location) }),
+    text: (data) => t('notifications.jobAlert', { category: categoryLabel(data.category), job: data.title, place: placeLabel(data) }),
     href: (data) => `/jobs/${data.jobId}`,
   },
   'job.hidden': {

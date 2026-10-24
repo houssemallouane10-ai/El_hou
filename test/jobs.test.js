@@ -40,7 +40,7 @@ describe('jobs', () => {
       title: 'سائق شاحنة لنقل البضائع',
       category: 'transport',
       jobType: 'daily',
-      location: 'negrine',
+      communeId: 372,
       isUrgent: true,
       contactPhone: '037 12 34 56',
       contactWhatsapp: '+213661234567',
@@ -56,7 +56,9 @@ describe('jobs', () => {
     const bySearch = await anonymous.get(`/api/jobs?q=${encodeURIComponent('سايق شاحنه')}`);
     assert.ok(bySearch.data.items.some((item) => item.id === job.id), 'search folds ة/ه and tolerates missing hamza');
 
-    const byFilters = await anonymous.get('/api/jobs?category=transport&jobType=daily&location=negrine&urgent=1');
+    assert.equal(job.wilayaCode, 62, 'the wilaya follows from the commune');
+    assert.equal(job.communeId, 372);
+    const byFilters = await anonymous.get('/api/jobs?category=transport&jobType=daily&commune=372&urgent=1');
     assert.deepEqual(byFilters.data.items.map((item) => item.id), [job.id]);
     assert.equal(byFilters.data.total, 1);
     assert.equal(byFilters.data.hasMore, false);

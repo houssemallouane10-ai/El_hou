@@ -18,7 +18,7 @@ describe('moderation and admin', () => {
     const dashboard = await admin.client.get('/api/admin/dashboard');
     assert.equal(dashboard.status, 200);
     assert.ok(dashboard.data.users.users >= 2);
-    assert.deepEqual(Object.keys(dashboard.data).sort(), ['applications', 'jobs', 'messages', 'reports', 'users']);
+    assert.deepEqual(Object.keys(dashboard.data).sort(), ['applications', 'byWilaya', 'jobs', 'messages', 'reports', 'users']);
   });
 
   it('accepts one open report per person and target, and lets admins resolve it', async () => {

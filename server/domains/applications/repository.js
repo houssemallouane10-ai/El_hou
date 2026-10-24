@@ -66,7 +66,8 @@ export const createApplicationsRepository = (db) => {
         SELECT a.*,
           u.name AS applicant_name, u.phone AS applicant_phone, u.whatsapp AS applicant_whatsapp,
           u.headline AS applicant_headline, u.category AS applicant_category,
-          u.experience_years AS applicant_experience, u.location AS applicant_location,
+          u.experience_years AS applicant_experience,
+          u.wilaya_code AS applicant_wilaya, u.commune_id AS applicant_commune,
           u.skills AS applicant_skills, u.is_verified AS applicant_verified, u.is_listed AS applicant_listed
         FROM applications a JOIN users u ON u.id = a.user_id
         ${filter.where()}
@@ -82,7 +83,8 @@ export const createApplicationsRepository = (db) => {
       const total = db.prepare(`SELECT COUNT(*) AS total FROM applications a ${where}`).get(filter.params).total;
       const rows = db.prepare(`
         SELECT a.*,
-          j.title AS job_title, j.category AS job_category, j.location AS job_location, j.job_type AS job_type,
+          j.title AS job_title, j.category AS job_category, j.job_type AS job_type,
+          j.wilaya_code AS job_wilaya, j.commune_id AS job_commune,
           j.status AS job_status, j.is_hidden AS job_hidden, j.expires_at AS job_expires_at,
           j.salary_min AS job_salary_min, j.salary_max AS job_salary_max, j.salary_period AS job_salary_period,
           j.user_id AS job_owner_id, u.name AS job_owner_name, u.company_name AS job_owner_company

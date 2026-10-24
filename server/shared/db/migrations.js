@@ -1,4 +1,18 @@
+import { communeById } from '../../../shared/geo.js';
+
 // Forward-only schema migrations. Append new entries; never edit an applied one.
+// A migration is either plain `sql` or an `up(db)` function; each runs in one transaction.
+
+// Version 1 stored places as slugs of the communes of Tébessa; version 2 maps them to the
+// national commune ids of shared/geo.js. "outside" had no commune and becomes unknown.
+const LEGACY_LOCATIONS = {
+  'bir-el-ater': 365, tebessa: 364, 'oum-ali': 384, bedjene: 389, bekkaria: 380, boukhadra: 381,
+  'boulhaf-dyr': 388, 'bir-dheb': 377, 'bir-mokkadem': 373, thlidjene: 385, 'el-hammamet': 371,
+  'el-houidjbet': 369, cheria: 366, 'stah-guentis': 367, 'safsaf-el-ouesra': 370, 'el-ogla': 378,
+  'el-ogla-el-malha': 376, 'el-aouinet': 368, 'ain-zerga': 386, ferkane: 391, gorriguer: 379,
+  'el-kouif': 374, 'el-ma-labiodh': 383, morsott: 375, 'el-meridj': 387, 'el-mezeraa': 390,
+  negrine: 372, ouenza: 382,
+};
 
 const MIGRATIONS = [
   {
@@ -151,9 +165,48 @@ const MIGRATIONS = [
       CREATE INDEX reports_target_idx ON reports (target_type, target_id);
     `,
   },
+  {
+    version: 2,
+    name: 'national places, user blocks, terms acceptance',
+    up(db) {
+      db.exec(`
+        ALTER TABLE users ADD COLUMN wilaya_code INTEGER;
+        ALTER TABLE users ADD COLUMN commune_id INTEGER;
+        ALTER TABLE users ADD COLUMN alert_wilaya INTEGER;
+        ALTER TABLE users ADD COLUMN terms_accepted_at TEXT;
+        ALTER TABLE jobs ADD COLUMN wilaya_code INTEGER;
+        ALTER TABLE jobs ADD COLUMN commune_id INTEGER;
+      `);
+      for (const table of ['users', 'jobs']) {
+        const update = db.prepare(`UPDATE ${table} SET commune_id = ?, wilaya_code = ?, search_text = '' WHERE id = ?`);
+        for (const row of db.prepare(`SELECT id, location FROM ${table}`).all()) {
+          const commune = communeById(LEGACY_LOCATIONS[row.location]);
+          update.run(commune?.id ?? null, commune?.wilaya ?? null, row.id);
+        }
+      }
+      db.exec(`
+        DROP INDEX users_directory_idx;
+        ALTER TABLE users DROP COLUMN location;
+        ALTER TABLE jobs DROP COLUMN location;
+        CREATE INDEX users_directory_idx ON users (is_listed, is_banned, wilaya_code, category);
+        CREATE INDEX jobs_wilaya_idx ON jobs (wilaya_code, published_at);
+        CREATE INDEX jobs_commune_idx ON jobs (commune_id);
+
+        CREATE TABLE blocks (
+          blocker_id INTEGER NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+          blocked_id INTEGER NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+          created_at TEXT NOT NULL,
+          PRIMARY KEY (blocker_id, blocked_id),
+          CHECK (blocker_id != blocked_id)
+        );
+        CREATE INDEX blocks_blocked_idx ON blocks (blocked_id);
+      `);
+    },
+  },
 ];
 
-export const migrate = (db, { now = () => new Date() } = {}) => {
+// `upTo` stops at a given version (used by tests to build an older schema).
+export const migrate = (db, { now = () => new Date(), upTo = Infinity } = {}) => {
   db.exec(`CREATE TABLE IF NOT EXISTS schema_migrations (
     version INTEGER PRIMARY KEY,
     name TEXT NOT NULL,
@@ -162,10 +215,11 @@ export const migrate = (db, { now = () => new Date() } = {}) => {
   const applied = new Set(db.prepare('SELECT version FROM schema_migrations').pluck().all());
   const record = db.prepare('INSERT INTO schema_migrations (version, name, applied_at) VALUES (?, ?, ?)');
   const apply = db.transaction((migration) => {
-    db.exec(migration.sql);
+    if (migration.up) migration.up(db);
+    else db.exec(migration.sql);
     record.run(migration.version, migration.name, now().toISOString());
   });
   for (const migration of MIGRATIONS) {
-    if (!applied.has(migration.version)) apply(migration);
+    if (migration.version <= upTo && !applied.has(migration.version)) apply(migration);
   }
 };

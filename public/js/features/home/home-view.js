@@ -1,4 +1,5 @@
 import { CATEGORIES } from '/shared/catalog.js';
+import { getRegion, setRegion } from '../../app/region.js';
 import { loadMeta, store } from '../../app/store.js';
 import { api, isAbort } from '../../shared/api.js';
 import {
@@ -7,6 +8,7 @@ import {
   errorState,
   inboxActions,
   jobCard,
+  regionButton,
   sectionHead,
   skeletonCards,
   workerCard,
@@ -15,6 +17,7 @@ import { formatNumber } from '../../shared/format.js';
 import { $, html, on, render } from '../../shared/html.js';
 import { label, t } from '../../shared/i18n.js';
 import { icon } from '../../shared/icons.js';
+import { pickWilaya, placeLabel } from '../../shared/places.js';
 import { mountInstallCard } from '../pwa/install-card.js';
 
 const VISIBLE_CATEGORIES = 8;
@@ -63,7 +66,10 @@ const categoriesMarkup = (counts, expanded) => {
 export default {
   mount(root, { navigate, signal, ready }) {
     const user = store.user;
+    const region = getRegion();
+    const regionName = region ? placeLabel({ wilayaCode: region }) : null;
     let categoryCounts = {};
+    let jobsByWilaya = null;
     let expanded = false;
 
     render(root, html`
@@ -71,8 +77,9 @@ export default {
       <div class="page home">
         <section class="hero">
           <p class="hero-kicker">${user ? t('home.greeting', { name: user.name.split(' ')[0] }) : t('home.welcome')}</p>
-          <h1 class="hero-title">${t('home.heroTitle')}</h1>
+          <h1 class="hero-title">${regionName ? t('home.heroTitleIn', { region: regionName }) : t('home.heroTitle')}</h1>
           <p class="hero-text">${t('home.heroText')}</p>
+          <div class="hero-region">${regionButton(region)}</div>
           <form class="search-box" role="search" data-search>
             ${icon('search')}
             <input class="search-input" name="q" type="search" dir="auto" enterkeyhint="search" autocomplete="off"
@@ -151,29 +158,48 @@ export default {
       }
     };
 
-    loadMeta({ fresh: true }).then((meta) => {
+    on(root, 'click', '[data-action="region"]', async () => {
+      const choice = await pickWilaya({ value: region, counts: jobsByWilaya });
+      if (choice === undefined || choice === region) return;
+      setRegion(choice);
+      navigate('/', { replace: true });
+    });
+
+    on(root, 'click', '[data-action="all-wilayas"]', () => {
+      setRegion(null);
+      navigate('/', { replace: true });
+    });
+
+    loadMeta({ fresh: true, wilayaCode: region }).then((meta) => {
       if (signal.aborted) return;
       categoryCounts = meta.categories ?? {};
+      jobsByWilaya = meta.jobsByWilaya ?? null;
       render($(root, '[data-stats]'), statsMarkup(meta));
       render($(root, '[data-categories]'), categoriesMarkup(categoryCounts, expanded));
     }).catch(() => {});
 
-    const latest = loadSection('[data-latest]', () => api.get('/api/jobs', { limit: 6 }, { signal }), (page) => (page.items.length
+    const wilaya = region ?? '';
+    const latest = loadSection('[data-latest]', () => api.get('/api/jobs', { wilaya, limit: 6 }, { signal }), (page) => (page.items.length
       ? page.items.map((job) => jobCard(job, { saved: store.isSaved('job', job.id) }))
       : emptyState({
         icon: 'briefcase',
-        title: t('home.noJobsTitle'),
+        title: regionName ? t('home.noJobsInTitle', { region: regionName }) : t('home.noJobsTitle'),
         text: t('home.noJobsText'),
-        action: html`<a class="btn btn-primary" href="/jobs/new">${icon('plus')}${t('home.postJob')}</a>`,
+        action: html`
+          <div class="row-center">
+            <a class="btn btn-primary" href="/jobs/new">${icon('plus')}${t('home.postJob')}</a>
+            ${region ? html`<button class="btn btn-secondary" type="button" data-action="all-wilayas">${icon('globe')}${t('places.browseAll')}</button>` : null}
+          </div>
+        `,
       })));
 
-    api.get('/api/jobs', { urgent: 1, limit: 6 }, { signal }).then((page) => {
+    api.get('/api/jobs', { wilaya, urgent: 1, limit: 6 }, { signal }).then((page) => {
       if (page.items.length === 0) return;
       $(root, '[data-urgent-section]').hidden = false;
       render($(root, '[data-urgent]'), page.items.map((job) => jobCard(job, { saved: store.isSaved('job', job.id) })));
     }).catch(() => {});
 
-    loadSection('[data-workers]', () => api.get('/api/workers', { available: 1, limit: 8 }, { signal }), (page) => (page.items.length
+    loadSection('[data-workers]', () => api.get('/api/workers', { wilaya, available: 1, limit: 8 }, { signal }), (page) => (page.items.length
       ? page.items.map((worker) => workerCard(worker, { saved: store.isSaved('worker', worker.id) }))
       : emptyState({
         icon: 'users',

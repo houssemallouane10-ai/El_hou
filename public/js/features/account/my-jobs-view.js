@@ -1,9 +1,10 @@
 import { api, isAbort } from '../../shared/api.js';
 import { appBar, emptyState, errorState, jobStateBadge, loadMore, skeletonCards } from '../../shared/components.js';
-import { daysUntil, locationLabel, timeAgo } from '../../shared/format.js';
+import { daysUntil, timeAgo } from '../../shared/format.js';
 import { $, html, on, render } from '../../shared/html.js';
 import { t } from '../../shared/i18n.js';
 import { icon } from '../../shared/icons.js';
+import { placeLabel } from '../../shared/places.js';
 import { confirmDialog, toast, toastError, withBusy } from '../../shared/ui.js';
 
 const STATES = ['all', 'active', 'closed', 'expired', 'hidden'];
@@ -13,7 +14,7 @@ const ownedJobCard = (job) => html`
     <div class="owned-job-top">
       <div>
         <h3 class="job-card-title"><a href="/jobs/${job.id}">${job.title}</a></h3>
-        <p class="muted text-sm">${locationLabel(job.location)} · ${t('jobs.postedAgo', { time: timeAgo(job.publishedAt) })}</p>
+        <p class="muted text-sm">${placeLabel(job)} · ${t('jobs.postedAgo', { time: timeAgo(job.publishedAt) })}</p>
       </div>
       ${jobStateBadge(job.state)}
     </div>

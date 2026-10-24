@@ -1,11 +1,14 @@
 import { REPORT_REASONS, ROLES, findById } from '/shared/catalog.js';
 import { formatPhone } from '/shared/phone.js';
+import { store } from '../../app/store.js';
 import { api, isAbort } from '../../shared/api.js';
 import { appBar, avatar, emptyState, errorState, jobStateBadge, loadMore, skeletonCards, verifiedMark } from '../../shared/components.js';
 import { formatNumber, timeAgo } from '../../shared/format.js';
+import { select } from '../../shared/forms.js';
 import { $, html, on, render } from '../../shared/html.js';
 import { label, t } from '../../shared/i18n.js';
 import { icon } from '../../shared/icons.js';
+import { placeLabel, wilayaOptions } from '../../shared/places.js';
 import { confirmDialog, copyText, openLayer, toast, toastError, withBusy } from '../../shared/ui.js';
 
 const TABS = ['overview', 'reports', 'users', 'jobs'];
@@ -20,6 +23,26 @@ const kpi = (iconName, value, text, tone = '') => html`
     <span class="kpi-label">${text}</span>
   </div>
 `;
+
+const byWilayaMarkup = (rows) => (rows.length ? html`
+  <section class="card card-pad">
+    <h2 class="card-title">${t('admin.byWilaya')}</h2>
+    <div class="table-wrap">
+      <table class="admin-table">
+        <thead><tr><th scope="col">${t('places.wilaya')}</th><th scope="col">${t('admin.kpi.users')}</th><th scope="col">${t('admin.kpi.activeJobs')}</th></tr></thead>
+        <tbody>
+          ${rows.map((row) => html`
+            <tr>
+              <th scope="row"><button class="text-link" type="button" data-wilaya-drill="${row.wilayaCode}">${String(row.wilayaCode).padStart(2, '0')} · ${placeLabel({ wilayaCode: row.wilayaCode })}</button></th>
+              <td>${formatNumber(row.users)}</td>
+              <td>${formatNumber(row.activeJobs)}</td>
+            </tr>
+          `)}
+        </tbody>
+      </table>
+    </div>
+  </section>
+` : null);
 
 const overviewMarkup = (data) => html`
   <div class="kpis">
@@ -36,6 +59,7 @@ const overviewMarkup = (data) => html`
     ${kpi('eye', data.jobs.views, t('admin.kpi.views'))}
     ${kpi('eye-off', data.jobs.hidden, t('admin.kpi.hiddenJobs'))}
   </div>
+  ${byWilayaMarkup(data.byWilaya ?? [])}
 `;
 
 const filterChips = (name, options, value, prefix) => html`
@@ -68,27 +92,39 @@ const reportItem = (report) => html`
   </article>
 `;
 
+// Owners (ADMIN_PHONES) appoint and remove moderators; moderators handle everyone else.
+const userActions = (user, viewerIsOwner) => {
+  if (user.isOwner) return null;
+  const adminToggle = viewerIsOwner && !user.isBanned
+    ? html`<button class="btn btn-sm btn-tonal" type="button" data-make-admin="${user.isAdmin ? 'false' : 'true'}">${icon('shield')}${user.isAdmin ? t('admin.removeAdmin') : t('admin.makeAdmin')}</button>`
+    : null;
+  if (user.isAdmin) return adminToggle ? html`<div class="owned-job-actions">${adminToggle}</div>` : null;
+  return html`
+    <div class="owned-job-actions">
+      <button class="btn btn-sm btn-secondary" type="button" data-verify="${user.isVerified ? 'false' : 'true'}">${icon('badge-check')}${user.isVerified ? t('admin.unverify') : t('admin.verify')}</button>
+      <button class="btn btn-sm ${user.isBanned ? 'btn-secondary' : 'btn-danger'}" type="button" data-ban="${user.isBanned ? 'false' : 'true'}">${icon(user.isBanned ? 'user-check' : 'user-x')}${user.isBanned ? t('admin.unban') : t('admin.ban')}</button>
+      <button class="btn btn-sm btn-ghost" type="button" data-reset-password>${icon('key-round')}${t('admin.resetPassword')}</button>
+      ${adminToggle}
+    </div>
+  `;
+};
+
 const userItem = (user) => html`
   <article class="card card-pad admin-item" data-user="${user.id}">
     <div class="admin-person">
       ${avatar(user, 'md')}
       <div>
         <p class="admin-item-title"><a href="/u/${user.id}">${user.name}</a>${verifiedMark(user)}</p>
-        <p class="muted text-sm"><span dir="ltr">${formatPhone(user.phone)}</span> · ${label(findById(ROLES, user.role))} · ${timeAgo(user.createdAt)}</p>
+        <p class="muted text-sm"><span dir="ltr">${formatPhone(user.phone)}</span> · ${label(findById(ROLES, user.role))} · ${placeLabel(user)} · ${timeAgo(user.createdAt)}</p>
       </div>
     </div>
     <div class="tags">
-      ${user.isAdmin ? html`<span class="badge badge-featured">${t('admin.flags.admin')}</span>` : null}
+      ${user.isOwner ? html`<span class="badge badge-featured">${icon('star')}${t('admin.flags.owner')}</span>` : null}
+      ${user.isAdmin && !user.isOwner ? html`<span class="badge badge-featured">${t('admin.flags.admin')}</span>` : null}
       ${user.isBanned ? html`<span class="badge badge-danger">${t('admin.flags.banned')}</span>` : null}
       ${user.isListed ? html`<span class="badge badge-info">${t('admin.flags.listed')}</span>` : null}
     </div>
-    ${user.isAdmin ? null : html`
-      <div class="owned-job-actions">
-        <button class="btn btn-sm btn-secondary" type="button" data-verify="${user.isVerified ? 'false' : 'true'}">${icon('badge-check')}${user.isVerified ? t('admin.unverify') : t('admin.verify')}</button>
-        <button class="btn btn-sm ${user.isBanned ? 'btn-secondary' : 'btn-danger'}" type="button" data-ban="${user.isBanned ? 'false' : 'true'}">${icon(user.isBanned ? 'user-check' : 'user-x')}${user.isBanned ? t('admin.unban') : t('admin.ban')}</button>
-        <button class="btn btn-sm btn-ghost" type="button" data-reset-password>${icon('key-round')}${t('admin.resetPassword')}</button>
-      </div>
-    `}
+    ${userActions(user, Boolean(store.user?.isOwner))}
   </article>
 `;
 
@@ -98,7 +134,7 @@ const jobItem = (job) => html`
       <p class="admin-item-title"><a href="/jobs/${job.id}">${job.title}</a></p>
       ${jobStateBadge(job.state)}
     </div>
-    <p class="muted text-sm">${job.poster.companyName || job.poster.name} · ${timeAgo(job.createdAt)} · ${t('jobs.views', { count: job.views })}</p>
+    <p class="muted text-sm">${job.poster.companyName || job.poster.name} · ${placeLabel(job)} · ${timeAgo(job.createdAt)} · ${t('jobs.views', { count: job.views })}</p>
     <div class="owned-job-actions">
       <button class="btn btn-sm ${job.isHidden ? 'btn-secondary' : 'btn-danger'}" type="button" data-hide="${job.isHidden ? 'false' : 'true'}">${icon(job.isHidden ? 'eye' : 'eye-off')}${job.isHidden ? t('admin.unhide') : t('admin.hide')}</button>
       <button class="btn btn-sm btn-secondary" type="button" data-feature="${job.isFeatured ? 'false' : 'true'}">${icon('star')}${job.isFeatured ? t('admin.unfeature') : t('admin.feature')}</button>
@@ -114,6 +150,7 @@ export default {
       reports: 'open',
       users: 'all',
       jobs: 'all',
+      wilaya: '',
       q: '',
       page: 1,
       items: [],
@@ -142,19 +179,25 @@ export default {
           ${icon('search')}<input class="search-input" name="q" type="search" dir="auto" value="${state.q}" placeholder="${placeholder}" aria-label="${t('common.search')}">
         </form>
       `;
+      const wilayaFilter = html`
+        <label class="admin-wilaya">
+          <span class="sr-only">${t('places.wilaya')}</span>
+          ${select({ name: 'adminWilaya', value: state.wilaya, placeholder: t('places.allWilayas'), options: wilayaOptions() })}
+        </label>
+      `;
       const controls = {
         overview: null,
         reports: filterChips('reports', REPORT_FILTERS, state.reports, 'admin.reportFilters'),
-        users: html`${search(t('admin.searchUsers'))}${filterChips('users', USER_FILTERS, state.users, 'admin.userFilters')}`,
-        jobs: html`${search(t('admin.searchJobs'))}${filterChips('jobs', JOB_FILTERS, state.jobs, 'admin.jobFilters')}`,
+        users: html`${search(t('admin.searchUsers'))}${wilayaFilter}${filterChips('users', USER_FILTERS, state.users, 'admin.userFilters')}`,
+        jobs: html`${search(t('admin.searchJobs'))}${wilayaFilter}${filterChips('jobs', JOB_FILTERS, state.jobs, 'admin.jobFilters')}`,
       };
       render($(root, '[data-controls]'), html`<div class="stack-sm admin-controls">${controls[state.tab]}</div>`);
     };
 
     const endpoint = () => ({
       reports: ['/api/admin/reports', { status: state.reports }],
-      users: ['/api/admin/users', { q: state.q, status: state.users === 'all' ? '' : state.users }],
-      jobs: ['/api/admin/jobs', { q: state.q, state: state.jobs === 'all' ? '' : state.jobs }],
+      users: ['/api/admin/users', { q: state.q, wilaya: state.wilaya, status: state.users === 'all' ? '' : state.users }],
+      jobs: ['/api/admin/jobs', { q: state.q, wilaya: state.wilaya, state: state.jobs === 'all' ? '' : state.jobs }],
     })[state.tab];
 
     const renderItems = (hasMore) => {
@@ -225,6 +268,28 @@ export default {
       }, 350);
     });
     on(root, 'submit', '[data-admin-search]', (event) => event.preventDefault());
+
+    on(root, 'change', 'select[name="adminWilaya"]', (event, control) => {
+      state.wilaya = control.value;
+      load();
+    });
+
+    // From the per-wilaya table: that wilaya's offers.
+    on(root, 'click', '[data-wilaya-drill]', (event, button) => {
+      state.wilaya = button.dataset.wilayaDrill;
+      switchTab('jobs');
+    });
+
+    on(root, 'click', '[data-make-admin]', async (event, button) => {
+      const making = button.dataset.makeAdmin === 'true';
+      if (!(await confirmDialog({
+        title: making ? t('admin.makeAdmin') : t('admin.removeAdmin'),
+        message: making ? t('admin.makeAdminConfirm') : t('admin.removeAdminConfirm'),
+        confirmLabel: making ? t('admin.makeAdmin') : t('admin.removeAdmin'),
+        danger: !making,
+      }))) return;
+      act(button, () => api.patch(`/api/admin/users/${itemId(button, 'data-user')}`, { isAdmin: making }), 'admin.done');
+    });
 
     on(root, 'click', '[data-action="more"]', () => {
       state.page += 1;

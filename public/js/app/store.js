@@ -82,9 +82,10 @@ export const refreshSummary = async () => {
   }
 };
 
-export const loadMeta = async ({ fresh = false } = {}) => {
-  if (store.meta && !fresh) return store.meta;
-  const meta = await api.get('/api/meta');
+// Site figures for one wilaya, or for the whole country when `wilayaCode` is null.
+export const loadMeta = async ({ fresh = false, wilayaCode = null } = {}) => {
+  if (store.meta && !fresh && store.meta.wilayaCode === wilayaCode) return store.meta;
+  const meta = await api.get('/api/meta', { wilaya: wilayaCode ?? '' });
   store.setMeta(meta);
   return meta;
 };

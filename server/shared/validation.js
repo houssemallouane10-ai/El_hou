@@ -2,6 +2,7 @@ import { invalid, notFound } from './errors.js';
 import { isMobilePhone, isPhone, normalizePhone } from '../../shared/phone.js';
 
 // Control characters, zero-width spaces, BOM and line/paragraph separators never belong in user text.
+// eslint-disable-next-line no-control-regex -- matching control characters is the point
 const UNWANTED_CHARS = /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F\u200B\u2028\u2029\uFEFF]/g;
 
 const cleanLine = (value) => value.replace(UNWANTED_CHARS, '').replace(/\s+/g, ' ').trim();
@@ -92,6 +93,13 @@ export const createValidator = (input, { partial = false } = {}) => {
         if (!(partial && value === undefined)) values[field] = false;
       } else if (typeof value === 'boolean') values[field] = value;
       else fail(field, 'invalid');
+      return validator;
+    },
+
+    // An explicit yes, such as accepting the terms: anything but `true` fails.
+    accepted(field) {
+      if (source[field] === true) values[field] = true;
+      else fail(field, 'must_accept');
       return validator;
     },
 

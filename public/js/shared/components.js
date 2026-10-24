@@ -7,10 +7,10 @@ import {
   categoryLabel,
   initials,
   jobTypeLabel,
-  locationLabel,
   salaryText,
   timeAgo,
 } from './format.js';
+import { placeLabel } from './places.js';
 import { errorMessage } from './ui.js';
 
 // ---------- People ----------
@@ -32,9 +32,17 @@ const brandMark = () => html`
     <img class="brand-logo" src="/icons/logo.svg" alt="" width="36" height="36">
     <span class="brand-text">
       <span class="brand-name">${t('common.appName')}</span>
-      <span class="brand-city">${icon('map-pin')}${t('common.city')}</span>
+      <span class="brand-city">${t('common.country')}</span>
     </span>
   </a>
+`;
+
+// The browsing region: a wilaya or the whole country. Opens the region picker.
+export const regionButton = (wilayaCode, { compact = false } = {}) => html`
+  <button class="region-btn ${compact ? 'region-btn-compact' : ''}" type="button" data-action="region" aria-haspopup="dialog"
+    aria-label="${t('places.regionLabel', { region: wilayaCode ? placeLabel({ wilayaCode }) : t('places.allWilayas') })}">
+    ${icon('map-pin')}<span class="region-btn-text">${wilayaCode ? placeLabel({ wilayaCode }) : t('places.allWilayas')}</span>${icon('chevron-down')}
+  </button>
 `;
 
 export const inboxActions = (user) => (user
@@ -106,7 +114,7 @@ export const jobCard = (job, { saved = false, showSave = true } = {}) => html`
       ${job.isUrgent ? html`<span class="badge badge-urgent">${icon('zap')}${t('jobs.urgent')}</span>` : null}
       ${job.isFeatured ? html`<span class="badge badge-featured">${icon('star')}${t('jobs.featured')}</span>` : null}
       ${job.state && job.state !== 'active' ? jobStateBadge(job.state) : null}
-      <span class="tag">${icon('map-pin')}${locationLabel(job.location)}</span>
+      <span class="tag">${icon('map-pin')}${placeLabel(job)}</span>
       <span class="tag">${icon('clock')}${jobTypeLabel(job.jobType)}</span>
     </div>
     <div class="job-card-foot">
@@ -129,7 +137,7 @@ export const workerCard = (worker, { saved = false, showSave = true } = {}) => h
     <div class="tags">
       <span class="badge ${worker.isAvailable ? 'badge-success' : 'badge-muted'}">${worker.isAvailable ? t('workers.available') : t('workers.unavailable')}</span>
       ${worker.category ? html`<span class="tag">${icon(categoryIcon(worker.category))}${categoryLabel(worker.category)}</span>` : null}
-      <span class="tag">${icon('map-pin')}${locationLabel(worker.location)}</span>
+      <span class="tag">${icon('map-pin')}${placeLabel(worker)}</span>
       ${worker.experienceYears ? html`<span class="tag">${icon('award')}${t('workers.experience', { count: worker.experienceYears })}</span>` : null}
     </div>
     ${worker.skills?.length ? html`<div class="chips">${worker.skills.map((skill) => html`<span class="chip chip-sm">${skill}</span>`)}</div>` : null}

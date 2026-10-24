@@ -1,12 +1,14 @@
 import { CATEGORIES } from '/shared/catalog.js';
-import { store } from '../../app/store.js';
+import { communeById } from '/shared/geo.js';
+import { regionFromQuery, regionQueryValue, setRegion } from '../../app/region.js';
+import { loadMeta, store } from '../../app/store.js';
 import { api, isAbort } from '../../shared/api.js';
-import { appBar, emptyState, errorState, inboxActions, loadMore, skeletonCards, workerCard } from '../../shared/components.js';
-import { locationLabel, sortedLocations } from '../../shared/format.js';
+import { appBar, emptyState, errorState, inboxActions, loadMore, regionButton, skeletonCards, workerCard } from '../../shared/components.js';
 import { readForm, select, switchControl } from '../../shared/forms.js';
 import { $, html, on, render } from '../../shared/html.js';
 import { label, t } from '../../shared/i18n.js';
 import { icon } from '../../shared/icons.js';
+import { communeOptions, pickWilaya, placeLabel } from '../../shared/places.js';
 import { openLayer, toastError } from '../../shared/ui.js';
 
 const SEARCH_DELAY_MS = 350;
@@ -30,9 +32,14 @@ export default {
     const filters = {
       q: query.get('q') ?? '',
       category: query.get('category') ?? '',
-      location: query.get('location') ?? '',
+      wilaya: regionFromQuery(query),
+      commune: query.get('commune') ?? '',
       available: query.get('available') ?? '',
     };
+    // A ?commune= link implies its wilaya; otherwise a commune only counts inside the wilaya.
+    const linkedCommune = communeById(filters.commune);
+    if (!query.has('wilaya') && linkedCommune) filters.wilaya = linkedCommune.wilaya;
+    if (linkedCommune?.wilaya !== filters.wilaya) filters.commune = '';
     let page = 1;
     let items = [];
     let loading = false;
@@ -55,6 +62,7 @@ export default {
             ${icon('sliders-horizontal')}<span class="hide-sm">${t('common.filters')}</span><span class="count" data-filter-count hidden></span>
           </button>
         </div>
+        <div class="region-row" data-region></div>
         <div class="chips-scroll" data-categories></div>
         <div class="list-toolbar"><p class="muted text-sm" data-count aria-live="polite"></p></div>
         <div class="chips" data-active></div>
@@ -64,6 +72,7 @@ export default {
     `);
 
     const syncControls = () => {
+      render($(root, '[data-region]'), regionButton(filters.wilaya));
       render($(root, '[data-categories]'), html`
         <button class="chip ${filters.category ? '' : 'is-active'}" type="button" data-category="">${t('common.all')}</button>
         ${CATEGORIES.map((category) => html`
@@ -71,7 +80,7 @@ export default {
         `)}
       `);
       const chips = [];
-      if (filters.location) chips.push({ key: 'location', text: locationLabel(filters.location) });
+      if (filters.commune) chips.push({ key: 'commune', text: placeLabel({ communeId: Number(filters.commune) }) });
       if (filters.available) chips.push({ key: 'available', text: t('workers.availableOnly') });
       render($(root, '[data-active]'), chips.map((chip) => html`
         <button class="chip chip-removable" type="button" data-remove="${chip.key}">${chip.text}${icon('x')}</button>
@@ -94,7 +103,8 @@ export default {
         const data = await api.get('/api/workers', {
           q: filters.q.trim(),
           category: filters.category,
-          location: filters.location,
+          wilaya: filters.wilaya ?? '',
+          commune: filters.commune,
           available: filters.available ? 1 : '',
           page,
         }, { signal: requestController.signal });
@@ -102,7 +112,12 @@ export default {
         $(root, '[data-count]').textContent = t('workers.results', { count: data.total });
         render($(root, '[data-results]'), items.length
           ? items.map((worker) => workerCard(worker, { saved: store.isSaved('worker', worker.id), showSave: worker.id !== store.user?.id }))
-          : emptyState({ icon: 'users', title: t('workers.emptyTitle'), text: t('workers.emptyText') }));
+          : emptyState({
+            icon: 'users',
+            title: t('workers.emptyTitle'),
+            text: t('workers.emptyText'),
+            action: filters.wilaya ? html`<button class="btn btn-secondary" type="button" data-action="all-wilayas">${icon('globe')}${t('places.browseAll')}</button>` : null,
+          }));
         render($(root, '[data-more]'), loadMore(data.hasMore));
         if (firstLoad) {
           firstLoad = false;
@@ -118,10 +133,25 @@ export default {
     };
 
     const apply = () => {
-      replaceQuery(filters);
+      replaceQuery({ ...filters, wilaya: regionQueryValue(filters.wilaya) });
       syncControls();
       load();
     };
+
+    const changeRegion = (code) => {
+      setRegion(code);
+      filters.wilaya = code;
+      filters.commune = '';
+      apply();
+    };
+
+    on(root, 'click', '[data-action="region"]', async () => {
+      const meta = await loadMeta().catch(() => null);
+      const choice = await pickWilaya({ value: filters.wilaya, counts: meta?.jobsByWilaya ?? null });
+      if (choice !== undefined && choice !== filters.wilaya) changeRegion(choice);
+    });
+
+    on(root, 'click', '[data-action="all-wilayas"]', () => changeRegion(null));
 
     on(root, 'input', '[data-search] input', (event, input) => {
       clearTimeout(searchTimer);
@@ -162,10 +192,12 @@ export default {
         title: t('common.filters'),
         body: html`
           <form class="form" id="worker-filters">
-            <div class="field">
-              <label class="field-label" for="f-location">${t('jobs.filters.location')}</label>
-              ${select({ name: 'location', value: filters.location, placeholder: t('jobs.filters.anywhere'), options: sortedLocations().map((item) => ({ value: item.id, label: label(item) })) })}
-            </div>
+            ${filters.wilaya ? html`
+              <div class="field">
+                <label class="field-label" for="f-commune">${t('places.commune')}</label>
+                ${select({ name: 'commune', value: filters.commune, placeholder: t('places.anyCommune'), options: communeOptions(filters.wilaya) })}
+              </div>
+            ` : html`<p class="field-hint">${icon('map-pin')} ${t('places.communeNeedsWilaya')}</p>`}
             ${switchControl({ name: 'available', checked: Boolean(filters.available), label: t('workers.availableOnly') })}
           </form>
         `,
@@ -178,13 +210,13 @@ export default {
           form.addEventListener('submit', (event) => {
             event.preventDefault();
             const values = readForm(form);
-            filters.location = values.location;
+            filters.commune = values.commune ?? '';
             filters.available = values.available ? '1' : '';
             layer.close();
             apply();
           });
           $(panel, '[data-sheet-reset]').addEventListener('click', () => {
-            filters.location = '';
+            filters.commune = '';
             filters.available = '';
             layer.close();
             apply();

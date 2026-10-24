@@ -4,11 +4,11 @@ import { formatPhone } from '/shared/phone.js';
 import { store } from '../../app/store.js';
 import { api } from '../../shared/api.js';
 import { appBar } from '../../shared/components.js';
-import { sortedLocations } from '../../shared/format.js';
 import { bindCounters, field, handleFormError, input, readForm, select, switchControl, textarea } from '../../shared/forms.js';
 import { $, html, on, render } from '../../shared/html.js';
 import { label, t } from '../../shared/i18n.js';
 import { icon } from '../../shared/icons.js';
+import { bindPlaceFields, placeFields, readPlace } from '../../shared/places.js';
 import { toast, withBusy } from '../../shared/ui.js';
 
 const skillChip = (skill) => html`
@@ -40,7 +40,7 @@ const formMarkup = (user, { highlightListing }) => html`
       <div data-company ${user.role === 'employer' ? '' : 'hidden'}>
         ${field({ name: 'companyName', label: t('editProfile.companyName'), optional: true, control: input({ name: 'companyName', value: user.companyName ?? '', maxlength: LIMITS.companyName.max, placeholder: t('editProfile.companyPlaceholder') }) })}
       </div>
-      ${field({ name: 'location', label: t('editProfile.location'), control: select({ name: 'location', value: user.location, options: sortedLocations().map((item) => ({ value: item.id, label: label(item) })) }) })}
+      ${placeFields({ wilayaCode: user.wilayaCode, communeId: user.communeId })}
     </section>
 
     <section class="form-section ${highlightListing ? 'is-highlighted' : ''}" id="worker-profile">
@@ -83,7 +83,7 @@ const toPayload = (values) => ({
   name: values.name,
   role: values.role,
   companyName: values.role === 'employer' ? values.companyName : null,
-  location: values.location,
+  ...readPlace(values),
   isListed: values.isListed,
   isAvailable: values.isAvailable,
   headline: values.headline,
@@ -111,6 +111,7 @@ export default {
 
     const form = $(root, '#profile-form');
     bindCounters(form);
+    bindPlaceFields(form);
     if (highlightListing) setTimeout(() => $(root, '#worker-profile').scrollIntoView({ behavior: 'smooth', block: 'start' }), 150);
 
     on(form, 'change', 'input[name="role"]', (event, radio) => {

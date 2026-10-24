@@ -1,27 +1,39 @@
 import { CATEGORIES, JOB_TYPES } from '/shared/catalog.js';
-import { store } from '../../app/store.js';
+import { communeById } from '/shared/geo.js';
+import { regionFromQuery, regionQueryValue, setRegion } from '../../app/region.js';
+import { loadMeta, store } from '../../app/store.js';
 import { api, isAbort } from '../../shared/api.js';
-import { appBar, emptyState, errorState, inboxActions, jobCard, loadMore, skeletonCards } from '../../shared/components.js';
-import { categoryLabel, jobTypeLabel, locationLabel, sortedLocations } from '../../shared/format.js';
+import { appBar, emptyState, errorState, inboxActions, jobCard, loadMore, regionButton, skeletonCards } from '../../shared/components.js';
+import { categoryLabel, jobTypeLabel } from '../../shared/format.js';
 import { readForm, select, switchControl } from '../../shared/forms.js';
 import { $, html, on, render } from '../../shared/html.js';
 import { label, t } from '../../shared/i18n.js';
 import { icon } from '../../shared/icons.js';
+import { communeOptions, pickWilaya, placeLabel } from '../../shared/places.js';
 import { openLayer, toast, toastError } from '../../shared/ui.js';
 
-const FILTER_KEYS = ['q', 'category', 'jobType', 'location', 'urgent', 'withSalary', 'postedWithin', 'sort'];
+const FILTER_KEYS = ['q', 'category', 'jobType', 'commune', 'urgent', 'withSalary', 'postedWithin', 'sort'];
+const ADVANCED_KEYS = ['jobType', 'commune', 'urgent', 'withSalary', 'postedWithin'];
 const POSTED_WITHIN = ['1', '3', '7', '30'];
 const SORTS = ['recent', 'urgent', 'popular'];
 const SEARCH_DELAY_MS = 350;
 
-const readFilters = (query) => Object.fromEntries(FILTER_KEYS.map((key) => [key, query.get(key) ?? '']));
+// The wilaya comes from ?wilaya=, else from a ?commune= link, else from the saved region. A commune
+// only counts inside that wilaya.
+const readFilters = (query) => {
+  const filters = Object.fromEntries(FILTER_KEYS.map((key) => [key, query.get(key) ?? '']));
+  const commune = communeById(filters.commune);
+  filters.wilaya = !query.has('wilaya') && commune ? commune.wilaya : regionFromQuery(query);
+  if (commune?.wilaya !== filters.wilaya) filters.commune = '';
+  return filters;
+};
 
-const advancedCount = (filters) => ['jobType', 'location', 'urgent', 'withSalary', 'postedWithin'].filter((key) => filters[key]).length;
+const advancedCount = (filters) => ADVANCED_KEYS.filter((key) => filters[key]).length;
 
 const activeChips = (filters) => {
   const chips = [];
   if (filters.jobType) chips.push({ key: 'jobType', text: jobTypeLabel(filters.jobType) });
-  if (filters.location) chips.push({ key: 'location', text: locationLabel(filters.location) });
+  if (filters.commune) chips.push({ key: 'commune', text: placeLabel({ communeId: Number(filters.commune) }) });
   if (filters.postedWithin) chips.push({ key: 'postedWithin', text: t(`jobs.posted.${filters.postedWithin}`) });
   if (filters.urgent) chips.push({ key: 'urgent', text: t('jobs.urgentOnly') });
   if (filters.withSalary) chips.push({ key: 'withSalary', text: t('jobs.withSalary') });
@@ -41,10 +53,12 @@ const filterSheetBody = (filters) => html`
         ${JOB_TYPES.map((type) => html`<label class="chip-radio"><input type="radio" name="jobType" value="${type.id}"${filters.jobType === type.id ? html` checked` : null}><span>${label(type)}</span></label>`)}
       </div>
     </fieldset>
-    <div class="field">
-      <label class="field-label" for="f-location">${t('jobs.filters.location')}</label>
-      ${select({ name: 'location', value: filters.location, placeholder: t('jobs.filters.anywhere'), options: sortedLocations().map((item) => ({ value: item.id, label: label(item) })) })}
-    </div>
+    ${filters.wilaya ? html`
+      <div class="field">
+        <label class="field-label" for="f-commune">${t('places.commune')}</label>
+        ${select({ name: 'commune', value: filters.commune, placeholder: t('places.anyCommune'), options: communeOptions(filters.wilaya) })}
+      </div>
+    ` : html`<p class="field-hint">${icon('map-pin')} ${t('places.communeNeedsWilaya')}</p>`}
     <fieldset class="field">
       <legend class="field-label">${t('jobs.filters.postedWithin')}</legend>
       <div class="chips">
@@ -81,6 +95,7 @@ export default {
             ${icon('sliders-horizontal')}<span class="hide-sm">${t('common.filters')}</span><span class="count" data-filter-count hidden></span>
           </button>
         </div>
+        <div class="region-row" data-region></div>
         <div class="chips-scroll" data-categories></div>
         <div class="list-toolbar">
           <p class="muted text-sm" data-count aria-live="polite"></p>
@@ -98,6 +113,7 @@ export default {
     `);
 
     const syncControls = () => {
+      render($(root, '[data-region]'), regionButton(filters.wilaya));
       render($(root, '[data-categories]'), html`
         <button class="chip ${filters.category ? '' : 'is-active'}" type="button" data-category="">${t('common.all')}</button>
         ${CATEGORIES.map((category) => html`
@@ -125,6 +141,7 @@ export default {
           action: html`
             <div class="row-center">
               ${advancedCount(filters) || filters.q || filters.category ? html`<button class="btn btn-secondary" type="button" data-action="reset">${t('common.resetFilters')}</button>` : null}
+              ${filters.wilaya ? html`<button class="btn btn-secondary" type="button" data-action="all-wilayas">${icon('globe')}${t('places.browseAll')}</button>` : null}
               ${filters.category ? html`<button class="btn btn-primary" type="button" data-action="alert">${icon('bell')}${t('jobs.alertCta')}</button>` : null}
             </div>
           `,
@@ -149,7 +166,8 @@ export default {
           q: filters.q.trim(),
           category: filters.category,
           jobType: filters.jobType,
-          location: filters.location,
+          wilaya: filters.wilaya ?? '',
+          commune: filters.commune,
           urgent: filters.urgent ? 1 : '',
           withSalary: filters.withSalary ? 1 : '',
           postedWithin: filters.postedWithin,
@@ -172,10 +190,20 @@ export default {
     };
 
     const apply = () => {
-      replaceQuery({ ...filters, sort: filters.sort === 'recent' ? '' : filters.sort });
+      replaceQuery({ ...filters, wilaya: regionQueryValue(filters.wilaya), sort: filters.sort === 'recent' ? '' : filters.sort });
       syncControls();
       load();
     };
+
+    on(root, 'click', '[data-action="region"]', async () => {
+      const meta = await loadMeta().catch(() => null);
+      const choice = await pickWilaya({ value: filters.wilaya, counts: meta?.jobsByWilaya ?? null });
+      if (choice === undefined || choice === filters.wilaya) return;
+      setRegion(choice);
+      filters.wilaya = choice;
+      filters.commune = '';
+      apply();
+    });
 
     on(root, 'input', '[data-search] input', (event, input) => {
       clearTimeout(searchTimer);
@@ -214,6 +242,13 @@ export default {
       apply();
     });
 
+    on(root, 'click', '[data-action="all-wilayas"]', () => {
+      setRegion(null);
+      filters.wilaya = null;
+      filters.commune = '';
+      apply();
+    });
+
     on(root, 'click', '[data-action="more"]', (event, button) => {
       if (loading) return;
       button.disabled = true;
@@ -230,9 +265,10 @@ export default {
       }
       const categories = [...new Set([...(store.user.alertCategories ?? []), filters.category])];
       try {
-        const result = await api.put('/api/me/alerts', { categories });
-        store.setUser({ ...store.user, alertCategories: result.categories });
-        toast(t('jobs.alertOn', { category: categoryLabel(filters.category) }), { type: 'success' });
+        const result = await api.put('/api/me/alerts', { categories, wilayaCode: store.user.alertWilaya ?? null });
+        store.setUser({ ...store.user, alertCategories: result.categories, alertWilaya: result.wilayaCode });
+        const scope = result.wilayaCode ? placeLabel({ wilayaCode: result.wilayaCode }) : t('places.allWilayas');
+        toast(t('jobs.alertOn', { category: categoryLabel(filters.category), scope }), { type: 'success' });
       } catch (error) {
         toastError(error);
       }
@@ -254,7 +290,7 @@ export default {
             Object.assign(filters, {
               category: values.category,
               jobType: values.jobType ?? '',
-              location: values.location,
+              commune: values.commune ?? '',
               postedWithin: values.postedWithin ?? '',
               urgent: values.urgent ? '1' : '',
               withSalary: values.withSalary ? '1' : '',
@@ -263,7 +299,7 @@ export default {
             apply();
           });
           $(panel, '[data-sheet-reset]').addEventListener('click', () => {
-            Object.assign(filters, { category: '', jobType: '', location: '', postedWithin: '', urgent: '', withSalary: '' });
+            Object.assign(filters, { category: '', jobType: '', commune: '', postedWithin: '', urgent: '', withSalary: '' });
             layer.close();
             apply();
           });

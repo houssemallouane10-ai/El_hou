@@ -6,7 +6,9 @@ import { formatDate, formatTime } from '../../shared/format.js';
 import { $, html, on, render } from '../../shared/html.js';
 import { t } from '../../shared/i18n.js';
 import { icon } from '../../shared/icons.js';
-import { toastError } from '../../shared/ui.js';
+import { openLayer, toastError } from '../../shared/ui.js';
+import { openReportSheet } from '../moderation/report-sheet.js';
+import { blockUser, unblockUser } from './blocking.js';
 
 const POLL_MS = 4000;
 const MAX_COMPOSER_HEIGHT = 140;
@@ -42,6 +44,17 @@ const messagesMarkup = (messages) => {
   });
 };
 
+// Why the composer is closed, if it is: the viewer blocked the other person, the other person
+// is gone, or the other person blocked the viewer (not said in so many words).
+const composerNotice = (conversation) => {
+  if (!conversation || conversation.canSend) return null;
+  if (conversation.iBlocked) {
+    return html`<p class="composer-closed">${icon('user-x')}<span>${t('blocking.youBlocked')}</span><button class="btn btn-sm btn-secondary" type="button" data-action="unblock">${t('blocking.unblock')}</button></p>`;
+  }
+  if (!conversation.otherIsActive) return html`<p class="composer-closed">${icon('info')}<span>${t('messages.unavailable')}</span></p>`;
+  return html`<p class="composer-closed">${icon('info')}<span>${t('blocking.cannotReply')}</span></p>`;
+};
+
 const header = (conversation) => html`
   <header class="appbar chat-head">
     <div class="appbar-inner">
@@ -55,13 +68,14 @@ const header = (conversation) => html`
           </span>
         </a>
         ${conversation.job ? html`<a class="icon-btn" href="/jobs/${conversation.job.id}" aria-label="${t('messages.viewJob')}">${icon('briefcase')}</a>` : null}
+        ${conversation.other ? html`<button class="icon-btn" type="button" data-action="menu" aria-haspopup="dialog" aria-label="${t('messages.options')}">${icon('ellipsis-vertical')}</button>` : null}
       ` : html`<div class="skeleton skeleton-line w-40"></div>`}
     </div>
   </header>
 `;
 
 export default {
-  mount(root, { params, signal, setTitle }) {
+  mount(root, { params, navigate, signal, setTitle }) {
     const conversationId = params.id;
     let messages = [];
     let conversation = null;
@@ -86,9 +100,8 @@ export default {
           <div class="chat-messages" data-messages></div>
         </div>
         <form class="composer" data-composer>
-          ${conversation && !conversation.otherIsActive
-            ? html`<p class="composer-closed">${icon('info')}${t('messages.unavailable')}</p>`
-            : html`
+          ${composerNotice(conversation)
+            ?? html`
               <textarea class="composer-input" name="body" rows="1" dir="auto" maxlength="${LIMITS.messageBody.max}" placeholder="${t('messages.placeholder')}" aria-label="${t('messages.placeholder')}" required></textarea>
               <button class="composer-send" type="submit" aria-label="${t('common.send')}">${icon('send', 'flip-rtl')}</button>
             `}
@@ -195,6 +208,38 @@ export default {
     });
 
     on(root, 'click', '[data-action="retry"]', load);
+
+    const setBlocked = (blocked) => {
+      conversation = { ...conversation, iBlocked: blocked, canSend: !blocked && conversation.otherIsActive };
+      renderPage();
+      scrollToBottom();
+    };
+
+    const person = () => ({ userId: conversation.other.id, name: displayName(conversation.other) });
+
+    on(root, 'click', '[data-action="unblock"]', async () => {
+      if (await unblockUser(person())) setBlocked(false);
+    });
+
+    on(root, 'click', '[data-action="menu"]', async () => {
+      const layer = openLayer({
+        title: displayName(conversation.other),
+        body: html`
+          <div class="list menu-list">
+            <a class="list-item" href="/u/${conversation.other.id}"><span class="list-icon">${icon('user')}</span><span class="list-text">${t('messages.viewProfile')}</span></a>
+            <button class="list-item" type="button" data-choice="report"><span class="list-icon">${icon('flag')}</span><span class="list-text">${t('messages.reportUser')}</span></button>
+            ${conversation.iBlocked
+              ? html`<button class="list-item" type="button" data-choice="unblock"><span class="list-icon">${icon('user-check')}</span><span class="list-text">${t('blocking.unblock')}</span></button>`
+              : html`<button class="list-item is-danger" type="button" data-choice="block"><span class="list-icon">${icon('user-x')}</span><span class="list-text">${t('blocking.block')}</span></button>`}
+          </div>
+        `,
+        onMount: (panel, self) => on(panel, 'click', '[data-choice]', (event, button) => self.close(button.dataset.choice)),
+      });
+      const choice = await layer.result;
+      if (choice === 'report') openReportSheet({ targetType: 'user', targetId: conversation.other.id, navigate });
+      if (choice === 'block' && await blockUser(person())) setBlocked(true);
+      if (choice === 'unblock' && await unblockUser(person())) setBlocked(false);
+    });
 
     render(root, html`${header(null)}<div class="page page-narrow chat"><div class="chat-messages" data-messages></div></div>`);
     load();

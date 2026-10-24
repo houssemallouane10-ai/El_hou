@@ -11,11 +11,13 @@ import {
   sectionHead,
   verifiedMark,
 } from '../../shared/components.js';
-import { categoryIcon, categoryLabel, formatDate, locationLabel, timeAgo } from '../../shared/format.js';
-import { $, html, on, render } from '../../shared/html.js';
+import { categoryIcon, categoryLabel, formatDate, timeAgo } from '../../shared/format.js';
+import { html, on, render } from '../../shared/html.js';
 import { t } from '../../shared/i18n.js';
 import { icon } from '../../shared/icons.js';
+import { placeLabel } from '../../shared/places.js';
 import { shareLink } from '../../shared/ui.js';
+import { blockUser, unblockUser } from '../messages/blocking.js';
 import { startConversation } from '../messages/start-conversation.js';
 import { openReportSheet } from '../moderation/report-sheet.js';
 
@@ -34,7 +36,7 @@ const profileMarkup = (user, jobs, isSelf) => html`
     ${user.headline ? html`<p class="profile-headline">${user.headline}</p>` : null}
     <div class="tags tags-center">
       ${user.isListed ? html`<span class="badge ${user.isAvailable ? 'badge-success' : 'badge-muted'}">${user.isAvailable ? t('workers.available') : t('workers.unavailable')}</span>` : null}
-      <span class="tag">${icon('map-pin')}${locationLabel(user.location)}</span>
+      <span class="tag">${icon('map-pin')}${placeLabel(user)}</span>
       ${lastSeenText(user.lastSeenAt) ? html`<span class="tag">${icon('clock')}${lastSeenText(user.lastSeenAt)}</span>` : null}
     </div>
     ${isSelf ? html`
@@ -44,8 +46,13 @@ const profileMarkup = (user, jobs, isSelf) => html`
     ` : html`
       <div class="profile-actions">
         ${user.contact ? contactActions({ phone: user.contact.phone, whatsapp: user.contact.whatsapp, whatsappText: t('profile.whatsappMessage', { name: user.name }) }) : null}
-        <button class="btn btn-secondary" type="button" data-action="message">${icon('message-circle')}${t('common.message')}</button>
+        ${user.isBlocked ? null : html`<button class="btn btn-secondary" type="button" data-action="message">${icon('message-circle')}${t('common.message')}</button>`}
       </div>
+      ${store.user ? html`
+        <button class="text-link profile-block" type="button" data-action="${user.isBlocked ? 'unblock' : 'block'}">
+          ${icon(user.isBlocked ? 'user-check' : 'user-x')}${user.isBlocked ? t('blocking.unblock') : t('blocking.block')}
+        </button>
+      ` : null}
     `}
   </section>
 
@@ -89,6 +96,7 @@ export default {
   mount(root, { params, navigate, signal, setTitle, ready }) {
     const userId = params.id;
     const isSelf = store.user?.id === userId;
+    let profileName = '';
 
     const renderShell = (user, jobs) => {
       render(root, html`
@@ -114,6 +122,7 @@ export default {
           api.get(`/api/users/${userId}`, null, { signal }),
           api.get('/api/jobs', { poster: userId, limit: 10 }, { signal }).catch(() => ({ items: [] })),
         ]);
+        profileName = user.name;
         setTitle(user.name);
         renderShell(user, jobs.items);
         ready();
@@ -124,8 +133,14 @@ export default {
     };
 
     on(root, 'click', '[data-action="message"]', () => startConversation({ userId, navigate }));
+    on(root, 'click', '[data-action="block"]', async () => {
+      if (await blockUser({ userId, name: profileName })) load();
+    });
+    on(root, 'click', '[data-action="unblock"]', async () => {
+      if (await unblockUser({ userId, name: profileName })) load();
+    });
     on(root, 'click', '[data-action="report"]', () => openReportSheet({ targetType: 'user', targetId: userId, navigate }));
-    on(root, 'click', '[data-action="share"]', () => shareLink({ title: $(root, '.profile-name')?.textContent ?? '', url: `${location.origin}/u/${userId}` }));
+    on(root, 'click', '[data-action="share"]', () => shareLink({ title: profileName, url: `${location.origin}/u/${userId}` }));
     on(root, 'click', '[data-action="retry"]', load);
 
     renderShell(null, []);

@@ -1,9 +1,9 @@
 import path from 'node:path';
 import express, { Router } from 'express';
 import { createServiceWorker } from './service-worker.js';
-import { createShell } from './shell.js';
+import { STATIC_PAGES, createShell } from './shell.js';
 
-const STATIC_PAGES = ['/', '/jobs', '/workers', '/about', '/safety', '/terms', '/privacy'];
+const SITEMAP_PAGES = ['/', '/jobs', '/workers', ...Object.keys(STATIC_PAGES)];
 
 const escapeXml = (value) => String(value).replace(/[<>&'"]/g, (char) => `&#${char.charCodeAt(0)};`);
 
@@ -14,7 +14,12 @@ const staticHeaders = (res, filePath) => {
 
 export const createWebRouter = ({ config, services }) => {
   const router = Router();
-  const shell = createShell({ publicDir: config.publicDir, cacheTemplate: config.isProduction, services });
+  const shell = createShell({
+    publicDir: config.publicDir,
+    cacheTemplate: config.isProduction,
+    services,
+    support: { supportWhatsapp: config.supportWhatsapp, supportEmail: config.supportEmail },
+  });
   const serviceWorker = createServiceWorker(config);
   const baseUrlOf = (req) => config.publicUrl || `${req.protocol}://${req.get('host')}`;
 
@@ -22,6 +27,16 @@ export const createWebRouter = ({ config, services }) => {
     res.type('application/javascript')
       .set({ 'Cache-Control': 'no-cache', 'Service-Worker-Allowed': '/' })
       .send(serviceWorker.source({ rebuild: !config.isProduction }));
+  });
+
+  // Digital Asset Links: lets the Play Store app open this site full screen, without a URL bar.
+  router.get('/.well-known/assetlinks.json', (req, res) => {
+    const app = config.androidApp;
+    const statements = app ? [{
+      relation: ['delegate_permission/common.handle_all_urls'],
+      target: { namespace: 'android_app', package_name: app.packageName, sha256_cert_fingerprints: app.fingerprints },
+    }] : [];
+    res.set('Cache-Control', 'public, max-age=3600').json(statements);
   });
 
   router.get('/robots.txt', (req, res) => {
@@ -32,7 +47,7 @@ export const createWebRouter = ({ config, services }) => {
   router.get('/sitemap.xml', (req, res) => {
     const base = baseUrlOf(req);
     const urls = [
-      ...STATIC_PAGES.map((page) => `<url><loc>${escapeXml(`${base}${page}`)}</loc></url>`),
+      ...SITEMAP_PAGES.map((page) => `<url><loc>${escapeXml(`${base}${page}`)}</loc></url>`),
       ...services.jobs.sitemapEntries().map((job) => `<url><loc>${escapeXml(`${base}/jobs/${job.id}`)}</loc><lastmod>${job.updated_at.slice(0, 10)}</lastmod></url>`),
     ];
     res.type('application/xml').send(`<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.join('\n')}\n</urlset>\n`);

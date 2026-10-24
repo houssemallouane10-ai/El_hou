@@ -407,7 +407,6 @@ body.no-tabbar .outlet { padding-bottom: 24px; }
   color: var(--text-2);
   font-size: 12px;
 }
-.brand-city .icon { width: 13px; height: 13px; color: var(--primary); }
 
 /* Bottom navigation (side rail on large screens) */
 
@@ -1902,6 +1901,112 @@ body.no-tabbar .offline-bar { bottom: calc(env(safe-area-inset-bottom) + 86px); 
 .article ul { margin: 0 0 12px; padding-inline-start: 22px; }
 .article li { margin-bottom: 6px; line-height: 1.8; }
 .article li::marker { color: var(--primary); }
+
+/* Server-rendered page shown before the app starts (no app bar yet). */
+.ssr-page { padding-top: 18px; }
+.ssr-page .article h1 { margin: 0 0 14px; font-size: 22px; font-weight: 700; }
+
+.row-wrap { display: flex; flex-wrap: wrap; gap: 8px; margin: 4px 0 12px; }
+
+/* ---------- Places ---------- */
+
+.region-row { display: flex; margin-bottom: 10px; }
+.region-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 100%;
+  min-height: 36px;
+  padding: 0 12px;
+  border: 1px solid var(--primary-100);
+  border-radius: 999px;
+  background: var(--primary-50);
+  color: var(--primary-ink);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.region-btn .icon { flex: none; width: 16px; height: 16px; }
+.region-btn-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; unicode-bidi: plaintext; }
+.region-btn:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+.hero-region { margin: -4px 0 14px; }
+.hero .region-btn { border-color: rgba(255, 255, 255, 0.32); background: rgba(255, 255, 255, 0.16); color: #fff; }
+.hero .region-btn:hover { background: rgba(255, 255, 255, 0.24); }
+
+.picker-search { position: sticky; top: 0; z-index: 1; min-height: 46px; margin-bottom: 8px; }
+.option-list { display: grid; gap: 2px; }
+.option {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 48px;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 12px;
+  background: none;
+  color: var(--text);
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+.option:hover { background: var(--surface-2); }
+.option:focus-visible { outline: 2px solid var(--primary); outline-offset: -2px; }
+.option[hidden] { display: none; }
+.option.is-selected { background: var(--primary-50); color: var(--primary-ink); font-weight: 600; }
+.option-code {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: var(--surface-2);
+  color: var(--text-2);
+  font-size: 13px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.option-code .icon { width: 18px; height: 18px; }
+.option.is-selected .option-code { background: var(--primary); color: var(--on-primary); }
+.option-label { flex: 1; min-width: 0; unicode-bidi: plaintext; }
+.option-meta { flex: none; color: var(--text-3); font-size: 12.5px; font-weight: 500; }
+.option-check { flex: none; width: 18px; height: 18px; color: var(--primary); }
+.picker-empty { padding: 16px 0; }
+
+/* ---------- Terms checkbox ---------- */
+
+.check-row { display: flex; align-items: flex-start; gap: 10px; color: var(--text-2); font-size: 14px; line-height: 1.7; cursor: pointer; }
+.check-row input { flex: none; width: 20px; height: 20px; margin: 3px 0 0; accent-color: var(--primary); cursor: pointer; }
+.check-row a { color: var(--primary-ink); font-weight: 600; }
+.check-row:has(input[aria-invalid='true']) { color: var(--danger-ink); }
+
+/* ---------- Blocking ---------- */
+
+button.list-item { width: 100%; border: 0; background: none; font: inherit; text-align: start; cursor: pointer; }
+.list-item.is-danger { color: var(--danger-ink); }
+.list-item.is-danger .list-icon { background: var(--danger-50); color: var(--danger); }
+.menu-list { padding: 0; }
+.profile-block { display: inline-flex; align-items: center; gap: 6px; margin-top: 4px; padding: 6px; border: 0; background: none; color: var(--text-3); font: inherit; font-size: 13.5px; cursor: pointer; }
+.profile-block .icon { width: 16px; height: 16px; }
+.profile-block:hover { color: var(--danger-ink); }
+.blocked-list { display: grid; gap: 8px; }
+.blocked-item { display: flex; align-items: center; gap: 10px; }
+.blocked-name { flex: 1; min-width: 0; overflow: hidden; font-weight: 500; text-overflow: ellipsis; white-space: nowrap; unicode-bidi: plaintext; }
+.composer-closed { flex-wrap: wrap; justify-content: center; text-align: center; }
+
+/* ---------- Admin: per wilaya ---------- */
+
+.table-wrap { overflow-x: auto; }
+.admin-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.admin-table th,
+.admin-table td { padding: 8px 6px; border-bottom: 1px solid var(--border-soft); text-align: start; }
+.admin-table thead th { color: var(--text-3); font-size: 12.5px; font-weight: 600; }
+.admin-table td { font-variant-numeric: tabular-nums; }
+.admin-table .text-link { padding: 0; border: 0; background: none; font: inherit; font-weight: 600; cursor: pointer; unicode-bidi: plaintext; }
+.admin-wilaya { display: block; }
+.admin-wilaya .select { width: 100%; }
 
 .auth-head { display: grid; justify-items: center; gap: 4px; margin: 10px 0 18px; text-align: center; }
 .auth-head img { border-radius: 16px; box-shadow: var(--shadow-md); }

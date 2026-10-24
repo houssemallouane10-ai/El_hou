@@ -1,15 +1,11 @@
-import {
-  CATEGORY_IDS,
-  JOB_DURATIONS_DAYS,
-  JOB_TYPE_IDS,
-  LOCATION_IDS,
-  SALARY_PERIOD_IDS,
-} from '../../../shared/catalog.js';
+import { CATEGORY_IDS, JOB_DURATIONS_DAYS, JOB_TYPE_IDS, SALARY_PERIOD_IDS } from '../../../shared/catalog.js';
 import { LIMITS } from '../../../shared/limits.js';
+import { readCommuneFilter, readWilayaFilter } from '../../shared/places.js';
 import { createValidator, parseId } from '../../shared/validation.js';
 import { JOB_ACTIONS, jobState } from './model.js';
 
 const DURATION_IDS = new Set(JOB_DURATIONS_DAYS);
+const PLACE_ID = { min: 1, max: 100_000 };
 const SORTS = new Set(['recent', 'urgent', 'popular']);
 const POSTED_WITHIN_DAYS = new Set([1, 3, 7, 30]);
 export const OWNER_FILTERS = new Set(['all', 'active', 'closed', 'expired', 'hidden']);
@@ -18,7 +14,8 @@ export const parseJobInput = (input, { partial = false } = {}) => createValidato
   .text('title', { required: true, ...LIMITS.jobTitle })
   .oneOf('category', CATEGORY_IDS, { required: true })
   .oneOf('jobType', JOB_TYPE_IDS, { required: true })
-  .oneOf('location', LOCATION_IDS, { required: true })
+  .integer('communeId', { required: true, ...PLACE_ID })
+  .integer('wilayaCode', PLACE_ID)
   .text('address', LIMITS.address)
   .text('description', { required: true, ...LIMITS.jobDescription, multiline: true })
   .text('requirements', { ...LIMITS.jobRequirements, multiline: true })
@@ -43,7 +40,8 @@ export const parseJobQuery = (query) => {
     q: typeof query.q === 'string' ? query.q.slice(0, LIMITS.searchQuery.max) : '',
     category: CATEGORY_IDS.has(query.category) ? query.category : null,
     jobType: JOB_TYPE_IDS.has(query.jobType) ? query.jobType : null,
-    location: LOCATION_IDS.has(query.location) ? query.location : null,
+    wilayaCode: readWilayaFilter(query.wilaya),
+    communeId: readCommuneFilter(query.commune),
     urgentOnly: query.urgent === '1' || query.urgent === 'true',
     withSalary: query.withSalary === '1' || query.withSalary === 'true',
     postedWithin: POSTED_WITHIN_DAYS.has(postedWithin) ? postedWithin : null,
@@ -65,7 +63,8 @@ export const toJobCard = (row, nowIso) => ({
   title: row.title,
   category: row.category,
   jobType: row.job_type,
-  location: row.location,
+  wilayaCode: row.wilaya_code,
+  communeId: row.commune_id,
   salary: { min: row.salary_min, max: row.salary_max, period: row.salary_period },
   positions: row.positions,
   isUrgent: Boolean(row.is_urgent),

@@ -2,6 +2,7 @@ import { DEFAULT_JOB_DURATION_DAYS } from '../../../shared/catalog.js';
 import { addDays } from '../../shared/clock.js';
 import { notFound, rateLimited } from '../../shared/errors.js';
 import { pageOf } from '../../shared/paging.js';
+import { readWilayaFilter, resolvePlace } from '../../shared/places.js';
 import { OWNER_FILTERS, parseJobInput, parseJobQuery, parseStatusChange, toJobCard, toJobDetail, toOwnerJob } from './contracts.js';
 import { JOB_STATE, jobState, planStatusChange, resolveSalary } from './model.js';
 import { createJobsRepository } from './repository.js';
@@ -47,15 +48,20 @@ export const createJobsService = ({ db, clock, accounts, notifications }) => {
     return row;
   };
 
+  // Subscribers follow categories in one wilaya or the whole country.
   const notifyAlertSubscribers = (row) => {
-    const subscribers = accounts.alertSubscriberIds(row.category, row.user_id);
+    const subscribers = accounts.alertSubscriberIds({ category: row.category, wilayaCode: row.wilaya_code, excludeUserId: row.user_id });
     notifications.notifyMany(subscribers, 'job.alert', {
       jobId: row.id,
       title: row.title,
       category: row.category,
-      location: row.location,
+      wilayaCode: row.wilaya_code,
+      communeId: row.commune_id,
     });
   };
+
+  // An offer always names its commune; the wilaya follows from it.
+  const placeOf = ({ wilayaCode = null, communeId = null }) => resolvePlace({ wilayaCode, communeId }, { requireCommune: true });
 
   return {
     list(query, paging) {
@@ -90,12 +96,14 @@ export const createJobsService = ({ db, clock, accounts, notifications }) => {
     create(userId, input) {
       const data = parseJobInput(input);
       const salary = resolveSalary(data);
+      const place = placeOf(data);
       const now = clock.now();
       if (repository.countCreatedSince(userId, addDays(now, -1).toISOString()) >= MAX_NEW_JOBS_PER_DAY) throw rateLimited();
       const row = db.transaction(() => {
         const inserted = repository.insert({
           ...data,
           ...salary,
+          ...place,
           userId,
           isUrgent: data.isUrgent ?? false,
           now: now.toISOString(),
@@ -115,7 +123,9 @@ export const createJobsService = ({ db, clock, accounts, notifications }) => {
         salaryMin: changes.salaryMin !== undefined ? changes.salaryMin : current.salary_min,
         salaryMax: changes.salaryMax !== undefined ? changes.salaryMax : current.salary_max,
       });
-      const row = db.transaction(() => repository.update(id, { ...changes, ...salary }, nowIso()))();
+      const placeChanged = changes.communeId !== undefined || changes.wilayaCode !== undefined;
+      const place = placeChanged ? placeOf({ wilayaCode: changes.wilayaCode, communeId: changes.communeId ?? current.commune_id }) : {};
+      const row = db.transaction(() => repository.update(id, { ...changes, ...salary, ...place }, nowIso()))();
       return toJobDetail(row, nowIso(), { viewerId: userId });
     },
 
@@ -167,7 +177,13 @@ export const createJobsService = ({ db, clock, accounts, notifications }) => {
 
     hasActiveJobs: (userId) => repository.hasActive(userId, nowIso()),
 
-    categoryCounts: () => repository.categoryCounts(nowIso()),
+    // Live offers per category, in one wilaya or (null) the whole country.
+    categoryCounts: (wilayaCode = null) => repository.categoryCounts(nowIso(), wilayaCode),
+
+    // Live offers per wilaya code, for the region picker and the admin dashboard.
+    countsByWilaya: () => Object.fromEntries(repository.countsByWilaya(nowIso()).map((row) => [row.wilayaCode, row.total])),
+
+    indexMissingSearchText: () => repository.indexMissingSearchText(),
 
     stats() {
       const row = repository.stats(nowIso(), addDays(clock.now(), -7).toISOString());
@@ -185,7 +201,7 @@ export const createJobsService = ({ db, clock, accounts, notifications }) => {
 
     adminList(query, paging) {
       const now = nowIso();
-      const { rows, total } = repository.listForAdmin({ q: query.q, state: query.state }, paging, now);
+      const { rows, total } = repository.listForAdmin({ q: query.q, state: query.state, wilayaCode: readWilayaFilter(query.wilaya) }, paging, now);
       return pageOf(rows.map((row) => ({ ...toOwnerJob(row, now), isHidden: Boolean(row.is_hidden) })), total, paging);
     },
 

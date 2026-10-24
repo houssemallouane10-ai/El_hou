@@ -1,5 +1,5 @@
-import { CATEGORIES, JOB_TYPES, LOCATIONS, PINNED_LOCATION_IDS, SALARY_PERIODS, findById } from '/shared/catalog.js';
-import { getLang, getLocale, label, t } from './i18n.js';
+import { CATEGORIES, JOB_TYPES, SALARY_PERIODS, findById } from '/shared/catalog.js';
+import { getLocale, label, t } from './i18n.js';
 
 const MINUTE = 60;
 const HOUR = 60 * MINUTE;
@@ -37,17 +37,6 @@ export const daysUntil = (iso) => Math.ceil((Date.parse(iso) - Date.now()) / (DA
 export const categoryLabel = (id) => label(findById(CATEGORIES, id));
 export const categoryIcon = (id) => findById(CATEGORIES, id)?.icon ?? 'layout-grid';
 export const jobTypeLabel = (id) => label(findById(JOB_TYPES, id));
-export const locationLabel = (id) => label(findById(LOCATIONS, id));
-
-// Home city and wilaya seat first, "outside" last, the rest alphabetically in the active language.
-export const sortedLocations = () => {
-  const pinned = PINNED_LOCATION_IDS.map((id) => findById(LOCATIONS, id));
-  const outside = LOCATIONS.filter((item) => item.id === 'outside');
-  const rest = LOCATIONS
-    .filter((item) => !PINNED_LOCATION_IDS.includes(item.id) && item.id !== 'outside')
-    .sort((a, b) => label(a).localeCompare(label(b), getLang()));
-  return [...pinned, ...rest, ...outside];
-};
 
 export const initials = (name) => String(name ?? '')
   .trim()

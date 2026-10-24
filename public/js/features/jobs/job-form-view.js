@@ -4,11 +4,11 @@ import { normalizePhone } from '/shared/phone.js';
 import { store } from '../../app/store.js';
 import { api, isAbort } from '../../shared/api.js';
 import { appBar, errorState } from '../../shared/components.js';
-import { sortedLocations } from '../../shared/format.js';
 import { bindCounters, field, handleFormError, input, readForm, select, switchControl, textarea } from '../../shared/forms.js';
 import { $, html, on, render } from '../../shared/html.js';
 import { label, t } from '../../shared/i18n.js';
 import { icon } from '../../shared/icons.js';
+import { bindPlaceFields, placeFields, readPlace } from '../../shared/places.js';
 import { toast, withBusy } from '../../shared/ui.js';
 
 const DRAFT_KEY = 'khedmati.jobDraft';
@@ -88,11 +88,7 @@ const formMarkup = (values, { isEdit }) => html`
 
     <section class="form-section">
       <h2 class="form-section-title">${icon('map-pin')}${t('jobForm.place')}</h2>
-      ${field({
-        name: 'location',
-        label: t('jobForm.location'),
-        control: select({ name: 'location', value: values.location, required: true, options: sortedLocations().map((item) => ({ value: item.id, label: label(item) })) }),
-      })}
+      ${placeFields({ wilayaCode: values.wilayaCode, communeId: values.communeId, requireCommune: true })}
       ${field({
         name: 'address',
         label: t('jobForm.address'),
@@ -180,7 +176,8 @@ const defaultsFor = (user) => ({
   category: '',
   jobType: 'full_time',
   positions: 1,
-  location: user.location || 'bir-el-ater',
+  wilayaCode: user.wilayaCode ?? '',
+  communeId: user.communeId ?? '',
   address: '',
   salaryPeriod: 'month',
   salaryMin: '',
@@ -198,7 +195,8 @@ const valuesFromJob = (job) => ({
   category: job.category,
   jobType: job.jobType,
   positions: job.positions,
-  location: job.location,
+  wilayaCode: job.wilayaCode ?? '',
+  communeId: job.communeId ?? '',
   address: job.address ?? '',
   salaryPeriod: job.salary.period,
   salaryMin: job.salary.min ?? '',
@@ -217,7 +215,7 @@ const toPayload = (values, { isEdit }) => {
     category: values.category,
     jobType: values.jobType,
     positions: Number(values.positions) || 1,
-    location: values.location,
+    ...readPlace(values),
     address: values.address,
     salaryPeriod: values.salaryPeriod,
     salaryMin: negotiable ? null : toAmount(values.salaryMin),
@@ -248,6 +246,7 @@ export default {
       `);
       const form = $(root, '#job-form');
       bindCounters(form);
+      bindPlaceFields(form);
 
       on(form, 'change', 'input[name="salaryPeriod"]', (event, radio) => {
         $(form, '[data-amounts]').hidden = radio.value === 'negotiable';
@@ -260,10 +259,12 @@ export default {
       });
 
       if (!isEdit) {
-        form.addEventListener('input', () => {
+        const saveDraft = () => {
           clearTimeout(draftTimer);
           draftTimer = setTimeout(() => writeDraft(readForm(form)), DRAFT_DELAY_MS);
-        });
+        };
+        form.addEventListener('input', saveDraft);
+        form.addEventListener('change', saveDraft);
       }
 
       form.addEventListener('submit', (event) => {

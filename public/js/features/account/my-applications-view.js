@@ -1,10 +1,11 @@
 import { APPLICATION_STATUSES } from '/shared/catalog.js';
 import { api, isAbort } from '../../shared/api.js';
 import { appBar, applicationBadge, emptyState, errorState, jobStateBadge, loadMore, skeletonCards } from '../../shared/components.js';
-import { locationLabel, salaryText, timeAgo } from '../../shared/format.js';
+import { salaryText, timeAgo } from '../../shared/format.js';
 import { $, html, on, render } from '../../shared/html.js';
 import { t } from '../../shared/i18n.js';
 import { icon } from '../../shared/icons.js';
+import { placeLabel } from '../../shared/places.js';
 import { confirmDialog, toast, toastError } from '../../shared/ui.js';
 
 const WITHDRAWABLE = new Set(['pending', 'shortlisted']);
@@ -15,7 +16,7 @@ const applicationCard = (item) => html`
       <div>
         ${item.job
           ? html`<h3 class="job-card-title"><a href="/jobs/${item.job.id}">${item.job.title}</a></h3>
-            <p class="muted text-sm">${item.job.poster.companyName || item.job.poster.name} · ${locationLabel(item.job.location)}</p>`
+            <p class="muted text-sm">${item.job.poster.companyName || item.job.poster.name} · ${placeLabel(item.job)}</p>`
           : html`<h3 class="job-card-title muted">${t('myApplications.unavailable')}</h3>`}
       </div>
       ${applicationBadge(item.status)}

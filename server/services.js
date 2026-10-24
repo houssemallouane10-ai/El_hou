@@ -19,8 +19,18 @@ export const createServices = ({ db, clock, config }) => {
   return { accounts, notifications, jobs, applications, bookmarks, messaging, moderation };
 };
 
-// Housekeeping that keeps tables bounded; safe to run at any time and on every instance.
+// Fills search text for rows migrated without it, a batch at a time until none are left.
+const indexAll = (indexBatch) => {
+  let total = 0;
+  for (let indexed = indexBatch(); indexed > 0; indexed = indexBatch()) total += indexed;
+  return total;
+};
+
+// Housekeeping that keeps tables bounded and indexes complete; safe to run at any time and on
+// every instance.
 export const runMaintenance = (services) => ({
   expiredSessions: services.accounts.purgeExpiredSessions(),
   oldNotifications: services.notifications.pruneOld(),
+  indexedUsers: indexAll(services.accounts.indexMissingSearchText),
+  indexedJobs: indexAll(services.jobs.indexMissingSearchText),
 });

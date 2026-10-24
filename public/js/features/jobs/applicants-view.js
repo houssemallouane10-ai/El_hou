@@ -2,10 +2,11 @@ import { APPLICATION_STATUSES } from '/shared/catalog.js';
 import { refreshSummary } from '../../app/store.js';
 import { api, isAbort } from '../../shared/api.js';
 import { appBar, applicationBadge, avatar, contactActions, emptyState, errorState, skeletonCards, verifiedMark } from '../../shared/components.js';
-import { categoryLabel, locationLabel, timeAgo } from '../../shared/format.js';
+import { categoryLabel, timeAgo } from '../../shared/format.js';
 import { $, html, on, render } from '../../shared/html.js';
 import { t } from '../../shared/i18n.js';
 import { icon } from '../../shared/icons.js';
+import { placeLabel } from '../../shared/places.js';
 import { toast, toastError } from '../../shared/ui.js';
 import { startConversation } from '../messages/start-conversation.js';
 
@@ -31,7 +32,7 @@ const applicantCard = (item, jobTitle) => html`
     <div class="tags">
       ${item.applicant.category ? html`<span class="tag">${icon('briefcase')}${categoryLabel(item.applicant.category)}</span>` : null}
       ${item.applicant.experienceYears ? html`<span class="tag">${icon('award')}${t('workers.experience', { count: item.applicant.experienceYears })}</span>` : null}
-      <span class="tag">${icon('map-pin')}${locationLabel(item.applicant.location)}</span>
+      <span class="tag">${icon('map-pin')}${placeLabel(item.applicant)}</span>
       <span class="tag">${icon('clock')}${timeAgo(item.createdAt)}</span>
     </div>
     ${item.message ? html`<blockquote class="quote">${item.message}</blockquote>` : null}

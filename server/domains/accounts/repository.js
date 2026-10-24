@@ -1,5 +1,6 @@
 import { CATEGORIES, findById } from '../../../shared/catalog.js';
 import { toFlag } from '../../shared/db/database.js';
+import { placeSearchText } from '../../shared/places.js';
 import { buildSearchText, createFilter, searchTerms } from '../../shared/search.js';
 
 const PROFILE_COLUMNS = {
@@ -11,7 +12,8 @@ const PROFILE_COLUMNS = {
   category: 'category',
   experienceYears: 'experience_years',
   skills: 'skills',
-  location: 'location',
+  wilayaCode: 'wilaya_code',
+  communeId: 'commune_id',
   whatsapp: 'whatsapp',
   expectedPay: 'expected_pay',
   isListed: 'is_listed',
@@ -35,6 +37,7 @@ const userSearchText = (user) => {
     user.expected_pay,
     category?.ar,
     category?.fr,
+    placeSearchText({ wilayaCode: user.wilaya_code, communeId: user.commune_id }),
   );
 };
 
@@ -43,12 +46,16 @@ export const createAccountsRepository = (db) => {
     byId: db.prepare('SELECT * FROM users WHERE id = ?'),
     byPhone: db.prepare('SELECT * FROM users WHERE phone = ?'),
     insert: db.prepare(`
-      INSERT INTO users (name, phone, password_hash, role, is_admin, search_text, created_at, updated_at, last_seen_at)
-      VALUES (@name, @phone, @passwordHash, @role, @isAdmin, @searchText, @now, @now, @now)
+      INSERT INTO users (
+        name, phone, password_hash, role, is_admin, wilaya_code, alert_wilaya, terms_accepted_at,
+        created_at, updated_at, last_seen_at
+      ) VALUES (
+        @name, @phone, @passwordHash, @role, @isAdmin, @wilayaCode, @wilayaCode, @now, @now, @now, @now
+      )
     `),
     setPassword: db.prepare('UPDATE users SET password_hash = ?, updated_at = ? WHERE id = ?'),
     setSearchText: db.prepare('UPDATE users SET search_text = ? WHERE id = ?'),
-    setAlerts: db.prepare('UPDATE users SET alert_categories = ?, updated_at = ? WHERE id = ?'),
+    setAlerts: db.prepare('UPDATE users SET alert_categories = ?, alert_wilaya = ?, updated_at = ? WHERE id = ?'),
     setAdmin: db.prepare('UPDATE users SET is_admin = ? WHERE id = ?'),
     setBanned: db.prepare('UPDATE users SET is_banned = ?, updated_at = ? WHERE id = ?'),
     setVerified: db.prepare('UPDATE users SET is_verified = ?, updated_at = ? WHERE id = ?'),
@@ -56,8 +63,22 @@ export const createAccountsRepository = (db) => {
     remove: db.prepare('DELETE FROM users WHERE id = ?'),
     alertSubscribers: db.prepare(`
       SELECT id FROM users
-      WHERE is_banned = 0 AND id != ? AND EXISTS (SELECT 1 FROM json_each(users.alert_categories) WHERE value = ?)
+      WHERE is_banned = 0 AND id != @excludeUserId
+        AND (alert_wilaya IS NULL OR alert_wilaya = @wilayaCode)
+        AND EXISTS (SELECT 1 FROM json_each(users.alert_categories) WHERE value = @category)
       LIMIT 2000
+    `),
+    unindexed: db.prepare("SELECT * FROM users WHERE search_text = '' LIMIT 500"),
+    publicStats: db.prepare(`
+      SELECT
+        SUM(CASE WHEN is_listed = 1 AND is_available = 1 THEN 1 ELSE 0 END) AS availableWorkers,
+        SUM(CASE WHEN role = 'employer' THEN 1 ELSE 0 END) AS employers
+      FROM users
+      WHERE is_banned = 0 AND (@wilayaCode IS NULL OR wilaya_code = @wilayaCode)
+    `),
+    countsByWilaya: db.prepare(`
+      SELECT wilaya_code AS wilayaCode, COUNT(*) AS users FROM users
+      WHERE is_banned = 0 AND wilaya_code IS NOT NULL GROUP BY wilaya_code
     `),
     stats: db.prepare(`
       SELECT
@@ -81,9 +102,17 @@ export const createAccountsRepository = (db) => {
       return db.prepare(`SELECT * FROM users WHERE id IN (${placeholders})`).all(...ids);
     },
 
-    insert({ name, phone, passwordHash, role, isAdmin, now }) {
-      const searchText = buildSearchText(name);
-      return Number(statements.insert.run({ name, phone, passwordHash, role, isAdmin: toFlag(isAdmin), searchText, now }).lastInsertRowid);
+    insert({ name, phone, passwordHash, role, isAdmin, wilayaCode, now }) {
+      const id = Number(statements.insert.run({ name, phone, passwordHash, role, isAdmin: toFlag(isAdmin), wilayaCode, now }).lastInsertRowid);
+      statements.setSearchText.run(userSearchText(statements.byId.get(id)), id);
+      return id;
+    },
+
+    // Rows migrated or imported without search text get it on the next maintenance pass.
+    indexMissingSearchText() {
+      const rows = statements.unindexed.all();
+      for (const row of rows) statements.setSearchText.run(userSearchText(row) || ' ', row.id);
+      return rows.length;
     },
 
     updateProfile(id, changes, now) {
@@ -99,19 +128,24 @@ export const createAccountsRepository = (db) => {
     },
 
     setPassword: (id, passwordHash, now) => statements.setPassword.run(passwordHash, now, id),
-    setAlertCategories: (id, categories, now) => statements.setAlerts.run(JSON.stringify(categories), now, id),
+    setAlerts: (id, { categories, wilayaCode }, now) => statements.setAlerts.run(JSON.stringify(categories), wilayaCode, now, id),
     setAdmin: (id, isAdmin) => statements.setAdmin.run(toFlag(isAdmin), id),
     setBanned: (id, isBanned, now) => statements.setBanned.run(toFlag(isBanned), now, id),
     setVerified: (id, isVerified, now) => statements.setVerified.run(toFlag(isVerified), now, id),
     touch: (id, now) => statements.touch.run(now, id),
     remove: (id) => statements.remove.run(id),
-    alertSubscriberIds: (category, excludeUserId) => statements.alertSubscribers.all(excludeUserId, category).map((row) => row.id),
+    alertSubscriberIds: ({ category, wilayaCode, excludeUserId }) => statements.alertSubscribers
+      .all({ category, wilayaCode, excludeUserId })
+      .map((row) => row.id),
     stats: (since) => statements.stats.get(since),
+    countsByWilaya: () => statements.countsByWilaya.all(),
+    publicStats: (wilayaCode) => statements.publicStats.get({ wilayaCode }),
 
-    listDirectory({ q, category, location, availableOnly }, { limit, offset }) {
+    listDirectory({ q, category, wilayaCode, communeId, availableOnly }, { limit, offset }) {
       const filter = createFilter().add('is_listed = 1').add('is_banned = 0');
       if (category) filter.add('category = @category', { category });
-      if (location) filter.add('location = @location', { location });
+      if (wilayaCode) filter.add('wilaya_code = @wilayaCode', { wilayaCode });
+      if (communeId) filter.add('commune_id = @communeId', { communeId });
       if (availableOnly) filter.add('is_available = 1');
       filter.addSearch('search_text', searchTerms(q));
       const where = filter.where();
@@ -124,8 +158,9 @@ export const createAccountsRepository = (db) => {
       return { rows, total };
     },
 
-    listForAdmin({ q, status }, { limit, offset }) {
+    listForAdmin({ q, status, wilayaCode }, { limit, offset }) {
       const filter = createFilter();
+      if (wilayaCode) filter.add('wilaya_code = @wilayaCode', { wilayaCode });
       if (status === 'banned') filter.add('is_banned = 1');
       if (status === 'admins') filter.add('is_admin = 1');
       if (status === 'verified') filter.add('is_verified = 1');

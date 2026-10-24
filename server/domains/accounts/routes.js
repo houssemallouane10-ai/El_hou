@@ -3,7 +3,7 @@ import { readPaging } from '../../shared/paging.js';
 import { requireIdParam } from '../../shared/validation.js';
 import { requireUser } from './http.js';
 
-export const createAccountsRoutes = ({ accounts, applications, jobs, cookie, limits }) => {
+export const createAccountsRoutes = ({ accounts, applications, jobs, messaging, cookie, limits }) => {
   const router = Router();
   const userAgentOf = (req) => ({ userAgent: req.get('user-agent') });
 
@@ -35,7 +35,7 @@ export const createAccountsRoutes = ({ accounts, applications, jobs, cookie, lim
   });
 
   router.put('/me/alerts', requireUser, (req, res) => {
-    res.json({ categories: accounts.setAlertCategories(req.user.id, req.body) });
+    res.json(accounts.setAlerts(req.user.id, req.body));
   });
 
   router.post('/me/deletion', requireUser, limits.sensitive, async (req, res) => {
@@ -53,7 +53,8 @@ export const createAccountsRoutes = ({ accounts, applications, jobs, cookie, lim
     const viewer = req.user;
     const hasAppliedToViewer = Boolean(viewer) && applications.hasAppliedToEmployer(id, viewer.id);
     const hasActiveJobs = jobs.hasActiveJobs(id);
-    res.json({ user: accounts.getProfile(id, { viewer, hasAppliedToViewer, hasActiveJobs }) });
+    const user = accounts.getProfile(id, { viewer, hasAppliedToViewer, hasActiveJobs });
+    res.json({ user: { ...user, isBlocked: Boolean(viewer) && messaging.hasBlocked(viewer.id, id) } });
   });
 
   return router;

@@ -52,6 +52,19 @@ export const createModerationService = ({ db, clock, accounts, jobs, application
     return person ? { type, id, title: person.name, ownerId: id } : { type, id, deleted: true };
   };
 
+  // Members and live offers per wilaya, busiest first; wilayas with neither are left out.
+  const activityByWilaya = () => {
+    const activeJobs = jobs.countsByWilaya();
+    const rows = new Map(accounts.countsByWilaya().map(({ wilayaCode, users }) => [wilayaCode, { wilayaCode, users, activeJobs: 0 }]));
+    for (const [code, total] of Object.entries(activeJobs)) {
+      const wilayaCode = Number(code);
+      const row = rows.get(wilayaCode) ?? { wilayaCode, users: 0, activeJobs: 0 };
+      row.activeJobs = total;
+      rows.set(wilayaCode, row);
+    }
+    return [...rows.values()].sort((a, b) => b.activeJobs - a.activeJobs || b.users - a.users || a.wilayaCode - b.wilayaCode);
+  };
+
   return {
     report(userId, input) {
       const data = parseReport(input);
@@ -101,12 +114,15 @@ export const createModerationService = ({ db, clock, accounts, jobs, application
         applications: applications.stats(),
         messages: messaging.stats(),
         reports: { open: statements.openCount.get().total },
+        byWilaya: activityByWilaya(),
       };
     },
 
+    // Admin flags come from owners only (checked by accounts); ban and verification from any admin.
     updateUser(adminId, userId, input) {
-      const flags = parseFlags(input, ['isBanned', 'isVerified']);
+      const flags = parseFlags(input, ['isBanned', 'isVerified', 'isAdmin']);
       let user = null;
+      if (flags.isAdmin !== undefined) user = accounts.adminSetAdmin(adminId, userId, flags.isAdmin);
       if (flags.isBanned !== undefined) user = accounts.adminSetBanned(adminId, userId, flags.isBanned);
       if (flags.isVerified !== undefined) {
         const wasVerified = Boolean(accounts.cardsByIds([userId]).get(userId)?.isVerified);

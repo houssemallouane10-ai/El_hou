@@ -21,7 +21,6 @@ import {
   formatDate,
   formatNumber,
   jobTypeLabel,
-  locationLabel,
   salaryText,
   timeAgo,
 } from '../../shared/format.js';
@@ -29,6 +28,7 @@ import { field, handleFormError, readForm, textarea } from '../../shared/forms.j
 import { $, html, on, render } from '../../shared/html.js';
 import { t } from '../../shared/i18n.js';
 import { icon } from '../../shared/icons.js';
+import { placeLabel } from '../../shared/places.js';
 import { confirmDialog, openLayer, shareLink, toast, toastError, withBusy } from '../../shared/ui.js';
 import { startConversation } from '../messages/start-conversation.js';
 import { openReportSheet } from '../moderation/report-sheet.js';
@@ -102,7 +102,7 @@ const detailMarkup = (job, myApplication, similar) => html`
     <div class="info-grid">
       ${infoItem('banknote', t('jobs.salary'), salaryText(job.salary))}
       ${infoItem('clock', t('jobs.jobType'), jobTypeLabel(job.jobType))}
-      ${infoItem('map-pin', t('jobs.place'), job.address ? `${locationLabel(job.location)} — ${job.address}` : locationLabel(job.location))}
+      ${infoItem('map-pin', t('jobs.place'), job.address ? `${placeLabel(job)} — ${job.address}` : placeLabel(job))}
       ${infoItem('users', t('jobs.positionsLabel'), t('jobs.positions', { count: job.positions }))}
       ${infoItem('calendar', t('jobs.deadline'), formatDate(job.expiresAt))}
       ${infoItem('eye', t('jobs.interest'), `${t('jobs.views', { count: job.views })} · ${t('jobs.applicants', { count: job.applicationsCount })}`)}
@@ -220,7 +220,7 @@ export default {
           <form class="form" id="apply-form" novalidate>
             <div class="apply-job">
               <strong>${job.title}</strong>
-              <span class="muted text-sm">${displayName(job.poster)} · ${locationLabel(job.location)}</span>
+              <span class="muted text-sm">${displayName(job.poster)} · ${placeLabel(job)}</span>
             </div>
             ${field({
               name: 'message',

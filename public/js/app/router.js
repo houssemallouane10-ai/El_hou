@@ -31,6 +31,7 @@ const ROUTES = [
   { path: '/safety', tab: 'me', page: 'safety', load: () => import('../features/pages/static-view.js') },
   { path: '/terms', tab: 'me', page: 'terms', load: () => import('../features/pages/static-view.js') },
   { path: '/privacy', tab: 'me', page: 'privacy', load: () => import('../features/pages/static-view.js') },
+  { path: '/account-deletion', tab: 'me', page: 'accountDeletion', load: () => import('../features/pages/static-view.js') },
 ];
 
 const NOT_FOUND = { tab: null, load: () => import('../features/pages/not-found-view.js') };

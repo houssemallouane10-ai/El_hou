@@ -98,9 +98,18 @@ export const createClient = (baseUrl) => {
 let phoneCounter = 0;
 export const nextPhone = () => `0550${String(++phoneCounter).padStart(6, '0')}`;
 
-export const signUp = async (server, { name = 'مستخدم تجريبي', role = 'seeker', phone = nextPhone() } = {}) => {
+// Places used across tests: Bir El Ater (wilaya 62) and two communes of Tébessa (wilaya 12).
+export const PLACES = {
+  birElAter: { wilayaCode: 62, communeId: 365 },
+  negrine: { wilayaCode: 62, communeId: 372 },
+  tebessa: { wilayaCode: 12, communeId: 364 },
+  cheria: { wilayaCode: 12, communeId: 366 },
+  algiers: { wilayaCode: 16, communeId: 554 },
+};
+
+export const signUp = async (server, { name = 'مستخدم تجريبي', role = 'seeker', phone = nextPhone(), wilayaCode = 62 } = {}) => {
   const client = server.client();
-  const response = await client.post('/api/auth/register', { name, phone, password: PASSWORD, role });
+  const response = await client.post('/api/auth/register', { name, phone, password: PASSWORD, role, wilayaCode, acceptTerms: true });
   if (response.status !== 201) throw new Error(`sign up failed: ${response.status} ${JSON.stringify(response.data)}`);
   return { client, user: response.data.user, phone };
 };
@@ -109,7 +118,7 @@ export const validJob = (overrides = {}) => ({
   title: 'مطلوب بائع في محل مواد غذائية',
   category: 'commerce',
   jobType: 'full_time',
-  location: 'bir-el-ater',
+  communeId: 365,
   address: 'وسط المدينة',
   description: 'نبحث عن بائع جاد ومنظم للعمل في محل مواد غذائية بوسط المدينة.',
   requirements: 'خبرة سنة على الأقل',
