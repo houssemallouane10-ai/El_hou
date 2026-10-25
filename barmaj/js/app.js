@@ -868,7 +868,8 @@ const registerSW = async () => {
     });
     let reloading = false;
     navigator.serviceWorker.addEventListener('controllerchange', () => {
-      if (!hadController) { if (!running) resetPython(); return; }
+      // The first takeover only enables interactive input; later ones are updates
+      if (!hadController) { hadController = true; if (!running) resetPython(); return; }
       if (reloading || running) return;
       reloading = true;
       location.reload();
@@ -876,7 +877,7 @@ const registerSW = async () => {
     setInterval(() => reg.update().catch(() => {}), 60 * 60 * 1000);
   } catch { /* offline features unavailable */ }
 };
-const hadController = !!navigator.serviceWorker?.controller;
+let hadController = !!navigator.serviceWorker?.controller;
 
 // ---------------------------------------------------------------- boot
 fillIcons();
