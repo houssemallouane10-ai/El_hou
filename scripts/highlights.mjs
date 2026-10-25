@@ -38,8 +38,7 @@ export const SOURCES = [
   { key: 'bein', name: 'beIN SPORTS', lang: 'ar', handles: ['@beINSPORTS', 'c/beINSPORTS', '@beinsportsmena'], leagues: ['eng.1', 'esp.1', 'fra.1', 'uefa.champions', 'uefa.europa', 'uefa.europa.conf'] },
   { key: 'thmanyah', name: 'ثمانية', lang: 'ar', handles: ['@thmanyahsports', '@ThmanyahSport', '@thmanyah'], leagues: ['ksa.1'] },
   { key: 'ontime', name: 'ON Time Sports', lang: 'ar', handles: ['@ONTimeSports', '@ontimesports1'], leagues: ['egy.1'] },
-  { key: 'adsports', name: 'AD Sports', lang: 'ar', handles: ['@ADSportsTV', '@adsports'], leagues: [] },
-  { key: 'ssc', name: 'SSC', lang: 'ar', handles: ['@SSCchannels', '@SSC_TV'], leagues: [] },
+  { key: 'adsports', name: 'AD Sports', lang: 'ar', handles: ['@ADSportsTV', '@adsports'], leagues: ['ita.1'] },
 ];
 
 const ARABIC = /[؀-ۿ]/;
@@ -60,7 +59,7 @@ export function arabicFold(s) {
 // Word lists use letter-aware boundaries so accented words (résumé) match
 const words = (list) => new RegExp(`(?:^|[^\\p{L}\\p{N}])(?:${list})(?![\\p{L}\\p{N}])`, 'iu');
 const HIGHLIGHT_WORDS = new RegExp(`${words('highlights?|resumen|r[eé]sum[eé]|resumo|sintesi|samenvatting|özet|ozet|goals?|goles|buts').source}|ملخص|أهداف|اهداف`, 'iu');
-const NOT_ARABIC = /مؤتمر|تصريح|حوار|تدريب|تحليل|استوديو|ستوديو|قبل المباراه|سيدات|الناشئين/;
+const NOT_ARABIC = /مؤتمر|تصريح|حوار|تدريب|تحليل|استوديو|ستوديو|قبل المباراه|سيدات|الناشيين|مباشر|بودكاست|حلقه/;
 const NOT_HIGHLIGHT = words('press conference|conf[eé]rence de presse|rueda de prensa|preview|reaction|interview|training|entrenamiento|behind the scenes|unboxing|live stream|watchalong|classic|rewind|throwback|on this day|retro|women|wsl|u1[789]|u2[13]|academy|f[eé]minin[ea]?|femenino|frauen|femminile');
 
 // Titles that name an earlier season (e.g. "Serie A 2019/20") are archive clips
@@ -307,7 +306,8 @@ export function buildOutput(matches, videos, previous) {
   );
   const seen = new Map((previous.latest || []).map((v) => [v.videoId, v]));
   videos
-    .filter((v) => HIGHLIGHT_WORDS.test(v.title) && !NOT_HIGHLIGHT.test(v.title) && !NOT_ARABIC.test(arabicFold(v.title)) && !oldSeason(v.title))
+    // Matched videos count even without a keyword (AD Sports titles are just "Torino 3 - 2 Monza")
+    .filter((v) => (HIGHLIGHT_WORDS.test(v.title) || matchByVideo.has(v.videoId)) && !NOT_HIGHLIGHT.test(v.title) && !NOT_ARABIC.test(arabicFold(v.title)) && !oldSeason(v.title))
     .forEach((v) =>
       seen.set(v.videoId, { videoId: v.videoId, title: v.title, channel: v.channel, published: v.published, league: v.leagues[0] || null, lang: isArabic(v) ? 'ar' : '' }),
     );
@@ -375,7 +375,8 @@ async function main() {
   await writeFile(CHANNEL_CACHE, `${JSON.stringify(cache, null, 2)}\n`);
   await writeFile(OUT, `${JSON.stringify({ updatedAt: changed ? new Date().toISOString() : previous.updatedAt || null, ...out })}\n`);
   await setOutput('changed', changed);
-  console.log(changed ? `Found ${Object.keys(out.matches).length} matched highlights, ${out.latest.length} latest videos` : 'No new highlights');
+  const arabic = Object.values(out.matches).filter((h) => h.ar).length;
+  console.log(changed ? `Found ${Object.keys(out.matches).length} matched highlights (${arabic} in Arabic), ${out.latest.length} latest videos` : 'No new highlights');
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
