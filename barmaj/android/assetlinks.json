@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "io.github.houssemallouane10ai.barmaj",
+      "sha256_cert_fingerprints": [
+        "31:C8:D1:F9:B8:24:E1:30:E2:05:0C:74:5F:2C:AF:04:61:2E:D8:EF:B6:44:75:1B:81:F2:3E:62:96:34:27:B6"
+      ]
+    }
+  }
+]
