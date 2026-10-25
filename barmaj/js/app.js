@@ -940,6 +940,14 @@ const openAbout = () => {
 
 const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 const standalone = matchMedia('(display-mode: standalone)').matches || navigator.standalone;
+// Opened from the Android app (Trusted Web Activity): the referrer is only set on the first page
+const inAndroidApp = (() => {
+  try {
+    if (document.referrer.startsWith('android-app://')) sessionStorage.setItem('barmaj:app', '1');
+    return sessionStorage.getItem('barmaj:app') === '1';
+  } catch { return false; }
+})();
+const offerAndroidApp = /android/i.test(navigator.userAgent) && !inAndroidApp && !standalone;
 
 const install = async () => {
   if (installPrompt) {
@@ -965,7 +973,8 @@ const openMenu = () => {
     item('search', t('menu.search'), () => { setTab('code'); editor.openSearch(); }),
     item('edit', t('files.rename'), () => renameFile()),
     item('settings', t('menu.settings'), openSettings),
-    (installPrompt || (isIOS && !standalone)) ? item('install', t('menu.install'), install) : null,
+    offerAndroidApp ? item('install', t('menu.android'), () => { location.href = 'download/'; }) : null,
+    !inAndroidApp && (installPrompt || (isIOS && !standalone)) ? item('install', t('menu.install'), install) : null,
     item('sparkle', t('look.title'), openLook),
     item('image', t('snap.title'), openSnap),
     item('info', t('menu.about'), openAbout));

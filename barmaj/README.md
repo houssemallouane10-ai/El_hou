@@ -44,8 +44,24 @@
 
 ## التثبيت على الهاتف
 
-- **Android (Chrome)**: افتح الرابط ← القائمة ⋮ ← "تثبيت التطبيق"، أو من قائمة برمج ← "ثبّت التطبيق".
+- **Android**: حمّل التطبيق من [صفحة التحميل](https://houssemallouane10-ai.github.io/El_hou/barmaj/download/) (ملف APK، مجاني). إذا الهاتف رفض، فعّل "السماح من هذا المصدر" ثم ثبّت.
+- **Android (بلا APK)**: افتح الرابط في Chrome ← القائمة ⋮ ← "تثبيت التطبيق".
 - **iPhone (Safari)**: زر المشاركة ⬆︎ ← "إضافة إلى الشاشة الرئيسية".
+
+## تطبيق Android
+
+التطبيق هو [Trusted Web Activity](https://developer.chrome.com/docs/android/trusted-web-activity): يفتح الموقع في شاشة كاملة، وكل تحديث للموقع يوصل للتطبيق وحدو، بلا ما تعاود تبني الـ APK.
+
+1. `android/` مولّد من `manifest.webmanifest` بـ `tools/android.mjs` ([Bubblewrap](https://github.com/GoogleChromeLabs/bubblewrap)). عاود ولّدو غير إذا بدلت الاسم، الأيقونة، الألوان ولا رقم النسخة.
+2. أي تعديل في `android/` يشغّل `.github/workflows/android.yml`، اللي يبني APK غير موقّع ويحطو في فرع `android-build`.
+3. التوقيع على جهازك (يلزم Java وopenssl):
+   ```bash
+   git fetch origin android-build
+   git show origin/android-build:barmaj-unsigned.apk > /tmp/barmaj-unsigned.apk
+   BARMAJ_SIGNING_KEY='…' node barmaj/tools/sign-apk.mjs /tmp/barmaj-unsigned.apk
+   ```
+   يكتب `download/Barmaj.apk`. مفتاح التوقيع مشفّر في `android/barmaj.keystore.enc`، والكلمة السرية (`BARMAJ_SIGNING_KEY`) ماهيش في المستودع: احفظها، بلا بيها ما تقدرش تنشر تحديث للتطبيق (Android يرفض APK بمفتاح آخر).
+4. باش يتفتح بلا شريط المتصفح، Android يتأكد من `https://houssemallouane10-ai.github.io/.well-known/assetlinks.json`. نسخة منو في `android/assetlinks.json`: حطها في مستودع `houssemallouane10-ai.github.io` (عام، فيه زيد ملف فارغ `.nojekyll`).
 
 ## الملفات
 
@@ -64,7 +80,9 @@
 | `workers/clang.worker.js`, `workers/wasi.worker.js` | مترجم C/C++ في الهاتف، وتشغيل البرنامج المترجَم |
 | `workers/stdin.js`, `sw.js` | المدخلات وقت التشغيل والعمل بلا إنترنت |
 | `vendor/` | المكتبات المبنية (CodeMirror، Sucrase، sql.js، wasmoon، marked) |
-| `tools/` | سكريبتات البناء |
+| `download/` | صفحة تحميل تطبيق Android والـ APK |
+| `android/` | مشروع تطبيق Android (مولّد) |
+| `tools/` | سكريبتات البناء والتوقيع |
 
 ## التطوير
 
