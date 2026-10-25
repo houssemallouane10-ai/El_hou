@@ -1,0 +1,32 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // A student's profile: only they can read or write it, and writes must
+    // keep the shape the app expects.
+    match /users/{uid} {
+      allow read, delete: if isOwner(uid);
+      allow create: if isOwner(uid) && validProfile()
+        && request.resource.data.createdAt == request.time;
+      allow update: if isOwner(uid) && validProfile()
+        && request.resource.data.createdAt == resource.data.createdAt;
+    }
+
+    function isOwner(uid) {
+      return request.auth != null && request.auth.uid == uid;
+    }
+
+    function validProfile() {
+      let d = request.resource.data;
+      return d.keys().hasOnly(['fullName', 'email', 'phone', 'wilayaCode',
+          'wilayaName', 'level', 'streamId', 'createdAt', 'updatedAt'])
+        && d.fullName is string && d.fullName.size() >= 3 && d.fullName.size() <= 80
+        && d.email == request.auth.token.email
+        && d.phone is string && d.phone.matches('^\\+213[567][0-9]{8}$')
+        && d.wilayaCode is int && d.wilayaCode >= 1 && d.wilayaCode <= 58
+        && d.level in ['bem', 'bac', 'university']
+        && (d.level == 'bem' ? d.streamId == null : d.streamId is string)
+        && d.updatedAt == request.time;
+    }
+  }
+}
