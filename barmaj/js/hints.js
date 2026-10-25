@@ -34,6 +34,9 @@ const rules = [
   [C, /expected (?:'|‘);(?:'|’)/, 'c.semicolon'],
   [C, /(?:'|‘)(\w+)(?:'|’) (?:undeclared|was not declared in this scope)|use of undeclared identifier '(\w+)'/, 'c.undeclared'],
   [C, /fatal error: ([\w./]+): No such file/, 'c.include'],
+  [['cpp'], /cannot use '(?:try|throw)' with exceptions disabled/, 'cpp.exceptions'],
+  [C, /integer divide by zero|Floating point exception/, 'py.zero'],
+  [C, /Stack overflow \(too much recursion\)/, 'py.recursion'],
   [C, /undefined reference to `(?:main|WinMain)/, 'c.main'],
   [['java'], /class (\w+) is public, should be declared in a file named/, 'java.public'],
   [JAVA, /cannot find symbol[\s\S]*?symbol:\s+\w+\s+(\w+)|The name '(\w+)' does not exist|Unresolved reference:? '?(\w+)/, 'java.symbol'],
@@ -78,7 +81,7 @@ export const findProblems = (langId, text, known) => {
 export const findHints = (langId, text, { exitCode, timedOut, signal } = {}) => {
   const out = [];
   if (timedOut) out.push({ id: 'gen.timeout', groups: [] });
-  if (exitCode === 139 || signal === 'SIGSEGV' || /Segmentation fault|SIGSEGV/.test(text || '')) out.push({ id: 'c.segfault', groups: [] });
+  if (/Segmentation fault|SIGSEGV/.test(text || '') || (signal === 'SIGSEGV')) out.push({ id: 'c.segfault', groups: [] });
   if (!text) return out;
   for (const [langs, re, id] of rules) {
     if (out.length >= 2) break;

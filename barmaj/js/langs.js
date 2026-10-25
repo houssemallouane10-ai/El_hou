@@ -1,5 +1,6 @@
 // The language catalog.
 //   local   engine that runs on the phone (workers/*.worker.js or the page itself)
+//   auto    prefer the cloud while online and the phone offline (slow local compilers)
 //   ce      Compiler Explorer language id (godbolt.org), runs in the cloud for free
 //   piston  language name on a Piston server, judge0: name prefix on a Judge0 server
 //   hl      syntax highlighting grammar (vendor/cm grammars)
@@ -74,7 +75,7 @@ for (const u of users) {
   },
   {
     id: 'c', name: 'C', badge: 'C', color: '#555555', ext: 'c', hl: 'cpp', popular: 1,
-    ce: 'c', piston: 'c', judge0: 'C (GCC', flags: '-O2 -std=c17 -lm',
+    local: 'clang', auto: true, ce: 'c', piston: 'c', judge0: 'C (GCC', flags: '-O2 -std=c17 -lm',
     reads: /\b(scanf|getchar|fgets|gets|getline)\s*\(/,
     tpl: `#include <stdio.h>
 
@@ -88,7 +89,7 @@ int main(void) {
   },
   {
     id: 'cpp', name: 'C++', badge: 'C++', color: '#f34b7d', ext: 'cpp', hl: 'cpp', popular: 1,
-    ce: 'c++', piston: 'c++', judge0: 'C++ (GCC', flags: '-O2 -std=c++20',
+    local: 'clang', auto: true, ce: 'c++', piston: 'c++', judge0: 'C++ (GCC', flags: '-O2 -std=c++20',
     reads: /\b(cin\s*>>|scanf\s*\(|getline\s*\(|getchar\s*\()/,
     tpl: `#include <iostream>
 #include <vector>
@@ -666,10 +667,24 @@ export const detectLang = (code) => {
   return 'python';
 };
 
-// Where a language can run, given the current settings
-export const runsOn = (l, s) => {
-  if (l.local) return 'local';
+const remote = (l, s) => {
   if ((s.piston.url && l.piston) || (s.judge0.url && l.judge0)) return 'server';
   if (l.ce && s.ce) return 'cloud';
-  return 'needs-server';
+  return null;
+};
+
+// Languages that can run both on the phone and in the cloud let the user choose
+export const hasChoice = (l, s) => !!l.local && !!remote(l, s);
+
+export const enginePref = (l, s) => s.engine?.[l.id] || (l.auto ? 'auto' : 'local');
+
+// Where a language runs right now, given the settings and the connection
+export const runsOn = (l, s) => {
+  const cloud = remote(l, s);
+  if (l.local) {
+    const pref = enginePref(l, s);
+    if (cloud && (pref === 'cloud' || (pref === 'auto' && navigator.onLine !== false))) return cloud;
+    return 'local';
+  }
+  return cloud || 'needs-server';
 };

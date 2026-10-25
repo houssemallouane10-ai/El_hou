@@ -1,6 +1,6 @@
 // Barmaj: the app controller (files, running, sheets, PWA glue)
 import { t, applyI18n, hintText, uiLangs, lang as uiLang } from './i18n.js';
-import { langs, byId, runsOn, langForName, detectLang } from './langs.js';
+import { langs, byId, runsOn, langForName, detectLang, hasChoice, enginePref } from './langs.js';
 import {
   settings, saveSettings, listFiles, getFile, saveFile, createFile, deleteFile, uniqueName,
   getHistory, snapshot, storageUsed, exportAll, importAll, read, write,
@@ -13,7 +13,9 @@ import { findProblems, findHints } from './hints.js';
 import { shareUrl, decodeShare } from './share.js';
 import { examples } from './examples.js';
 import { $, h, sheet, toast, confirmBox, promptBox, download, pickFiles, fmtBytes, fmtTime, timeAgo } from './ui.js';
-import { runWorker, stopLocal, renderWeb, renderMarkdown, preload, warmPython, resetPython } from './engines/local.js';
+import {
+  runWorker, stopLocal, renderWeb, renderMarkdown, preload, warmPython, resetPython, runClang, warmClang, localFlags,
+} from './engines/local.js';
 import { runCloud, stopCloud, ceInfo, testPiston, testJudge0 } from './engines/cloud.js';
 
 const app = $('#app');
@@ -26,6 +28,7 @@ let running = null;
 let saveTimer = null;
 let previewTimer = null;
 let installPrompt = null;
+let offerShown = false;
 let pythonVersion = null;
 
 // ---------------------------------------------------------------- layout
@@ -101,6 +104,7 @@ const engineLabel = () => {
   const e = engineOf(lang);
   if (e === 'local') {
     if (lang.local === 'python') return `${pythonVersion ? 'Pyodide ' + pythonVersion : 'Python'} · ${t('eng.local')}`;
+    if (lang.local === 'clang') return `Clang 22 · ${t('eng.local')}`;
     return t('eng.local');
   }
   const c = lang.ce && ceInfo(lang);
@@ -124,10 +128,28 @@ const refreshInputPane = () => {
   $('#inputHelp').textContent = noInput ? t('input.helpNone') : e === 'local' ? t('input.helpLocal') : t('input.helpCloud');
   $('#stdin').value = file.stdin || '';
   $('#stdin').disabled = noInput;
-  $('#runOpts').hidden = e === 'local';
+  $('#runOpts').hidden = e === 'local' && lang.local !== 'clang';
   $('#flagsRow').hidden = !lang.ce && !lang.flags;
   $('#flags').value = file.flags ?? '';
-  $('#flags').placeholder = lang.flags || '';
+  $('#flags').placeholder = (e === 'local' ? localFlags(lang.id) : lang.flags) || '';
+  const choice = hasChoice(lang, settings);
+  $('#engineRow').hidden = !choice;
+  if (choice) {
+    const pref = enginePref(lang, settings);
+    const options = [...(lang.auto ? [['auto', t('engine.auto')]] : []), ['local', t('eng.local')], ['cloud', t('eng.cloud')]];
+    $('#engineSeg').replaceChildren(...options.map(([value, label]) => h('button', {
+      type: 'button',
+      class: pref === value ? 'on' : '',
+      'aria-pressed': String(pref === value),
+      onclick: () => {
+        settings.engine = { ...settings.engine, [lang.id]: value };
+        saveSettings();
+        refreshHeader();
+        refreshInputPane();
+      },
+    }, label)));
+    $('#engineHelp').textContent = lang.auto ? t('engine.autoHelp') : '';
+  }
   $('#args').value = file.args || '';
   const n = (file.stdin || '').split('\n').filter((l) => l.trim()).length;
   $('#inputCount').hidden = !n;
@@ -253,6 +275,7 @@ const askStdin = () => new Promise((resolve) => {
 });
 
 const finishRun = (r, { kind, label }) => {
+  term.flushNow();
   running = null;
   setRunButton(false);
   if (r.stopped) { setStatus('', t('status.stopped')); term.note(t('status.stopped'), 'sys'); return; }
@@ -262,7 +285,7 @@ const finishRun = (r, { kind, label }) => {
   else if (r.timedOut) setStatus('err', t('status.timeout'));
   else setStatus('err', r.exitCode != null ? t('status.fail', { code: r.exitCode }) : t('status.error'));
   $('#engineLabel').textContent = label || engineLabel();
-  const text = r.errText || '';
+  const text = (r.errText || '').replace(/\x1b\[[\d;]*m/g, '');
   const problems = [...(r.problems || []), ...findProblems(lang.id, text, r.error)]
     .filter((p, i, all) => all.findIndex((q) => q.line === p.line) === i)
     .sort((a, b) => (a.severity === 'warning') - (b.severity === 'warning'));
@@ -300,9 +323,21 @@ const runLocalEngine = async () => {
     running: () => startClock(t('status.running')),
     waiting: (on) => (on ? setStatus('wait', t('status.waiting')) : startClock(t('status.running'))),
   };
-  if (engine !== 'python') startClock(t('status.running'));
   running = { stop: stopLocal };
-  const r = await runWorker(engine, file, ctx);
+  let r;
+  if (engine === 'clang') {
+    ctx.compiling = () => startClock(t('status.compiling'));
+    ctx.downloading = (p) => startClock(t('status.loading', { what: `${t('load.clang')} ${p}%` }));
+    r = await runClang(lang.id, file, ctx);
+    if (r.engineError && navigator.onLine === false) {
+      term.write(t('err.noClang') + '\n', 'err');
+      return { ok: false, error: null };
+    }
+    if (!r.engineError && !r.stopped && !settings.clangReady) { settings.clangReady = true; saveSettings(); }
+  } else {
+    if (engine !== 'python') startClock(t('status.running'));
+    r = await runWorker(engine, file, ctx);
+  }
   if (r.engineError) {
     term.write(t('err.engine', { e: r.engineError }) + '\n', 'err');
     return { ok: false, error: null };
@@ -341,6 +376,13 @@ const runCloudEngine = async () => {
   if (r.stderr) term.write(r.stderr.replace(/\n?$/, '\n'), 'err');
   if (!r.compileFailed && r.exitCode) term.note(`exit ${r.exitCode}`, 'sys');
   if (!r.stdout && !r.stderr && !r.compileErr && !r.exitCode) term.note('(no output)', 'sys');
+  if (lang.local === 'clang' && !settings.clangReady && !offerShown) {
+    offerShown = true;
+    term.block(h('div', { class: 'offer' },
+      h('span', { html: icon('device') }),
+      h('span', {}, t('offer.clang')),
+      h('button', { type: 'button', class: 'btn', onclick: () => downloadClang() }, t('offer.download'))));
+  }
   return {
     ...r,
     ok: !r.compileFailed && !r.timedOut && !r.exitCode,
@@ -677,6 +719,12 @@ const openSettings = () => {
     }
     pyBtn.disabled = false;
   });
+  const clangBtn = h('button', { type: 'button', class: 'btn' });
+  const paintClang = () => {
+    clangBtn.replaceChildren(...(settings.clangReady ? [h('span', { html: icon('check') }), t('settings.clangReady')] : [t('settings.getClang')]));
+  };
+  paintClang();
+  clangBtn.addEventListener('click', () => downloadClang((text) => { clangBtn.textContent = text; }).then(paintClang, () => {}));
   const storage = h('small', {}, t('settings.storage', { s: fmtBytes(storageUsed()) }));
   navigator.storage?.estimate?.().then((e) => { storage.textContent = t('settings.storage', { s: fmtBytes(e.usage || storageUsed()) }); }).catch(() => {});
   const reopen = () => { s.close(); setTimeout(openSettings, 180); };
@@ -705,7 +753,7 @@ const openSettings = () => {
       serverBox('judge0', t('settings.judge0'), testJudge0),
       h('div', { class: 'set-group' }, t('settings.offline')),
       h('p', { class: 'note' }, t('settings.offlineHint')),
-      h('div', { class: 'set col' }, pyBtn),
+      h('div', { class: 'set col' }, pyBtn, clangBtn),
       h('div', { class: 'set-group' }, t('settings.data')),
       h('div', { class: 'set col' },
         storage,
@@ -733,6 +781,26 @@ const openSettings = () => {
           },
         }))),
   });
+};
+
+// Download the C/C++ compiler (≈ 27 MB) so C and C++ also run offline
+let clangDownload = null;
+const downloadClang = (onText) => {
+  if (!clangDownload) {
+    const show = (text) => { onText?.(text); toast(text); };
+    clangDownload = warmClang((p) => onText?.(t('status.loading', { what: `${t('load.clang')} ${p}%` })))
+      .then(() => {
+        settings.clangReady = true;
+        saveSettings();
+        show(t('toast.clangReady'));
+      })
+      .catch((e) => {
+        show(t('err.engine', { e: e.message }));
+        throw e;
+      })
+      .finally(() => { clangDownload = null; });
+  }
+  return clangDownload;
 };
 
 const openAbout = () => {
@@ -935,7 +1003,10 @@ addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); installProm
 addEventListener('appinstalled', () => { installPrompt = null; toast(t('toast.installed')); });
 addEventListener('pagehide', flushSave);
 document.addEventListener('visibilitychange', () => { if (document.hidden) flushSave(); });
-const onlineState = () => { $('#offlineDot').hidden = navigator.onLine !== false; };
+const onlineState = () => {
+  $('#offlineDot').hidden = navigator.onLine !== false;
+  if (file) { refreshHeader(); refreshInputPane(); }
+};
 addEventListener('online', () => { onlineState(); toast(t('toast.online')); });
 addEventListener('offline', () => { onlineState(); toast(t('toast.offline')); });
 addEventListener('hashchange', () => { if (location.hash.startsWith('#c=')) incoming(); });

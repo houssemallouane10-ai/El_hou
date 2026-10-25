@@ -68,6 +68,10 @@
     <section class="pane pane-input" id="inputPane">
       <div class="pane-head"><h3 data-i18n="input.title">المدخلات</h3></div>
       <div class="input-body">
+        <div class="engine-row" id="engineRow" hidden>
+          <div class="engine-top"><span data-i18n="input.engine">طريقة التشغيل</span><div class="seg" id="engineSeg"></div></div>
+          <small id="engineHelp"></small>
+        </div>
         <p class="help" id="inputHelp"></p>
         <textarea id="stdin" class="field mono" dir="ltr" spellcheck="false" autocapitalize="off" autocomplete="off" data-i18n-placeholder="input.placeholder"></textarea>
         <div class="opts" id="runOpts">

@@ -9,7 +9,10 @@ export const pythonConfig = () => self.BARMAJ_PYODIDE || {
   packages: `https://cdn.jsdelivr.net/pyodide/v${PYODIDE}/full/`,
 };
 
-const workerFile = { js: 'js', ts: 'js', python: 'py', lua: 'lua', sql: 'sql' };
+const CLANG = '22.0.0-git20542-10';
+export const clangBase = () => self.BARMAJ_CLANG || `https://cdn.jsdelivr.net/npm/@yowasp/clang@${CLANG}/`;
+
+const workerFile = { js: 'js', ts: 'js', python: 'py', lua: 'lua', sql: 'sql', wasi: 'wasi' };
 let python = null;
 let current = null;
 const waiting = new Set();
@@ -47,7 +50,7 @@ const answer = async (id, value) => {
   target?.postMessage({ type: 'stdin', id, value });
 };
 
-export const runWorker = (engine, file, ctx) => new Promise((resolve) => {
+export const runWorker = (engine, file, ctx, extra = {}) => new Promise((resolve) => {
   const persistent = engine === 'python';
   const w = persistent ? pythonWorker() : new Worker(`workers/${workerFile[engine]}.worker.js`);
   let settled = false;
@@ -117,12 +120,72 @@ export const runWorker = (engine, file, ctx) => new Promise((resolve) => {
     lang: engine,
     code: file.code,
     stdin: file.stdin,
+    args: file.args,
     interactive: true,
     cfg: engine === 'python' ? pythonConfig() : undefined,
+    ...extra,
   });
 });
 
 export const stopLocal = () => current?.stop();
+
+// ---------------------------------------------------------------- C and C++ on the device
+let clang = null;
+let seq = 0;
+const compiled = new Map();
+const LOCAL_FLAGS = { c: '-O1 -std=c17', cpp: '-O1 -std=c++20' };
+
+const clangWorker = () => {
+  if (!clang) clang = new Worker('workers/clang.worker.js', { type: 'module' });
+  return clang;
+};
+
+const askClang = (msg, onProgress) => new Promise((resolve, reject) => {
+  const id = ++seq;
+  const w = clangWorker();
+  const onMsg = ({ data }) => {
+    if (data.id !== id) return;
+    if (data.type === 'progress') { onProgress?.(data.percent); return; }
+    w.removeEventListener('message', onMsg);
+    if (data.type === 'error') reject(new Error(data.message)); else resolve(data);
+  };
+  w.addEventListener('message', onMsg);
+  w.postMessage({ ...msg, id, base: clangBase() });
+});
+
+// Download the compiler ahead of time (≈ 27 MB compressed), for offline use
+export const warmClang = (onProgress) => askClang({ type: 'prefetch' }, onProgress);
+
+export const localFlags = (langId) => LOCAL_FLAGS[langId];
+
+export const runClang = async (langId, file, ctx) => {
+  const flags = file.flags ?? LOCAL_FLAGS[langId];
+  const key = `${langId}\0${flags}\0${file.code}`;
+  let result = compiled.get(key);
+  if (!result) {
+    let cancelled = false;
+    let stopCompile;
+    const stopped = new Promise((resolve) => { stopCompile = resolve; });
+    current = { stop() { cancelled = true; stopCompile({ stopped: true }); } };
+    ctx.compiling();
+    result = await Promise.race([
+      askClang({ type: 'compile', lang: langId, code: file.code, flags }, (p) => ctx.downloading(p)),
+      stopped,
+    ]).catch((e) => ({ engineError: e.message }));
+    current = null;
+    if (cancelled || result.stopped) return { ok: false, stopped: true };
+    if (result.engineError) return { ok: false, engineError: result.engineError };
+    if (result.ok) {
+      compiled.set(key, result);
+      if (compiled.size > 6) compiled.delete(compiled.keys().next().value);
+    }
+  }
+  if (result.diag) ctx.term.write(result.diag.replace(/\n?$/, '\n'), result.ok ? 'sys' : 'err');
+  if (!result.ok) return { ok: false, compileFailed: true, exitCode: result.exitCode, errText: result.diag };
+  ctx.running();
+  const r = await runWorker('wasi', file, ctx, { wasm: result.wasm.slice() });
+  return { ...r, compileTime: result.time, errText: (r.errText || '') + (result.diag || '') };
+};
 
 // ---------------------------------------------------------------- previews
 const consoleBridge = (token) => `<script>(function(){var T=${JSON.stringify(token)};function s(k,a){try{parent.postMessage({__barmaj:T,k:k,a:a.map(function(x){if(typeof x==='string')return x;try{return x instanceof Error?String(x):JSON.stringify(x)}catch(e){return String(x)}})},'*')}catch(e){}}['log','info','warn','error','debug'].forEach(function(k){var o=console[k];console[k]=function(){s(k,[].slice.call(arguments));try{o.apply(console,arguments)}catch(e){}}});addEventListener('error',function(e){s('error',[(e.message||'Error')+(e.lineno?' ('+e.lineno+':'+e.colno+')':'')])});addEventListener('unhandledrejection',function(e){s('error',['Uncaught (in promise) '+((e.reason&&e.reason.message)||e.reason)])});var m={};try{localStorage.length}catch(e){var st={getItem:function(k){return k in m?m[k]:null},setItem:function(k,v){m[k]=String(v)},removeItem:function(k){delete m[k]},clear:function(){m={}},key:function(i){return Object.keys(m)[i]||null}};Object.defineProperty(st,'length',{get:function(){return Object.keys(m).length}});try{Object.defineProperty(window,'localStorage',{value:st});Object.defineProperty(window,'sessionStorage',{value:st})}catch(e){}}})();</script>`;
