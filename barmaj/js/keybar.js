@@ -50,7 +50,7 @@ export class Keybar {
   setLanguage(lang) {
     const arrows = ['left', 'down', 'up', 'right'].map((d) =>
       `<button type="button" class="kb-key kb-ic" data-act="arrow" data-dir="${d}" aria-label="${d}">${icon(d)}</button>`).join('');
-    this.scroll.innerHTML = arrows;
+    this.scroll.replaceChildren();
     for (const k of setFor(lang)) {
       const b = document.createElement('button');
       b.type = 'button';
@@ -59,6 +59,7 @@ export class Keybar {
       b.textContent = k;
       this.scroll.append(b);
     }
+    this.scroll.insertAdjacentHTML('beforeend', arrows);
   }
 
   down(e) {

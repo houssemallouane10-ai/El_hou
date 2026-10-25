@@ -5,6 +5,9 @@ const PY = ['python'];
 const JS = ['javascript', 'typescript', 'html'];
 const JAVA = ['java', 'kotlin', 'scala', 'csharp', 'vb', 'fsharp'];
 
+// Broad rules that only apply when no specific rule matched
+const GENERIC = new Set(['py.syntax', 'js.syntax', 'c.undeclared']);
+
 const rules = [
   [PY, /NameError: name '(\w+)' is not defined/, 'py.name'],
   [PY, /IndentationError|TabError|unindent does not match|expected an indented block/, 'py.indent'],
@@ -80,6 +83,7 @@ export const findHints = (langId, text, { exitCode, timedOut, signal } = {}) => 
   for (const [langs, re, id] of rules) {
     if (out.length >= 2) break;
     if (langs !== '*' && !langs.includes(langId)) continue;
+    if (GENERIC.has(id) && out.length) continue; // only when nothing more specific matched
     const m = text.match(re);
     if (!m || out.some((h) => h.id === id)) continue;
     // Patterns with alternatives capture into different groups; keep the first one found

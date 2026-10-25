@@ -144,6 +144,7 @@ export class Term {
     fig.className = 'timg';
     const img = document.createElement('img');
     img.src = src;
+    if (src.startsWith('data:image/svg')) img.className = 'svg';
     img.alt = alt;
     img.loading = 'lazy';
     img.addEventListener('load', () => this.scroll());

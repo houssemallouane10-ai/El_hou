@@ -118,9 +118,12 @@ export const pickFiles = (accept = '', multiple = true) => new Promise((resolve)
   input.click();
 });
 
-export const fmtBytes = (n) => (n < 1024 ? `${n} B` : n < 1048576 ? `${(n / 1024).toFixed(1)} KB` : `${(n / 1048576).toFixed(1)} MB`);
+// Values with Latin units are wrapped in bidi isolates so "53 ms" stays in order inside Arabic text
+const ltr = (s) => `\u2066${s}\u2069`;
 
-export const fmtTime = (ms) => (ms == null ? '' : ms < 1000 ? `${Math.max(1, Math.round(ms))} ms` : `${(ms / 1000).toFixed(ms < 10000 ? 2 : 1)} s`);
+export const fmtBytes = (n) => ltr(n < 1024 ? `${n} B` : n < 1048576 ? `${(n / 1024).toFixed(1)} KB` : `${(n / 1048576).toFixed(1)} MB`);
+
+export const fmtTime = (ms) => (ms == null ? '' : ltr(ms < 1000 ? `${Math.max(1, Math.round(ms))} ms` : `${(ms / 1000).toFixed(ms < 10000 ? 2 : 1)} s`));
 
 export const timeAgo = (ts, lang) => {
   const rtf = new Intl.RelativeTimeFormat(lang, { numeric: 'auto' });

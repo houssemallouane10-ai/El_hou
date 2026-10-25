@@ -90,7 +90,7 @@ self.onmessage = async ({ data }) => {
   }
   lua.global.set('__barmaj_out', (s) => post('out', { text: String(s) }));
   lua.global.set('__barmaj_err', (s) => post('err', { text: String(s) }));
-  lua.global.set('__barmaj_read', () => barmajStdin.readLine());
+  lua.global.set('__barmaj_read', () => barmajStdin.readLine() ?? undefined); // wasmoon needs undefined for nil
   await lua.doString(PRELUDE);
   const start = performance.now();
   try {

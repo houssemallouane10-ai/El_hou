@@ -61,7 +61,7 @@ const setStatus = (kind, text) => {
   const el = $('#status');
   el.className = `status ${kind}`;
   $('#statusText').textContent = text;
-  $('#tabState').className = `state ${kind === 'ok' ? 'ok' : kind === 'err' ? 'err' : kind === 'run' || kind === 'wait' ? 'run' : ''}`;
+  $('#tabState').className = `state ${kind === 'ok' ? 's-ok' : kind === 'err' ? 's-err' : kind === 'run' || kind === 'wait' ? 's-run' : ''}`;
 };
 
 const startClock = (label) => {
@@ -110,7 +110,7 @@ const engineLabel = () => {
 const refreshHeader = () => {
   paintBadge($('#langBadge'), lang);
   $('#fileName').textContent = file.name;
-  $('#langName').textContent = lang.name;
+  $('#langName').replaceChildren(h('bdi', { dir: 'ltr' }, lang.name));
   const tag = engineTag(lang, true);
   tag.id = 'engTag';
   $('#engTag').replaceWith(tag);
@@ -257,7 +257,7 @@ const finishRun = (r, { kind, label }) => {
   setRunButton(false);
   if (r.stopped) { setStatus('', t('status.stopped')); term.note(t('status.stopped'), 'sys'); return; }
   const ok = r.ok;
-  if (ok) setStatus('ok', t('status.ok', { t: fmtTime(r.time) }));
+  if (ok) setStatus('ok', r.preview ? t('out.done') : t('status.ok', { t: fmtTime(r.time) }));
   else if (r.compileFailed) setStatus('err', t('status.compile'));
   else if (r.timedOut) setStatus('err', t('status.timeout'));
   else setStatus('err', r.exitCode != null ? t('status.fail', { code: r.exitCode }) : t('status.error'));
@@ -279,8 +279,7 @@ const runLocalEngine = async () => {
   if (engine === 'web' || engine === 'markdown') {
     if (settings.clearOnRun) term.clear();
     const r = engine === 'web' ? renderWeb(file, { term }) : await renderMarkdown(file, { term });
-    setStatus('ok', t('out.done'));
-    return r;
+    return { ...r, preview: true };
   }
   let errText = '';
   // The terminal, but stderr is also collected for the problems panel
@@ -290,6 +289,7 @@ const runLocalEngine = async () => {
     image: (src) => term.image(src),
     table: (...a) => term.table(...a),
     note: (...a) => term.note(...a),
+    block: (node) => term.block(node),
     clear: () => term.clear(),
     cancelAsk: () => term.cancelAsk?.(),
   };
@@ -401,8 +401,8 @@ const langRow = (l, onPick, current) => {
   paintBadge(badge, l);
   const c = l.ce && ceInfo(l);
   b.append(badge, h('span', { class: 'row-text' },
-    h('span', { class: 'row-title' }, l.name),
-    h('span', { class: 'row-sub' }, engineTag(l, false), c?.name ? h('span', { dir: 'ltr' }, ' ' + c.name) : null)));
+    h('span', { class: 'row-title' }, h('bdi', { dir: 'ltr' }, l.name)),
+    h('span', { class: 'row-sub' }, engineTag(l, false), c?.name ? h('bdi', { dir: 'ltr' }, ' ' + c.name) : null)));
   return b;
 };
 
@@ -417,12 +417,13 @@ const openLanguages = (mode = 'change') => {
     const untouched = !file.code.trim() || file.code === lang.tpl;
     if (untouched) { changeLanguage(l); return; }
     const choice = await new Promise((resolve) => {
+      const choose = (value) => () => { resolve(value); c.close(); };
       const c = sheet({
         title: l.name,
         className: 'small',
         body: h('div', { class: 'list' },
-          h('button', { type: 'button', class: 'row', onclick: () => { c.close(); resolve('new'); }, html: icon('plus') + `<span class="row-text"><span class="row-title">${t('lang.newFile')}</span></span>` }),
-          h('button', { type: 'button', class: 'row', onclick: () => { c.close(); resolve('change'); }, html: icon('edit') + `<span class="row-text"><span class="row-title">${t('lang.keep')}</span></span>` })),
+          h('button', { type: 'button', class: 'row', onclick: choose('new'), html: icon('plus') + `<span class="row-text"><span class="row-title">${t('lang.newFile')}</span></span>` }),
+          h('button', { type: 'button', class: 'row', onclick: choose('change'), html: icon('edit') + `<span class="row-text"><span class="row-title">${t('lang.keep')}</span></span>` })),
         onClose: () => resolve(null),
       });
     });
@@ -474,7 +475,7 @@ const openFiles = () => {
         badge,
         h('span', { class: 'row-text' },
           h('span', { class: 'row-title', dir: 'auto' }, f.name),
-          h('span', { class: 'row-sub' }, `${l.name} · ${timeAgo(f.updated, uiLang())} · ${fmtBytes(f.size || 0)}`)),
+          h('span', { class: 'row-sub' }, h('bdi', { dir: 'ltr' }, l.name), ` · ${timeAgo(f.updated, uiLang())} · ${fmtBytes(f.size || 0)}`)),
         h('span', { class: 'row-end' },
           act('edit', t('files.rename'), async () => { await renameFile(f.id); render(); }),
           act('copy', t('files.duplicate'), () => {
@@ -541,8 +542,8 @@ const openExamples = () => {
     return h('button', { type: 'button', class: 'row', onclick: () => { s.close(); newFile(l, { code: ex.code, name: ex.name, stdin: ex.stdin }); } },
       badge,
       h('span', { class: 'row-text' },
-        h('span', { class: 'row-title' }, ex.title[uiLang()] || ex.title.en),
-        h('span', { class: 'row-sub' }, engineTag(l, false), h('span', { dir: 'ltr' }, ' ' + ex.name))));
+        h('span', { class: 'row-title' }, (ex.title[uiLang()] || ex.title.en).replace(/^[^:]+:\s*/, '')),
+        h('span', { class: 'row-sub' }, engineTag(l, false), h('bdi', { dir: 'ltr' }, ' ' + ex.name))));
   }));
   s = sheet({ title: t('menu.examples'), body: listEl });
 };

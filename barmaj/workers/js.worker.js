@@ -163,7 +163,13 @@ let mainDone = false;
 let pending = 0;
 const timeouts = new Set();
 const intervals = new Set();
-const native = { setTimeout, clearTimeout, setInterval, clearInterval, fetch: self.fetch };
+const native = {
+  setTimeout: setTimeout.bind(self),
+  clearTimeout: clearTimeout.bind(self),
+  setInterval: setInterval.bind(self),
+  clearInterval: clearInterval.bind(self),
+  fetch: self.fetch?.bind(self),
+};
 
 const where = (e) => {
   const stack = String(e?.stack || '');
@@ -259,9 +265,10 @@ self.onmessage = async ({ data }) => {
       filePath: fileName,
     }).code;
   } catch (e) {
-    const m = String(e.message).match(/\((\d+):(\d+)\)/);
-    err(`SyntaxError: ${e.message}\n`);
-    post('done', { ok: false, time: 0, error: { name: 'SyntaxError', message: e.message, line: m ? +m[1] : 0, col: m ? +m[2] + 1 : 0 } });
+    const message = String(e.message).replace(/^Error transforming [^:]*:\s*/, '');
+    const m = message.match(/\((\d+):(\d+)\)/);
+    err(`SyntaxError: ${message}\n`);
+    post('done', { ok: false, time: 0, error: { name: 'SyntaxError', message, line: m ? +m[1] : 0, col: m ? +m[2] + 1 : 0 } });
     return;
   }
   started = performance.now();

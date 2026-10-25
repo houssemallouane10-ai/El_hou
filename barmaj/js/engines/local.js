@@ -83,7 +83,18 @@ export const runWorker = (engine, file, ctx) => new Promise((resolve) => {
         ctx.term.table(m.columns, m.rows, m.sql ? `${m.sql.length > 90 ? m.sql.slice(0, 90) + '…' : m.sql} · ${t('out.rows', { n: m.total })}` : null);
         break;
       case 'sqlinfo':
-        ctx.term.note(`✓ ${m.sql.split('\n')[0].slice(0, 70)} — ${t('out.changes', { n: m.changes })}`, 'ok');
+        {
+          const note = document.createElement('div');
+          note.className = 'tnote k-ok';
+          note.textContent = `✓ ${m.sql.split('\n')[0].slice(0, 70)}`;
+          if (m.changes) {
+            const info = document.createElement('bdi');
+            info.className = 'tinfo';
+            info.textContent = t('out.changes', { n: m.changes });
+            note.append(' ', info);
+          }
+          ctx.term.block(note);
+        }
         break;
       case 'stdin':
         waiting.add(m.id);
