@@ -400,7 +400,7 @@ const runCloudEngine = async () => {
     term.block(h('div', { class: 'offer' },
       h('span', { html: icon('device') }),
       h('span', {}, t('offer.clang')),
-      h('button', { type: 'button', class: 'btn', onclick: () => downloadClang() }, t('offer.download'))));
+      h('button', { type: 'button', class: 'btn', onclick: (e) => clangButton(e.currentTarget, () => {}) }, t('offer.download'))));
   }
   return {
     ...r,
@@ -743,7 +743,8 @@ const openSettings = () => {
     clangBtn.replaceChildren(...(settings.clangReady ? [h('span', { html: icon('check') }), t('settings.clangReady')] : [t('settings.getClang')]));
   };
   paintClang();
-  clangBtn.addEventListener('click', () => downloadClang((text) => { clangBtn.textContent = text; }).then(paintClang, () => {}));
+  clangBtn.addEventListener('click', () => clangButton(clangBtn, paintClang));
+  if (clangDownload) clangButton(clangBtn, paintClang);
   const storage = h('small', {}, t('settings.storage', { s: fmtBytes(storageUsed()) }));
   navigator.storage?.estimate?.().then((e) => { storage.textContent = t('settings.storage', { s: fmtBytes(e.usage || storageUsed()) }); }).catch(() => {});
   const reopen = () => { s.close(); setTimeout(openSettings, 180); };
@@ -907,24 +908,51 @@ const openSnap = async () => {
   });
 };
 
-// Download the C/C++ compiler (≈ 27 MB) so C and C++ also run offline
+// Download the C/C++ compiler (≈ 27 MB) so C and C++ also run offline.
+// Every button that asks follows the same download, even one opened later.
 let clangDownload = null;
+let clangText = '';
+const clangWatchers = new Set();
 const downloadClang = (onText) => {
+  if (onText) {
+    clangWatchers.add(onText);
+    if (clangText) onText(clangText);
+  }
   if (!clangDownload) {
-    const show = (text) => { onText?.(text); toast(text); };
-    clangDownload = warmClang((p) => onText?.(t('status.loading', { what: `${t('load.clang')} ${p}%` })))
+    const show = (text) => {
+      clangText = text;
+      clangWatchers.forEach((f) => f(text));
+    };
+    show(t('status.loading', { what: t('load.clang') }));
+    toast(clangText);
+    clangDownload = warmClang((p) => show(t('status.loading', { what: `${t('load.clang')} ${p}%` })))
       .then(() => {
         settings.clangReady = true;
         saveSettings();
         show(t('toast.clangReady'));
+        toast(clangText);
       })
       .catch((e) => {
-        show(t('err.engine', { e: e.message }));
+        const net = !navigator.onLine || /fetch|network|import|load failed/i.test(e.message);
+        show(net ? t('err.clangNet') : t('err.engine', { e: e.message }));
+        toast(clangText, { kind: 'bad' });
         throw e;
       })
-      .finally(() => { clangDownload = null; });
+      .finally(() => {
+        clangDownload = null;
+        clangText = '';
+        clangWatchers.clear();
+      });
   }
   return clangDownload;
+};
+
+// Shows the download on a button and keeps it busy until it ends
+const clangButton = (btn, done) => {
+  btn.disabled = true;
+  downloadClang((text) => { btn.textContent = text; })
+    .then(done, () => {})
+    .finally(() => { btn.disabled = false; });
 };
 
 const openAbout = () => {
@@ -1062,7 +1090,8 @@ const registerSW = async () => {
     const offerUpdate = (worker) => {
       toast(t('toast.update'), { action: t('toast.updateBtn'), onAction: () => worker.postMessage({ type: 'skipWaiting' }) });
     };
-    if (reg.waiting && navigator.serviceWorker.controller) offerUpdate(reg.waiting);
+    // An update downloaded during an earlier visit: apply it now, before any work starts
+    if (reg.waiting && navigator.serviceWorker.controller) reg.waiting.postMessage({ type: 'skipWaiting' });
     reg.addEventListener('updatefound', () => {
       const w = reg.installing;
       w?.addEventListener('statechange', () => {
