@@ -24,6 +24,11 @@ export const preload = (engine) => {
   if (engine === 'python') pythonWorker().postMessage({ type: 'boot', cfg: pythonConfig() });
 };
 
+// Drop an idle Python worker (for example one started before the service worker took control)
+export const resetPython = () => {
+  if (python && !current) { python.terminate(); python = null; }
+};
+
 // Python stays loaded for the next run; the user can also download it ahead of time
 export const warmPython = () => new Promise((resolve, reject) => {
   const w = pythonWorker();
@@ -73,6 +78,7 @@ export const runWorker = (engine, file, ctx) => new Promise((resolve) => {
       case 'image': ctx.term.image(m.src); break;
       case 'loading': ctx.loading(m.what === 'python' ? t('load.python') : t('load.packages', { list: m.list })); break;
       case 'running': ctx.running(); break;
+      case 'ready': ctx.ready?.(m.version); break;
       case 'table':
         ctx.term.table(m.columns, m.rows, m.sql ? `${m.sql.length > 90 ? m.sql.slice(0, 90) + '…' : m.sql} · ${t('out.rows', { n: m.total })}` : null);
         break;

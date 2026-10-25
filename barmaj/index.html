@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
+<title>برمج · Barmaj</title>
+<meta name="description" content="برمج: محرر كود احترافي للهاتف يشغّل أكثر من 50 لغة برمجة. Python وJavaScript وSQL وLua وHTML تخدم بلا إنترنت، وC وC++ وJava وغيرها في السحابة مجانًا.">
+<meta name="theme-color" content="#0c0f14">
+<meta name="color-scheme" content="dark light">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Barmaj">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta property="og:title" content="برمج · Barmaj">
+<meta property="og:description" content="شغّل كل لغات البرمجة من هاتفك · Run every programming language from your phone">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap">
+<link rel="stylesheet" href="css/app.css">
+<link rel="modulepreload" href="vendor/cm/cm.js">
+<script>
+  // Apply the saved theme and interface language before the first paint
+  try {
+    var s = JSON.parse(localStorage.getItem('barmaj:settings') || '{}');
+    if (s.theme === 'dark' || s.theme === 'light') document.documentElement.dataset.theme = s.theme;
+    if (s.uiLang === 'fr' || s.uiLang === 'en') { document.documentElement.lang = s.uiLang; document.documentElement.dir = 'ltr'; }
+  } catch (e) {}
+</script>
+</head>
+<body>
+<div id="app" class="app" data-tab="code">
+  <header class="bar">
+    <button type="button" class="ib" id="menuBtn" data-i18n-title="menu"><i data-icon="menu"></i></button>
+    <button type="button" class="chip" id="langBtn" aria-haspopup="dialog">
+      <span class="badge" id="langBadge"></span>
+      <span class="chip-text">
+        <span class="chip-file" id="fileName"></span>
+        <span class="chip-sub"><span id="langName"></span><span class="eng" id="engTag"></span></span>
+      </span>
+      <i data-icon="chevron" class="chev"></i>
+    </button>
+    <div class="bar-tools">
+      <button type="button" class="ib" data-act="files" data-i18n-title="menu.files"><i data-icon="folder"></i></button>
+      <button type="button" class="ib" data-act="share" data-i18n-title="menu.share"><i data-icon="share"></i></button>
+      <button type="button" class="ib" data-act="settings" data-i18n-title="menu.settings"><i data-icon="settings"></i></button>
+    </div>
+    <span class="offline-dot" id="offlineDot" hidden><i data-icon="wifiOff"></i></span>
+    <button type="button" class="run" id="runBtn">
+      <span class="run-ic"><i data-icon="play"></i></span>
+      <span class="run-label" data-i18n="run">شغّل</span>
+    </button>
+  </header>
+
+  <nav class="tabs" role="tablist">
+    <button type="button" role="tab" data-tab="code" aria-selected="true"><span data-i18n="tab.code">الكود</span></button>
+    <button type="button" role="tab" data-tab="input" aria-selected="false"><span data-i18n="tab.input">المدخلات</span><b class="count" id="inputCount" hidden></b></button>
+    <button type="button" role="tab" data-tab="output" aria-selected="false"><span data-i18n="tab.output">النتيجة</span><i class="state" id="tabState"></i></button>
+  </nav>
+
+  <main class="panes">
+    <section class="pane pane-code" id="codePane" dir="ltr">
+      <div id="editor" class="editor"></div>
+    </section>
+
+    <section class="pane pane-input" id="inputPane">
+      <div class="pane-head"><h3 data-i18n="input.title">المدخلات</h3></div>
+      <div class="input-body">
+        <p class="help" id="inputHelp"></p>
+        <textarea id="stdin" class="field mono" dir="ltr" spellcheck="false" autocapitalize="off" autocomplete="off" data-i18n-placeholder="input.placeholder"></textarea>
+        <div class="opts" id="runOpts">
+          <label class="opt" id="flagsRow">
+            <span data-i18n="input.flags">خيارات المترجم</span>
+            <input type="text" id="flags" class="field mono" dir="ltr" spellcheck="false" autocapitalize="off">
+          </label>
+          <label class="opt">
+            <span><span data-i18n="input.args">وسائط البرنامج</span> <small data-i18n="input.argsHint"></small></span>
+            <input type="text" id="args" class="field mono" dir="ltr" spellcheck="false" autocapitalize="off">
+          </label>
+        </div>
+      </div>
+    </section>
+
+    <section class="pane pane-output" id="outputPane">
+      <div class="out-head">
+        <span class="status" id="status"><i class="sdot"></i><span id="statusText" data-i18n="status.idle">جاهز</span></span>
+        <span class="engine-label" id="engineLabel"></span>
+        <span class="grow"></span>
+        <button type="button" class="ib sm" id="copyOut" data-i18n-title="out.copy"><i data-icon="copy"></i></button>
+        <button type="button" class="ib sm" id="clearOut" data-i18n-title="out.clear"><i data-icon="trash"></i></button>
+      </div>
+      <div class="term" id="term" role="log" aria-live="polite" dir="ltr"></div>
+    </section>
+  </main>
+
+  <div class="keybar" id="keybar" dir="ltr"></div>
+</div>
+
+<noscript><p class="noscript">Barmaj needs JavaScript.</p></noscript>
+<script type="module" src="js/app.js"></script>
+</body>
+</html>

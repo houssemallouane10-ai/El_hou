@@ -1,9 +1,8 @@
-// Builds ../vendor from npm packages and writes ../precache.json,
-// the list of files the service worker stores for offline use.
+// Builds ../vendor from npm packages, then stamps sw.js (see stamp.mjs).
 //   cd barmaj/tools && npm ci && npm run build
 import { build } from 'esbuild';
-import { cp, mkdir, readdir, readFile, rm, writeFile } from 'node:fs/promises';
-import { dirname, join, relative } from 'node:path';
+import { cp, mkdir, rm } from 'node:fs/promises';
+import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -49,16 +48,5 @@ const copies = [
 ];
 for (const [from, to] of copies) await cp(mod(from), join(vendor, to));
 
-// Everything the app needs offline: the shell plus the vendor files.
-const walk = async (dir) => (await Promise.all((await readdir(dir, { withFileTypes: true })).map((e) => {
-  const p = join(dir, e.name);
-  return e.isDirectory() ? walk(p) : [p];
-}))).flat();
-const skip = /(\.LICENSE|\.md|\.map)$|^(tools|precache\.json|sw\.js)/;
-const files = (await walk(app))
-  .map((p) => relative(app, p).split('\\').join('/'))
-  .filter((p) => !p.startsWith('tools/') && !skip.test(p))
-  .sort();
-const pkg = JSON.parse(await readFile(join(here, 'package.json'), 'utf8'));
-await writeFile(join(app, 'precache.json'), JSON.stringify({ files: ['./', ...files.filter((f) => f !== 'index.html')], deps: pkg.devDependencies }, null, 1) + '\n');
-console.log(`vendor built, ${files.length} files in precache.json`);
+console.log('vendor built');
+await import('./stamp.mjs');

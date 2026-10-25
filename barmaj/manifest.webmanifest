@@ -1,0 +1,32 @@
+{
+  "name": "برمج · Barmaj",
+  "short_name": "Barmaj",
+  "description": "Run every programming language from your phone: Python, JavaScript, SQL, Lua and HTML offline, C, C++, Java and 40 more in the cloud.",
+  "id": "./",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0c0f14",
+  "theme_color": "#11151c",
+  "lang": "ar",
+  "dir": "rtl",
+  "categories": ["developer", "education", "productivity"],
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+    { "src": "icons/icon.svg", "sizes": "any", "type": "image/svg+xml" }
+  ],
+  "shortcuts": [
+    { "name": "Python", "url": "./?new=python", "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }] },
+    { "name": "C++", "url": "./?new=cpp", "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }] },
+    { "name": "JavaScript", "url": "./?new=javascript", "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }] },
+    { "name": "HTML", "url": "./?new=html", "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }] }
+  ],
+  "share_target": {
+    "action": "./",
+    "method": "GET",
+    "params": { "title": "title", "text": "text", "url": "url" }
+  }
+}
