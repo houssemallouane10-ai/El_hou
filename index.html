@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>مدرّج · مباريات اليوم</title>
+<meta name="description" content="مدرّج: مباريات الأمس واليوم والغد، نتائج مباشرة، توقعات مبنية على الأرقام، ومشغل بث بكل الجودات ولغات تعليق متعددة.">
+<meta name="theme-color" content="#08100e">
+<meta property="og:title" content="مدرّج · مباريات اليوم مباشرة">
+<meta property="og:description" content="نتائج مباشرة، توقعات، ومشغل بث بكل الجودات.">
+<meta property="og:type" content="website">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%2308100e'/%3E%3Cellipse cx='16' cy='16' rx='12' ry='8.5' fill='none' stroke='%23e9efe9' stroke-width='2.2'/%3E%3Cpath d='M13.6 12.4v7.2l6-3.6z' fill='%23f4b740'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://site.api.espn.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;800&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=Reem+Kufi:wght@500;700&display=swap">
+<link rel="stylesheet" href="assets/css/style.css">
+<script>
+  // Apply saved theme and language before first paint
+  try {
+    var th = JSON.parse(localStorage.getItem('mdrj:theme'));
+    if (th === 'light' || th === 'dark') document.documentElement.dataset.theme = th;
+    var lg = JSON.parse(localStorage.getItem('mdrj:lang'));
+    if (lg === 'fr' || lg === 'en') { document.documentElement.lang = lg; document.documentElement.dir = 'ltr'; }
+  } catch (e) {}
+</script>
+</head>
+<body>
+<a class="skip" href="#app">تخطي إلى المحتوى</a>
+
+<header class="top">
+  <div class="wrap top-in">
+    <a class="brand" href="#/" aria-label="مدرّج">
+      <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true">
+        <ellipse cx="16" cy="16" rx="14" ry="10" fill="none" stroke="currentColor" stroke-width="2.4"/>
+        <ellipse cx="16" cy="16" rx="8.5" ry="5.6" fill="none" stroke="currentColor" stroke-width="1.3" opacity=".5"/>
+        <path d="M13.6 12.4v7.2l6-3.6z" class="brand-play"/>
+      </svg>
+      <span class="brand-name">مدرّج</span>
+    </a>
+    <nav class="mainnav" aria-label="main">
+      <a href="#/today" data-route="home" data-i18n="nav.matches">المباريات</a>
+      <a href="#/live" data-route="live" class="nav-live"><i class="dot"></i><span data-i18n="nav.live">مباشر</span><b id="liveCount" hidden>0</b></a>
+      <a href="#/predictions" data-route="predictions" data-i18n="nav.predictions">التوقعات</a>
+    </nav>
+    <div class="top-actions">
+      <label class="langsel">
+        <span class="sr" data-i18n="lang.label">اللغة</span>
+        <select id="langSelect">
+          <option value="ar">العربية</option>
+          <option value="fr">Français</option>
+          <option value="en">English</option>
+        </select>
+      </label>
+      <button type="button" id="themeBtn" class="iconbtn" data-i18n-attr="aria-label:theme.toggle" aria-label="تبديل الوضع الليلي"></button>
+    </div>
+  </div>
+  <div class="ticker" hidden>
+    <div class="ticker-track" id="tickerTrack"></div>
+  </div>
+</header>
+
+<main id="app" tabindex="-1">
+  <div class="wrap boot"><span class="spin"></span></div>
+</main>
+
+<noscript><p class="wrap">يحتاج الموقع إلى تفعيل JavaScript.</p></noscript>
+
+<footer class="foot">
+  <div class="wrap foot-in">
+    <div class="foot-brand">
+      <span class="brand-name">مدرّج</span>
+      <p data-i18n="footer.legal">مدرّج يعرض فقط روابط البث التي يضيفها صاحب الموقع من مصادر يملك حق بثها. حقوق المباريات تعود لأصحابها.</p>
+    </div>
+    <p class="foot-data" data-i18n="footer.data">بيانات المباريات: ESPN. الشعارات ملك أصحابها.</p>
+  </div>
+</footer>
+
+<div id="toasts" class="toasts" role="status" aria-live="polite"></div>
+
+<script src="assets/vendor/hls.min.js" defer></script>
+<script type="module" src="assets/js/app.js"></script>
+</body>
+</html>

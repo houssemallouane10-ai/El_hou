@@ -1,0 +1,39 @@
+{
+  "_help": "Add stream links you have the rights to show. 'matches' takes an ESPN event id or 'home-vs-away' (lowercase, hyphens). Each source: label, lang (ar, fr, en, es, de, it, pt, tr or multi), type (hls, mp4 or iframe) and url. Anything without its own entry falls back to 'leagues', then 'default'.",
+
+  "channels": {
+    "demo-multilang": {
+      "name": "Demo · 5 languages",
+      "demo": true,
+      "sources": [
+        { "label": "Server 1 · Multi", "lang": "multi", "type": "hls", "url": "https://storage.googleapis.com/shaka-demo-assets/angel-one-hls/hls.m3u8" },
+        { "label": "Server 2 · Multi", "lang": "multi", "type": "hls", "url": "https://storage.googleapis.com/shaka-demo-assets/angel-one-hls-apple/master.m3u8" }
+      ]
+    },
+    "demo-fhd": {
+      "name": "Demo · 1080p60",
+      "demo": true,
+      "sources": [
+        { "label": "Server 3 · FHD 60fps", "lang": "en", "type": "hls", "url": "https://storage.googleapis.com/shaka-demo-assets/apple-advanced-stream-ts/master.m3u8" }
+      ]
+    },
+    "demo-hd": {
+      "name": "Demo · 720p",
+      "demo": true,
+      "sources": [
+        { "label": "Server 4 · HD", "lang": "en", "type": "hls", "url": "https://storage.googleapis.com/shaka-demo-assets/bbb-dark-truths-hls/hls.m3u8" }
+      ]
+    }
+  },
+
+  "default": ["demo-multilang", "demo-fhd", "demo-hd"],
+
+  "leagues": {},
+
+  "matches": {
+    "example-home-vs-example-away": [
+      { "label": "Arabic HD", "lang": "ar", "type": "hls", "url": "https://your-licensed-cdn.example/arabic/master.m3u8" },
+      { "label": "French HD", "lang": "fr", "type": "hls", "url": "https://your-licensed-cdn.example/french/master.m3u8" }
+    ]
+  }
+}
