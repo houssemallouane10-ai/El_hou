@@ -1141,6 +1141,77 @@ h1, h2, h3, h4 { font-family: var(--font-display); font-weight: 700; line-height
 .link-more { color: var(--accent); font-weight: 600; font-size: 14px; width: max-content; }
 .link-more:hover { text-decoration: underline; }
 
+/* ---------- Highlights ---------- */
+
+.hls { padding-block: 32px 64px; display: flex; flex-direction: column; gap: 18px; }
+.hl-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr)); gap: 18px; }
+.hcard { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.hthumb {
+  position: relative;
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  padding: 0;
+  border: 0;
+  border-radius: var(--r);
+  overflow: hidden;
+  background: var(--surface-3);
+}
+.hthumb img { display: block; width: 100%; height: 100%; object-fit: cover; transition: transform 0.4s ease; }
+.hthumb:hover img { transform: scale(1.04); }
+.hplay {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: rgba(244, 183, 64, 0.94);
+  color: #1b1303;
+  box-shadow: 0 0 0 8px rgba(244, 183, 64, 0.18);
+  transition: transform 0.2s ease;
+}
+.hthumb:hover .hplay { transform: scale(1.08); }
+.hplay .ic { width: 24px; height: 24px; margin-left: 3px; }
+.hleague { position: absolute; top: 8px; inset-inline-start: 8px; padding: 2px 8px; border-radius: 6px; background: rgba(0, 0, 0, 0.62); color: #fff; font-size: 11.5px; }
+.hmeta h3 {
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 14.5px;
+  line-height: 1.45;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.hmeta p { margin: 4px 0 0; display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 12.5px; color: var(--fg-3); }
+.hmeta .link-more { display: inline-block; margin-top: 4px; font-size: 13px; }
+
+.hl-strip-wrap { margin-top: 12px; }
+.hl-strip-wrap:empty { display: none; }
+.hl-strip-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.hl-strip { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(240px, 280px); gap: 16px; overflow-x: auto; padding-bottom: 8px; scroll-snap-type: x mandatory; scrollbar-width: thin; }
+.hl-strip .hcard { scroll-snap-align: start; }
+
+.hl-dialog {
+  width: min(960px, calc(100vw - 24px));
+  max-width: none;
+  padding: 0;
+  border: 0;
+  border-radius: var(--r-lg);
+  overflow: hidden;
+  background: var(--surface);
+  color: var(--fg);
+  box-shadow: 0 30px 90px rgba(0, 0, 0, 0.6);
+}
+.hl-dialog::backdrop { background: rgba(4, 8, 7, 0.8); backdrop-filter: blur(4px); }
+.hl-modal header { display: flex; align-items: center; gap: 12px; padding: 10px 12px; }
+.hl-modal h3 { flex: 1; min-width: 0; font-family: var(--font-body); font-size: 15px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hl-frame { aspect-ratio: 16 / 9; background: #000; }
+.hl-frame iframe { display: block; width: 100%; height: 100%; border: 0; }
+
 /* ---------- Footer & toasts ---------- */
 
 .foot { border-top: 1px solid var(--line); background: var(--bg-2); padding-block: 28px calc(28px + env(safe-area-inset-bottom, 0px)); }
@@ -1192,7 +1263,7 @@ h1, h2, h3, h4 { font-family: var(--font-display); font-weight: 700; line-height
   .top-in { gap: 10px; height: 56px; }
   .brand-name { font-size: 20px; }
   .mainnav { position: fixed; z-index: 55; inset: auto 0 0; margin: 0; justify-content: space-around; padding: 6px max(10px, env(safe-area-inset-left, 0px)) calc(6px + env(safe-area-inset-bottom, 0px)) max(10px, env(safe-area-inset-right, 0px)); background: color-mix(in srgb, var(--bg) 90%, transparent); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border-top: 1px solid var(--line); }
-  .mainnav a { flex: 1; justify-content: center; font-size: 13px; padding-inline: 6px; }
+  .mainnav a { flex: 1; justify-content: center; gap: 4px; font-size: 12.5px; padding-inline: 2px; }
   .foot { padding-bottom: calc(84px + env(safe-area-inset-bottom, 0px)); }
   .toasts { bottom: calc(76px + env(safe-area-inset-bottom, 0px)); }
 

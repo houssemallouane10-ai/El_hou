@@ -1,0 +1,332 @@
+// Finds the official highlight video for every finished match.
+// Runs in GitHub Actions on a schedule: reads finished fixtures from ESPN,
+// reads the public YouTube feeds of official league channels, matches
+// videos to fixtures by team names and time, and writes data/highlights.json.
+//
+// Usage: node scripts/highlights.mjs
+
+import { readFile, writeFile, mkdir } from 'node:fs/promises';
+import { LEAGUES, API } from '../assets/js/config.js';
+
+const DATA_DIR = new URL('../data/', import.meta.url);
+const OUT = new URL('highlights.json', DATA_DIR);
+const CHANNEL_CACHE = new URL('yt-channels.json', DATA_DIR);
+
+const DAYS_BACK = 3;
+const KEEP_DAYS = 10;
+const LATEST_MAX = 120;
+const MATCH_WINDOW_H = 72;
+
+// Official channels that publish match highlights. `id` is used when known,
+// otherwise the channel id is discovered once from the handle page and cached.
+export const SOURCES = [
+  { key: 'premierleague', name: 'Premier League', id: 'UCG5qGWdu8nIRZqJ_GgDwQ-w', handles: ['@premierleague'], leagues: ['eng.1'] },
+  { key: 'laliga', name: 'LALIGA', handles: ['@LaLiga', '@laligaeasports'], leagues: ['esp.1'] },
+  { key: 'seriea', name: 'Serie A', id: 'UCBJeMCIeLQos7wacox4hmLQ', handles: ['@SerieA'], leagues: ['ita.1'] },
+  { key: 'bundesliga', name: 'Bundesliga', id: 'UC6UL29enLNe4mqwTfAyeNuw', handles: ['@bundesliga'], leagues: ['ger.1'] },
+  { key: 'ligue1', name: 'Ligue 1', handles: ['@Ligue1', '@ligue1mcdonalds'], leagues: ['fra.1'] },
+  { key: 'golazo', name: 'CBS Sports Golazo', handles: ['@CBSSportsGolazo'], leagues: ['uefa.champions', 'uefa.europa', 'uefa.europa.conf', 'ita.1'] },
+  { key: 'tntfootball', name: 'TNT Sports Football', handles: ['@footballontnt', '@tntsports'], leagues: ['uefa.champions', 'uefa.europa', 'uefa.europa.conf', 'eng.1'] },
+  { key: 'mls', name: 'Major League Soccer', handles: ['@MLS'], leagues: ['usa.1'] },
+  { key: 'spl', name: 'Roshn Saudi League', handles: ['@SPL', '@SaudiProLeague'], leagues: ['ksa.1'] },
+  { key: 'caf', name: 'CAF TV', handles: ['@CAFTV', '@CAFonline'], leagues: ['caf.champions', 'caf.confed'] },
+  { key: 'ligaportugal', name: 'Liga Portugal', handles: ['@LigaPortugal'], leagues: ['por.1'] },
+  { key: 'eredivisie', name: 'Eredivisie', handles: ['@eredivisie'], leagues: ['ned.1'] },
+  { key: 'efl', name: 'EFL', handles: ['@EFL'], leagues: ['eng.league_cup'] },
+];
+
+// Word lists use letter-aware boundaries so accented words (résumé) match
+const words = (list) => new RegExp(`(?:^|[^\\p{L}\\p{N}])(?:${list})(?![\\p{L}\\p{N}])`, 'iu');
+const HIGHLIGHT_WORDS = new RegExp(`${words('highlights?|resumen|r[eé]sum[eé]|resumo|sintesi|samenvatting|özet|ozet|goals?|goles|buts').source}|ملخص|أهداف|اهداف`, 'iu');
+const NOT_HIGHLIGHT = words('press conference|conf[eé]rence de presse|rueda de prensa|preview|reaction|interview|training|entrenamiento|behind the scenes|unboxing|live stream|watchalong|classic|rewind|throwback|on this day|retro|women|wsl|u1[789]|u2[13]|academy|f[eé]minin[ea]?|femenino|frauen|femminile');
+
+// Titles that name an earlier season (e.g. "Serie A 2019/20") are archive clips
+function oldSeason(title) {
+  const now = new Date();
+  const current = now.getUTCMonth() >= 6 ? now.getUTCFullYear() : now.getUTCFullYear() - 1;
+  const years = [...title.matchAll(/(?:^|\D)(20\d\d)\s*[/-]\s*(\d\d)(?!\d)/g)].map((m) => Number(m[1]));
+  return years.some((y) => y < current);
+}
+
+// Short forms used in highlight titles that the ESPN names don't contain
+const ALIASES = {
+  'manchester united': ['man united', 'man utd'],
+  'manchester city': ['man city'],
+  'tottenham hotspur': ['spurs', 'tottenham'],
+  'wolverhampton wanderers': ['wolves'],
+  'brighton & hove albion': ['brighton'],
+  'nottingham forest': ["nott'm forest", 'forest'],
+  'paris saint-germain': ['psg', 'paris sg'],
+  'fc cologne': ['koln', 'cologne', 'fc koln'],
+  'olympique de marseille': ['marseille', 'om'],
+  marseille: ['om'],
+  'olympique lyonnais': ['lyon', 'ol'],
+  lyon: ['ol'],
+  'bayern munich': ['bayern', 'fc bayern', 'bayern munchen', 'bayern muenchen'],
+  'borussia dortmund': ['dortmund', 'bvb'],
+  'bayer leverkusen': ['leverkusen', 'bayer 04'],
+  'borussia monchengladbach': ['gladbach', 'monchengladbach'],
+  'eintracht frankfurt': ['frankfurt', 'sge'],
+  'internazionale': ['inter', 'inter milan'],
+  'inter milan': ['inter'],
+  'ac milan': ['milan'],
+  'as roma': ['roma'],
+  juventus: ['juve'],
+  'atletico madrid': ['atletico', 'atleti', 'atletico de madrid'],
+  barcelona: ['barca', 'fc barcelona'],
+  'athletic club': ['athletic', 'athletic bilbao'],
+  'real betis': ['betis'],
+  'celta vigo': ['celta'],
+  'sporting cp': ['sporting'],
+  'al hilal': ['al-hilal', 'alhilal'],
+  'al nassr': ['al-nassr', 'alnassr'],
+  'al ittihad': ['al-ittihad', 'ittihad'],
+  'al ahli': ['al-ahli'],
+};
+
+const ALIAS_MAP = Object.fromEntries(Object.entries(ALIASES).map(([k, v]) => [norm(k).trim(), v]));
+
+const STRIP = /\b(fc|cf|afc|ac|as|ss|ssc|sc|us|rc|rcd|cd|ud|sd|club|de|calcio|1\.|sv|vfb|vfl|tsg|fsv)\b/g;
+
+export function norm(s) {
+  return ` ${String(s || '')
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .toLowerCase()
+    .replace(/ß/g, 'ss')
+    .replace(/[^a-z0-9؀-ۿ&']+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()} `;
+}
+
+export function teamNames(team) {
+  const out = new Set();
+  [team.displayName, team.shortDisplayName, team.name, team.location].filter(Boolean).forEach((n) => {
+    const full = norm(n).trim();
+    out.add(full);
+    const stripped = norm(full.replace(STRIP, ' ')).trim();
+    if (stripped.length >= 3) out.add(stripped);
+    (ALIAS_MAP[full] || ALIAS_MAP[stripped] || []).forEach((a) => out.add(norm(a).trim()));
+  });
+  return [...out].filter((n) => n.length >= 2);
+}
+
+const hasName = (title, names) => names.some((n) => title.includes(` ${n} `));
+
+/** Scores how well a video fits a fixture; 0 means no match. */
+export function scoreVideo(video, match) {
+  const title = norm(video.title);
+  if (NOT_HIGHLIGHT.test(video.title) || oldSeason(video.title)) return 0;
+  if (!hasName(title, match.homeNames) || !hasName(title, match.awayNames)) return 0;
+  const hours = (Date.parse(video.published) - Date.parse(match.date)) / 3_600_000;
+  if (hours < 1 || hours > MATCH_WINDOW_H) return 0;
+  let score = 10;
+  // A score in the title must be this match's result, otherwise it's another game
+  const shown = video.title.match(/(?:^|[^\d])(\d{1,2})\s*[-–:]\s*(\d{1,2})(?!\d)/);
+  if (shown && match.score?.every((v) => v !== undefined && v !== null)) {
+    const [h, a] = match.score.map(Number);
+    const [x, y] = [Number(shown[1]), Number(shown[2])];
+    if ((x === h && y === a) || (x === a && y === h)) score += 5;
+    else return 0;
+  }
+  if (HIGHLIGHT_WORDS.test(video.title)) score += 10;
+  if (/extended|full highlights|resumen completo/i.test(video.title)) score += 3;
+  if (video.leagues.includes(match.league)) score += 6;
+  score -= Math.min(5, hours / 12);
+  return score;
+}
+
+/* ---------- Fetching ---------- */
+
+async function get(url, { json = false, timeout = 15_000 } = {}) {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), timeout);
+  try {
+    const res = await fetch(url, {
+      signal: ctrl.signal,
+      headers: { 'user-agent': 'Mozilla/5.0 (compatible; MudarrajHighlights/1.0)', 'accept-language': 'en' },
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return json ? res.json() : res.text();
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+const ymd = (d) => d.toISOString().slice(0, 10).replaceAll('-', '');
+
+export async function finishedMatches(fetchJson = (u) => get(u, { json: true })) {
+  const out = [];
+  const days = Array.from({ length: DAYS_BACK }, (_, i) => new Date(Date.now() - i * 86_400_000));
+  for (const league of LEAGUES) {
+    for (const day of days) {
+      try {
+        const data = await fetchJson(`${API.espn}/${league.slug}/scoreboard?dates=${ymd(day)}`);
+        for (const ev of data.events || []) {
+          const comp = ev.competitions?.[0];
+          if (ev.status?.type?.state !== 'post' || !comp) continue;
+          const home = comp.competitors?.find((c) => c.homeAway === 'home');
+          const away = comp.competitors?.find((c) => c.homeAway === 'away');
+          if (!home || !away) continue;
+          out.push({
+            id: String(ev.id),
+            league: league.slug,
+            date: ev.date,
+            home: home.team?.displayName,
+            away: away.team?.displayName,
+            score: [home.score, away.score].map((s) => (typeof s === 'object' ? s?.value : s)),
+            homeNames: teamNames(home.team || {}),
+            awayNames: teamNames(away.team || {}),
+          });
+        }
+      } catch {
+        /* league or date not served: skip */
+      }
+    }
+  }
+  return [...new Map(out.map((m) => [m.id, m])).values()];
+}
+
+const decode = (s) =>
+  s.replace(/&amp;/g, '&').replace(/&quot;/g, '"').replace(/&#39;|&apos;/g, "'").replace(/&lt;/g, '<').replace(/&gt;/g, '>');
+
+export function parseFeed(xml, source) {
+  return [...xml.matchAll(/<entry>([\s\S]*?)<\/entry>/g)]
+    .map(([, e]) => ({
+      videoId: e.match(/<yt:videoId>([^<]+)<\/yt:videoId>/)?.[1],
+      title: decode(e.match(/<title>([^<]*)<\/title>/)?.[1] || ''),
+      published: e.match(/<published>([^<]+)<\/published>/)?.[1],
+      channel: source.name,
+      source: source.key,
+      leagues: source.leagues,
+    }))
+    .filter((v) => v.videoId && /^[\w-]{11}$/.test(v.videoId) && v.published);
+}
+
+async function resolveChannelId(source, cache) {
+  if (source.id) return source.id;
+  if (cache[source.key]) return cache[source.key];
+  for (const handle of source.handles || []) {
+    try {
+      const html = await get(`https://www.youtube.com/${handle}`);
+      const id = html.match(/feeds\/videos\.xml\?channel_id=(UC[\w-]{22})/)?.[1] || html.match(/"externalId":"(UC[\w-]{22})"/)?.[1];
+      if (id) {
+        cache[source.key] = id;
+        return id;
+      }
+    } catch {
+      /* try the next handle */
+    }
+  }
+  return null;
+}
+
+async function readJson(url, fallback) {
+  try {
+    return JSON.parse(await readFile(url, 'utf8'));
+  } catch {
+    return fallback;
+  }
+}
+
+/* ---------- Main ---------- */
+
+export function buildOutput(matches, videos, previous) {
+  const now = Date.now();
+  const byMatch = { ...(previous.matches || {}) };
+  for (const m of matches) {
+    let best = null;
+    for (const v of videos) {
+      const s = scoreVideo(v, m);
+      if (s > 0 && (!best || s > best.score)) best = { score: s, v };
+    }
+    if (best && (!byMatch[m.id] || best.score >= (byMatch[m.id].score || 0))) {
+      const { v } = best;
+      byMatch[m.id] = {
+        videoId: v.videoId, title: v.title, channel: v.channel, published: v.published, score: Math.round(best.score),
+        league: m.league, date: m.date, home: m.home, away: m.away, result: m.score,
+      };
+    }
+  }
+  // Forget matches older than KEEP_DAYS
+  Object.keys(byMatch).forEach((id) => {
+    if (now - Date.parse(byMatch[id].date) > KEEP_DAYS * 86_400_000) delete byMatch[id];
+  });
+
+  const matchByVideo = new Map(Object.entries(byMatch).map(([id, h]) => [h.videoId, id]));
+  const seen = new Map((previous.latest || []).map((v) => [v.videoId, v]));
+  videos
+    .filter((v) => HIGHLIGHT_WORDS.test(v.title) && !NOT_HIGHLIGHT.test(v.title) && !oldSeason(v.title))
+    .forEach((v) => seen.set(v.videoId, { videoId: v.videoId, title: v.title, channel: v.channel, published: v.published, league: v.leagues[0] }));
+  const latest = [...seen.values()]
+    .map((v) => {
+      const matchId = matchByVideo.get(v.videoId) || v.matchId || null;
+      return { ...v, matchId, league: byMatch[matchId]?.league || v.league };
+    })
+    .filter((v) => now - Date.parse(v.published) < KEEP_DAYS * 86_400_000)
+    .sort((a, b) => Date.parse(b.published) - Date.parse(a.published))
+    .slice(0, LATEST_MAX);
+
+  return { matches: byMatch, latest };
+}
+
+// The last published data lives on the site itself; read it from there so
+// history survives between runs without committing to the repo.
+async function previousData(name, fallback) {
+  const base = process.env.PREVIOUS_BASE_URL;
+  if (base) {
+    try {
+      return JSON.parse(await get(`${base.replace(/\/$/, '')}/data/${name}?t=${Date.now()}`));
+    } catch {
+      /* first deploy, or the site is unreachable */
+    }
+  }
+  return readJson(new URL(name, DATA_DIR), fallback);
+}
+
+async function setOutput(key, value) {
+  if (!process.env.GITHUB_OUTPUT) return;
+  await writeFile(process.env.GITHUB_OUTPUT, `${key}=${value}\n`, { flag: 'a' });
+}
+
+async function main() {
+  await mkdir(DATA_DIR, { recursive: true });
+  const previous = await previousData('highlights.json', { matches: {}, latest: [] });
+  const cache = await previousData('yt-channels.json', {});
+  const cacheBefore = JSON.stringify(cache);
+
+  const videos = [];
+  for (const source of SOURCES) {
+    const id = await resolveChannelId(source, cache);
+    if (!id) {
+      console.log(`! ${source.name}: channel not found`);
+      continue;
+    }
+    try {
+      const feed = parseFeed(await get(`https://www.youtube.com/feeds/videos.xml?channel_id=${id}`), source);
+      videos.push(...feed);
+      console.log(`  ${source.name}: ${feed.length} videos`);
+    } catch (err) {
+      console.log(`! ${source.name}: feed failed (${err.message})`);
+    }
+  }
+
+  const matches = await finishedMatches();
+  console.log(`  ${matches.length} finished matches in the last ${DAYS_BACK} days`);
+  const out = buildOutput(matches, videos, previous);
+
+  const changed =
+    JSON.stringify({ m: previous.matches, l: previous.latest }) !== JSON.stringify({ m: out.matches, l: out.latest }) ||
+    JSON.stringify(cache) !== cacheBefore;
+  await writeFile(CHANNEL_CACHE, `${JSON.stringify(cache, null, 2)}\n`);
+  await writeFile(OUT, `${JSON.stringify({ updatedAt: changed ? new Date().toISOString() : previous.updatedAt || null, ...out })}\n`);
+  await setOutput('changed', changed);
+  console.log(changed ? `Found ${Object.keys(out.matches).length} matched highlights, ${out.latest.length} latest videos` : 'No new highlights');
+}
+
+if (import.meta.url === `file://${process.argv[1]}`) {
+  main().catch((err) => {
+    console.error(err);
+    process.exit(1);
+  });
+}

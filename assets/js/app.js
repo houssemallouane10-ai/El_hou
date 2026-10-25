@@ -1,5 +1,6 @@
 import { SITE, REFRESH, COMMENTARY_LANGS, LEAGUES } from './config.js';
 import { REGIONS, DEFAULT_REGION, CHANNELS, channelsFor, coverage } from './channels.js';
+import { loadHighlights, highlightFor, latestHighlights, embedUrl, thumbUrl } from './highlights.js';
 import { t, getLang, setLang, onLangChange, applyDocumentLang, languageName, formatTime, formatDay, formatShortDay } from './i18n.js';
 import { loadDay, refreshLeagues, loadSummary, dayKey, addDays } from './api.js';
 import { predict, grade } from './predict.js';
@@ -125,7 +126,7 @@ async function fetchDay(offset, opts) {
 const dataSource = () => state.days[0]?.source || state.days[1]?.source || 'espn';
 
 async function initialLoad() {
-  await fetchDay(0);
+  await Promise.all([fetchDay(0), loadHighlights()]);
   render();
   await Promise.all([fetchDay(1), fetchDay(-1)]);
   render({ soft: true });
@@ -165,7 +166,8 @@ function renderChrome() {
     const on = (r === 'home' && state.route.name === 'home' && state.filter !== 'live') ||
       (r === 'live' && state.route.name === 'home' && state.filter === 'live') ||
       (r === 'predictions' && state.route.name === 'predictions') ||
-      (r === 'channels' && state.route.name === 'channels');
+      (r === 'channels' && state.route.name === 'channels') ||
+      (r === 'highlights' && state.route.name === 'highlights');
     a.toggleAttribute('aria-current', on);
   });
   document.getElementById('langSelect').value = getLang();
@@ -213,7 +215,7 @@ function heroHtml() {
         <p class="hero-sub" data-i18n="hero.sub">${t('hero.sub')}</p>
         <div class="hero-cta">
           <a class="btn btn-primary" href="#/today">${icon('ball')}<span data-i18n="hero.cta">${t('hero.cta')}</span></a>
-          <a class="btn btn-ghost" href="#/predictions"><span data-i18n="hero.cta2">${t('hero.cta2')}</span></a>
+          <a class="btn btn-ghost" href="#/highlights">${icon('play')}<span data-i18n="nav.highlights">${t('nav.highlights')}</span></a>
         </div>
         <dl class="hero-stats"></dl>
       </div>
@@ -296,7 +298,8 @@ function matchRow(m, i) {
   if (isLive(m)) side = `<span class="btn btn-sm btn-live">${icon('play')}${t('watch.live')}</span>`;
   else if (isOver(m)) {
     const g = grade(p, m.home.score, m.away.score);
-    side = `${g ? `<span class="grade grade-${g}" title="${t(g === 'miss' ? 'pred.wrong' : g === 'exact' ? 'pred.exact' : 'pred.correct')}">${g === 'miss' ? '✕' : '✓'} ${scorePair(p.score[0], p.score[1])}</span>` : ''}<span class="btn btn-sm btn-ghost">${t('watch.summary')}</span>`;
+    const hasVideo = !!highlightFor(m.id);
+    side = `${g ? `<span class="grade grade-${g}" title="${t(g === 'miss' ? 'pred.wrong' : g === 'exact' ? 'pred.exact' : 'pred.correct')}">${g === 'miss' ? '✕' : '✓'} ${scorePair(p.score[0], p.score[1])}</span>` : ''}${hasVideo ? `<span class="btn btn-sm btn-primary">${icon('play')}${t('hl.watch')}</span>` : `<span class="btn btn-sm btn-ghost">${t('watch.summary')}</span>`}`;
   } else side = `${predBar(p, true)}<span class="btn btn-sm btn-ghost">${t('watch.details')}</span>`;
   const flash = state.flash.has(m.id) ? 'flash' : '';
   return `<a class="mrow ${isLive(m) ? 'is-live' : ''} ${flash}" href="${matchHref(m)}" style="--i:${Math.min(i, 12)}">
@@ -373,6 +376,7 @@ function renderHome({ soft } = {}) {
       <div class="lchips"></div>
       <div class="srcbox"></div>
       <div class="list"></div>
+      <section class="hl-strip-wrap"></section>
     </div>`;
     mountHero();
     bindHome();
@@ -393,6 +397,7 @@ function renderHome({ soft } = {}) {
   q('.list').classList.toggle('anim', listKey !== lastListKey);
   lastListKey = listKey;
   q('.list').innerHTML = listHtml(offset);
+  q('.hl-strip-wrap').innerHTML = highlightStripHtml();
   renderHeroDynamic();
   state.flash.clear();
 }
@@ -716,10 +721,12 @@ function buildMatchBody(page) {
   });
   player.on('source', () => renderStreams(page));
   player.on('tracks', () => renderStreams(page));
-  sourcesFor(m).then((list) => {
+  Promise.all([sourcesFor(m), loadHighlights()]).then(([list]) => {
     if (matchPage !== page) return;
-    page.sources = list;
-    player.load(list, { lang: store.get('commentaryLang', null) || getLang() });
+    // A finished match opens on its official highlights when we have them
+    const h = isOver(m) ? highlightFor(m.id) : null;
+    page.sources = h ? [{ type: 'iframe', url: embedUrl(h.videoId, true), label: t('hl.label'), lang: 'multi', id: `hl#${h.videoId}`, highlight: true }, ...list] : list;
+    player.load(page.sources, { lang: store.get('commentaryLang', null) || getLang(), start: h ? 0 : undefined });
     renderStreams(page);
   });
 
@@ -857,6 +864,7 @@ function renderStreams(page) {
     <div class="srow"><span class="slabel">${icon('tv')}${t('player.servers')}</span><div class="srvs">${pills}</div></div>
     ${audio.length > 1 ? `<p class="muted small">${t('player.tracks', { n: new Set(audio.map((a) => a.lang)).size })}</p>` : ''}
     ${demo ? `<p class="notice">${icon('info')}<span>${t('player.demoNotice')}</span></p>` : ''}
+    ${isOver(page.match) && !highlightFor(page.id) ? `<p class="muted small">${icon('play')} ${t('hl.soon')}</p>` : ''}
     <details class="addlink">
       <summary>${icon('link')}${t('player.addLink')}</summary>
       <form class="addlink-form">
@@ -952,6 +960,79 @@ function renderPredictions() {
   bindPickForms(app.querySelector('.preds'));
 }
 
+/* ---------- Highlights ---------- */
+
+function timeAgo(iso) {
+  const mins = Math.round((Date.now() - Date.parse(iso)) / 60_000);
+  const rtf = new Intl.RelativeTimeFormat(getLang() === 'ar' ? 'ar' : getLang(), { numeric: 'auto' });
+  if (mins < 60) return rtf.format(-Math.max(1, mins), 'minute');
+  if (mins < 48 * 60) return rtf.format(-Math.round(mins / 60), 'hour');
+  return rtf.format(-Math.round(mins / 1440), 'day');
+}
+
+function highlightCard(v) {
+  const m = v.matchId ? state.byId.get(v.matchId) : null;
+  return `<article class="hcard">
+    <button type="button" class="hthumb" data-video="${esc(v.videoId)}" data-title="${esc(v.title)}" aria-label="${esc(v.title)}">
+      <img src="${thumbUrl(v.videoId)}" alt="" loading="lazy" decoding="async" onerror="this.style.visibility='hidden'">
+      <span class="hplay">${icon('play')}</span>
+      ${v.league ? `<span class="hleague">${esc(leagueNameBySlug(v.league))}</span>` : ''}
+    </button>
+    <div class="hmeta">
+      <h3 dir="auto">${esc(v.title)}</h3>
+      <p><span>${esc(v.channel)}</span><span>${esc(timeAgo(v.published))}</span></p>
+      ${m ? `<a class="link-more" href="${matchHref(m)}">${t('hl.matchPage')}</a>` : ''}
+    </div>
+  </article>`;
+}
+
+function highlightStripHtml() {
+  const list = latestHighlights().slice(0, 12);
+  if (!list.length) return '';
+  return `<header class="hl-strip-head"><h2 class="sec-h">${t('hl.latest')}</h2><a class="link-more" href="#/highlights">${t('hl.all')}</a></header>
+    <div class="hl-strip">${list.map(highlightCard).join('')}</div>`;
+}
+
+function renderHighlights() {
+  teardownMatch();
+  unmountHero();
+  const all = latestHighlights();
+  const leagues = [...new Set(all.map((v) => v.league).filter(Boolean))];
+  const pick = state.hlLeague && leagues.includes(state.hlLeague) ? state.hlLeague : 'all';
+  const list = pick === 'all' ? all : all.filter((v) => v.league === pick);
+  const chips = leagues.length > 1
+    ? `<div class="lchips">${[`<button type="button" class="lchip" data-hl-league="all" aria-pressed="${pick === 'all'}">${t('filter.all')}</button>`]
+      .concat(leagues.map((l) => `<button type="button" class="lchip" data-hl-league="${esc(l)}" aria-pressed="${pick === l}">${esc(leagueNameBySlug(l))}</button>`))
+      .join('')}</div>`
+    : '';
+  app.innerHTML = `<div class="wrap hls">
+    <header class="chans-head"><h1>${t('hl.title')}</h1><p class="muted">${t('hl.sub')}</p></header>
+    ${chips}
+    ${list.length ? `<div class="hl-grid">${list.map(highlightCard).join('')}</div>` : `<div class="empty">${icon('play')}<span>${t('hl.empty')}</span></div>`}
+  </div>`;
+}
+
+function openVideo(videoId, title) {
+  if (!/^[\w-]{11}$/.test(videoId)) return;
+  let dlg = document.getElementById('hlDialog');
+  if (!dlg) {
+    dlg = document.createElement('dialog');
+    dlg.id = 'hlDialog';
+    dlg.className = 'hl-dialog';
+    dlg.innerHTML = `<div class="hl-modal"><header><h3 dir="auto"></h3><button type="button" class="iconbtn" data-close aria-label="${t('hl.close')}">✕</button></header><div class="hl-frame"><iframe allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen referrerpolicy="strict-origin-when-cross-origin" title="video"></iframe></div></div>`;
+    document.body.appendChild(dlg);
+    const close = () => dlg.close();
+    dlg.addEventListener('click', (e) => {
+      if (e.target === dlg || e.target.closest('[data-close]')) close();
+    });
+    dlg.addEventListener('close', () => dlg.querySelector('iframe').removeAttribute('src'));
+  }
+  dlg.querySelector('h3').textContent = title;
+  dlg.querySelector('iframe').src = embedUrl(videoId, true);
+  if (dlg.showModal) dlg.showModal();
+  else dlg.setAttribute('open', '');
+}
+
 /* ---------- Router ---------- */
 
 function parseRoute() {
@@ -960,6 +1041,7 @@ function parseRoute() {
   if (parts[0] === 'match' && parts[2]) return { name: 'match', slug: parts[1], id: parts[2] };
   if (parts[0] === 'predictions') return { name: 'predictions' };
   if (parts[0] === 'channels') return { name: 'channels' };
+  if (parts[0] === 'highlights') return { name: 'highlights' };
   if (parts[0] === 'live') return { name: 'home', day: 0, live: true };
   return { name: 'home', day: DAY_ROUTES[parts[0]] ?? 0 };
 }
@@ -970,6 +1052,7 @@ function render({ soft = false } = {}) {
   else if (r.name === 'predictions') {
     if (!soft || !app.querySelector('.preds') || !app.querySelector('.preds').contains(document.activeElement)) renderPredictions();
   } else if (r.name === 'channels') renderChannels();
+  else if (r.name === 'highlights') renderHighlights();
   else renderHome({ soft });
   renderChrome();
 }
@@ -1022,6 +1105,13 @@ function boot() {
   if (state.route.live) state.filter = 'live';
   window.addEventListener('hashchange', onRoute);
   app.addEventListener('click', (e) => {
+    const vid = e.target.closest('[data-video]');
+    if (vid) return openVideo(vid.dataset.video, vid.dataset.title || '');
+    const hl = e.target.closest('[data-hl-league]');
+    if (hl) {
+      state.hlLeague = hl.dataset.hlLeague;
+      return renderHighlights();
+    }
     const b = e.target.closest('[data-region]');
     if (!b) return;
     store.set('region', b.dataset.region);
@@ -1035,7 +1125,7 @@ function boot() {
     pollLive().catch(() => {});
   }, REFRESH.live);
   setInterval(() => {
-    Promise.all([fetchDay(0, { force: true }), fetchDay(1)]).then(() => render({ soft: true })).catch(() => {});
+    Promise.all([fetchDay(0, { force: true }), fetchDay(1), loadHighlights({ force: true })]).then(() => render({ soft: true })).catch(() => {});
   }, REFRESH.idle);
   setInterval(tickCountdown, 1000);
 }

@@ -254,7 +254,7 @@ export class StreamPlayer {
 
   /* ---------- Loading ---------- */
 
-  load(sources, { lang } = {}) {
+  load(sources, { lang, start: forced } = {}) {
     this.sources = sources;
     this.failed.clear();
     if (lang) this.prefLang = lang;
@@ -263,6 +263,7 @@ export class StreamPlayer {
       this.message(t('player.failed'), false);
       return;
     }
+    if (Number.isInteger(forced)) return this.select(forced);
     const pref = this.prefLang;
     let start = sources.findIndex((s) => s.lang === pref);
     if (start < 0) start = sources.findIndex((s) => s.lang === 'multi');

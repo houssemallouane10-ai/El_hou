@@ -16,15 +16,22 @@
 - **القنوات الناقلة**: صفحة فيها beIN SPORTS، Arena Sport، FOX، Sky Sports، DAZN، Movistar Plus+، CANAL+، TNT Sports وغيرهم: اختار منطقتك وتشوف واش تبث كل قناة اليوم وغدًا، مع رابط المنصة الرسمية. نفس المعلومة تظهر في صفحة كل مباراة. الحقوق مكتوبة في `assets/js/channels.js` (موسم 2026-27) وتقدر تحدّثها كل موسم.
 - **واجهة بثلاث لغات**: العربية، Français، English. وضع ليلي ونهاري. يخدم على الهاتف والكمبيوتر.
 
+## الملخصات التلقائية
+
+كل 20 دقيقة يخدم GitHub Actions (`.github/workflows/deploy.yml`) هكذا:
+1. يجيب المباريات اللي كملت في آخر 3 أيام من ESPN.
+2. يقرا الفيديوهات الجديدة من القنوات الرسمية في يوتيوب: Premier League، LALIGA، Serie A، Bundesliga، Ligue 1، CBS Sports Golazo، TNT Sports، MLS، دوري روشن، CAF TV، Liga Portugal، Eredivisie، EFL.
+3. يربط كل ملخص بالمباراة تاعو بأسماء الفريقين والنتيجة والوقت.
+4. ينشر الموقع من جديد كي يلقى ملخصات جداد.
+
+الملخص يبان وحدو في صفحة الملخصات، وفي الصفحة الرئيسية، وفي صفحة المباراة. القنوات مكتوبة في `scripts/highlights.mjs` وتقدر تزيد عليهم.
+
 ## النشر على الإنترنت (مجانًا عبر GitHub Pages)
 
-1. افتح المستودع على GitHub ثم **Settings ← Pages**.
-2. في **Build and deployment** اختر **Source: Deploy from a branch**.
-3. اختر الفرع `claude/sports-streaming-site-khngzx` والمجلد `/ (root)` ثم **Save**.
-4. بعد دقيقة أو دقيقتين يكون الموقع على:
+1. لازم الملفات يكونو في الفرع `main`، لأن الخدمة الأوتوماتيكية تاع GitHub تخدم غير منو.
+2. في المستودع على GitHub: **Settings ← Pages ← Build and deployment ← Source: GitHub Actions**.
+3. الموقع يتنشر وحدو، ويكون على:
    **https://houssemallouane10-ai.github.io/Nadouch/**
-
-إذا دمجت الفرع في `main` لاحقًا، غيّر الفرع في نفس الصفحة إلى `main`.
 
 ## إضافة روابط البث
 
@@ -69,5 +76,8 @@ python3 -m http.server 8000
 | `assets/js/i18n.js` | النصوص بالعربية والفرنسية والإنجليزية |
 | `assets/js/config.js` | اسم الموقع وقائمة البطولات |
 | `streams.json` | روابط البث |
+| `assets/js/highlights.js` | عرض الملخصات في الموقع |
+| `scripts/highlights.mjs` | يلقى الملخصات الرسمية ويربطها بالمباريات |
+| `.github/workflows/deploy.yml` | النشر الأوتوماتيكي وتحديث الملخصات |
 
 بيانات المباريات من ESPN. المشغل مبني على [hls.js](https://github.com/video-dev/hls.js) (Apache-2.0).
