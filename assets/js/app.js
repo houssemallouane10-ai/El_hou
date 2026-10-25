@@ -977,6 +977,7 @@ function highlightCard(v) {
       <img src="${thumbUrl(v.videoId)}" alt="" loading="lazy" decoding="async" onerror="this.style.visibility='hidden'">
       <span class="hplay">${icon('play')}</span>
       ${v.league ? `<span class="hleague">${esc(leagueNameBySlug(v.league))}</span>` : ''}
+      ${v.lang === 'ar' ? `<span class="hlang">${t('hl.arabic')}</span>` : ''}
     </button>
     <div class="hmeta">
       <h3 dir="auto">${esc(v.title)}</h3>
@@ -996,7 +997,11 @@ function highlightStripHtml() {
 function renderHighlights() {
   teardownMatch();
   unmountHero();
-  const all = latestHighlights();
+  const everything = latestHighlights();
+  const arabicCount = everything.filter((v) => v.lang === 'ar').length;
+  // Arabic first: show only Arabic videos unless the viewer picks all languages
+  if (!state.hlLang && everything.length) state.hlLang = arabicCount >= 6 ? 'ar' : 'all';
+  const all = state.hlLang === 'ar' ? everything.filter((v) => v.lang === 'ar') : everything;
   const leagues = [...new Set(all.map((v) => v.league).filter(Boolean))];
   const pick = state.hlLeague && leagues.includes(state.hlLeague) ? state.hlLeague : 'all';
   const list = pick === 'all' ? all : all.filter((v) => v.league === pick);
@@ -1005,8 +1010,15 @@ function renderHighlights() {
       .concat(leagues.map((l) => `<button type="button" class="lchip" data-hl-league="${esc(l)}" aria-pressed="${pick === l}">${esc(leagueNameBySlug(l))}</button>`))
       .join('')}</div>`
     : '';
+  const langChips = arabicCount
+    ? `<div class="chips" role="group">
+        <button type="button" class="chip" data-hl-lang="ar" aria-pressed="${state.hlLang === 'ar'}">${t('hl.arabic')}<span>${arabicCount}</span></button>
+        <button type="button" class="chip" data-hl-lang="all" aria-pressed="${state.hlLang === 'all'}">${t('hl.allLangs')}<span>${everything.length}</span></button>
+      </div>`
+    : '';
   app.innerHTML = `<div class="wrap hls">
     <header class="chans-head"><h1>${t('hl.title')}</h1><p class="muted">${t('hl.sub')}</p></header>
+    ${langChips}
     ${chips}
     ${list.length ? `<div class="hl-grid">${list.map(highlightCard).join('')}</div>` : `<div class="empty">${icon('play')}<span>${t('hl.empty')}</span></div>`}
   </div>`;
@@ -1107,6 +1119,12 @@ function boot() {
   app.addEventListener('click', (e) => {
     const vid = e.target.closest('[data-video]');
     if (vid) return openVideo(vid.dataset.video, vid.dataset.title || '');
+    const hlLang = e.target.closest('[data-hl-lang]');
+    if (hlLang) {
+      state.hlLang = hlLang.dataset.hlLang;
+      state.hlLeague = 'all';
+      return renderHighlights();
+    }
     const hl = e.target.closest('[data-hl-league]');
     if (hl) {
       state.hlLeague = hl.dataset.hlLeague;

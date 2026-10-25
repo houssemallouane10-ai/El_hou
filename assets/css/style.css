@@ -1175,6 +1175,7 @@ h1, h2, h3, h4 { font-family: var(--font-display); font-weight: 700; line-height
 }
 .hthumb:hover .hplay { transform: scale(1.08); }
 .hplay .ic { width: 24px; height: 24px; margin-left: 3px; }
+.hlang { position: absolute; top: 8px; inset-inline-end: 8px; padding: 2px 8px; border-radius: 6px; background: var(--accent-bg); color: var(--accent-ink); font-size: 11.5px; font-weight: 700; }
 .hleague { position: absolute; top: 8px; inset-inline-start: 8px; padding: 2px 8px; border-radius: 6px; background: rgba(0, 0, 0, 0.62); color: #fff; font-size: 11.5px; }
 .hmeta h3 {
   font-family: var(--font-body);

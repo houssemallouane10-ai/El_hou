@@ -7,6 +7,7 @@
 
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { LEAGUES, API } from '../assets/js/config.js';
+import { ARABIC_NAMES } from './arabic-names.mjs';
 
 const DATA_DIR = new URL('../data/', import.meta.url);
 const OUT = new URL('highlights.json', DATA_DIR);
@@ -33,11 +34,33 @@ export const SOURCES = [
   { key: 'ligaportugal', name: 'Liga Portugal', handles: ['@LigaPortugal', '@ligaportugalbetclic', '@LigaPortugalOficial'], leagues: ['por.1'] },
   { key: 'eredivisie', name: 'Eredivisie', handles: ['@eredivisie', '@EredivisieOfficial', '@ESPNNL'], leagues: ['ned.1'] },
   { key: 'efl', name: 'EFL', handles: ['@EFL'], leagues: ['eng.league_cup'] },
+  // Arabic-language official channels. Handles that don't exist are skipped.
+  { key: 'bein', name: 'beIN SPORTS', lang: 'ar', handles: ['@beINSPORTS', 'c/beINSPORTS', '@beinsportsmena'], leagues: ['eng.1', 'esp.1', 'fra.1', 'uefa.champions', 'uefa.europa', 'uefa.europa.conf'] },
+  { key: 'thmanyah', name: 'ثمانية', lang: 'ar', handles: ['@thmanyahsports', '@ThmanyahSport', '@thmanyah'], leagues: ['ksa.1'] },
+  { key: 'ontime', name: 'ON Time Sports', lang: 'ar', handles: ['@ONTimeSports', '@ontimesports1'], leagues: ['egy.1'] },
+  { key: 'adsports', name: 'AD Sports', lang: 'ar', handles: ['@ADSportsTV', '@adsports'], leagues: [] },
+  { key: 'ssc', name: 'SSC', lang: 'ar', handles: ['@SSCchannels', '@SSC_TV'], leagues: [] },
 ];
+
+const ARABIC = /[؀-ۿ]/;
+
+/** Folds Arabic spelling variants and Arabic-Indic digits so titles compare reliably. */
+export function arabicFold(s) {
+  return String(s || '')
+    .replace(/[ً-ٰٟـ]/g, '')
+    .replace(/[أإآٱ]/g, 'ا')
+    .replace(/ى/g, 'ي')
+    .replace(/ة/g, 'ه')
+    .replace(/ؤ/g, 'و')
+    .replace(/ئ/g, 'ي')
+    .replace(/[٠-٩]/g, (d) => String(d.charCodeAt(0) - 0x0660))
+    .replace(/[۰-۹]/g, (d) => String(d.charCodeAt(0) - 0x06f0));
+}
 
 // Word lists use letter-aware boundaries so accented words (résumé) match
 const words = (list) => new RegExp(`(?:^|[^\\p{L}\\p{N}])(?:${list})(?![\\p{L}\\p{N}])`, 'iu');
 const HIGHLIGHT_WORDS = new RegExp(`${words('highlights?|resumen|r[eé]sum[eé]|resumo|sintesi|samenvatting|özet|ozet|goals?|goles|buts').source}|ملخص|أهداف|اهداف`, 'iu');
+const NOT_ARABIC = /مؤتمر|تصريح|حوار|تدريب|تحليل|استوديو|ستوديو|قبل المباراه|سيدات|الناشئين/;
 const NOT_HIGHLIGHT = words('press conference|conf[eé]rence de presse|rueda de prensa|preview|reaction|interview|training|entrenamiento|behind the scenes|unboxing|live stream|watchalong|classic|rewind|throwback|on this day|retro|women|wsl|u1[789]|u2[13]|academy|f[eé]minin[ea]?|femenino|frauen|femminile');
 
 // Titles that name an earlier season (e.g. "Serie A 2019/20") are archive clips
@@ -86,15 +109,23 @@ const ALIASES = {
 
 const ALIAS_MAP = Object.fromEntries(Object.entries(ALIASES).map(([k, v]) => [norm(k).trim(), v]));
 
+const ARABIC_MAP = new Map();
+ARABIC_NAMES.forEach(([en, ar]) =>
+  en.forEach((name) => {
+    const key = norm(name).trim();
+    ARABIC_MAP.set(key, [...(ARABIC_MAP.get(key) || []), ...ar.map((a) => norm(a).trim())]);
+  }),
+);
+
 const STRIP = /\b(fc|cf|afc|ac|as|ss|ssc|sc|us|rc|rcd|cd|ud|sd|club|de|calcio|1\.|sv|vfb|vfl|tsg|fsv)\b/g;
 
 export function norm(s) {
-  return ` ${String(s || '')
+  return ` ${arabicFold(s)
     .normalize('NFD')
     .replace(/[̀-ͯ]/g, '')
     .toLowerCase()
     .replace(/ß/g, 'ss')
-    .replace(/[^a-z0-9؀-ۿ&']+/g, ' ')
+    .replace(/[^a-z0-9\u0621-\u064a\u0671-\u06d3&']+/g, ' ')
     .replace(/\s+/g, ' ')
     .trim()} `;
 }
@@ -108,21 +139,31 @@ export function teamNames(team) {
     if (stripped.length >= 3) out.add(stripped);
     (ALIAS_MAP[full] || ALIAS_MAP[stripped] || []).forEach((a) => out.add(norm(a).trim()));
   });
+  [...out].forEach((n) => (ARABIC_MAP.get(n) || []).forEach((a) => out.add(a)));
   return [...out].filter((n) => n.length >= 2);
 }
 
-const hasName = (title, names) => names.some((n) => title.includes(` ${n} `));
+// Arabic titles glue و / ف / ب / ل onto the next word ("ريال مدريد وبرشلونة")
+const hasName = (title, names) =>
+  names.some((n) => {
+    if (title.includes(` ${n} `)) return true;
+    if (!ARABIC.test(n)) return false;
+    if (['و', 'ف', 'ب', 'ل'].some((p) => title.includes(` ${p}${n} `))) return true;
+    return n.startsWith('ال') && (title.includes(` لل${n.slice(2)} `) || title.includes(` ولل${n.slice(2)} `));
+  });
+
+const isArabic = (video) => video.lang === 'ar' || ARABIC.test(video.title);
 
 /** Scores how well a video fits a fixture; 0 means no match. */
 export function scoreVideo(video, match) {
   const title = norm(video.title);
-  if (NOT_HIGHLIGHT.test(video.title) || oldSeason(video.title)) return 0;
+  if (NOT_HIGHLIGHT.test(video.title) || NOT_ARABIC.test(arabicFold(video.title)) || oldSeason(video.title)) return 0;
   if (!hasName(title, match.homeNames) || !hasName(title, match.awayNames)) return 0;
   const hours = (Date.parse(video.published) - Date.parse(match.date)) / 3_600_000;
   if (hours < 1 || hours > MATCH_WINDOW_H) return 0;
   let score = 10;
   // A score in the title must be this match's result, otherwise it's another game
-  const shown = video.title.match(/(?:^|[^\d])(\d{1,2})\s*[-–:]\s*(\d{1,2})(?!\d)/);
+  const shown = arabicFold(video.title).match(/(?:^|[^\d])(\d{1,2})\s*[-–:]\s*(\d{1,2})(?!\d)/);
   if (shown && match.score?.every((v) => v !== undefined && v !== null)) {
     const [h, a] = match.score.map(Number);
     const [x, y] = [Number(shown[1]), Number(shown[2])];
@@ -199,6 +240,7 @@ export function parseFeed(xml, source) {
       channel: source.name,
       source: source.key,
       leagues: source.leagues,
+      lang: source.lang || '',
     }))
     .filter((v) => v.videoId && /^[\w-]{11}$/.test(v.videoId) && v.published);
 }
@@ -234,30 +276,41 @@ async function readJson(url, fallback) {
 export function buildOutput(matches, videos, previous) {
   const now = Date.now();
   const byMatch = { ...(previous.matches || {}) };
+  const pick = (v) => ({ videoId: v.videoId, title: v.title, channel: v.channel, published: v.published });
   for (const m of matches) {
     let best = null;
+    let bestAr = null;
     for (const v of videos) {
       const s = scoreVideo(v, m);
-      if (s > 0 && (!best || s > best.score)) best = { score: s, v };
+      if (s <= 0) continue;
+      if (!best || s > best.score) best = { score: s, v };
+      if (isArabic(v) && (!bestAr || s > bestAr.score)) bestAr = { score: s, v };
     }
-    if (best && (!byMatch[m.id] || best.score >= (byMatch[m.id].score || 0))) {
-      const { v } = best;
+    const prev = byMatch[m.id];
+    if (best && (!prev || best.score >= (prev.score || 0))) {
       byMatch[m.id] = {
-        videoId: v.videoId, title: v.title, channel: v.channel, published: v.published, score: Math.round(best.score),
+        ...pick(best.v), score: Math.round(best.score),
         league: m.league, date: m.date, home: m.home, away: m.away, result: m.score,
+        ...(prev?.ar ? { ar: prev.ar } : {}),
       };
     }
+    // Keep an Arabic version alongside, since the site prefers Arabic commentary
+    if (bestAr && byMatch[m.id]) byMatch[m.id].ar = pick(bestAr.v);
   }
   // Forget matches older than KEEP_DAYS
   Object.keys(byMatch).forEach((id) => {
     if (now - Date.parse(byMatch[id].date) > KEEP_DAYS * 86_400_000) delete byMatch[id];
   });
 
-  const matchByVideo = new Map(Object.entries(byMatch).map(([id, h]) => [h.videoId, id]));
+  const matchByVideo = new Map(
+    Object.entries(byMatch).flatMap(([id, h]) => [[h.videoId, id], ...(h.ar ? [[h.ar.videoId, id]] : [])]),
+  );
   const seen = new Map((previous.latest || []).map((v) => [v.videoId, v]));
   videos
-    .filter((v) => HIGHLIGHT_WORDS.test(v.title) && !NOT_HIGHLIGHT.test(v.title) && !oldSeason(v.title))
-    .forEach((v) => seen.set(v.videoId, { videoId: v.videoId, title: v.title, channel: v.channel, published: v.published, league: v.leagues[0] }));
+    .filter((v) => HIGHLIGHT_WORDS.test(v.title) && !NOT_HIGHLIGHT.test(v.title) && !NOT_ARABIC.test(arabicFold(v.title)) && !oldSeason(v.title))
+    .forEach((v) =>
+      seen.set(v.videoId, { videoId: v.videoId, title: v.title, channel: v.channel, published: v.published, league: v.leagues[0] || null, lang: isArabic(v) ? 'ar' : '' }),
+    );
   const latest = [...seen.values()]
     .map((v) => {
       const matchId = matchByVideo.get(v.videoId) || v.matchId || null;
@@ -306,6 +359,7 @@ async function main() {
       const feed = parseFeed(await get(`https://www.youtube.com/feeds/videos.xml?channel_id=${id}`), source);
       videos.push(...feed);
       console.log(`  ${source.name}: ${feed.length} videos`);
+      if (source.lang) feed.slice(0, 3).forEach((v) => console.log(`      · ${v.title.slice(0, 90)}`));
     } catch (err) {
       console.log(`! ${source.name}: feed failed (${err.message})`);
     }

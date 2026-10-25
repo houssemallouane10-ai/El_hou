@@ -27,12 +27,19 @@ export function loadHighlights({ force = false } = {}) {
   return pending;
 }
 
+/** The match's highlights, in Arabic when an Arabic version exists. */
 export function highlightFor(matchId) {
   const h = data.matches[matchId];
-  return h && VIDEO_ID.test(h.videoId) ? h : null;
+  if (!h) return null;
+  if (h.ar && VIDEO_ID.test(h.ar.videoId)) return { ...h, ...h.ar, lang: 'ar' };
+  return VIDEO_ID.test(h.videoId) ? h : null;
 }
 
-export const latestHighlights = () => data.latest;
+/** Latest videos, Arabic ones first. */
+export const latestHighlights = () => [
+  ...data.latest.filter((v) => v.lang === 'ar'),
+  ...data.latest.filter((v) => v.lang !== 'ar'),
+];
 
 export const embedUrl = (videoId, autoplay = false) =>
   `https://www.youtube-nocookie.com/embed/${videoId}?rel=0&modestbranding=1&playsinline=1${autoplay ? '&autoplay=1' : ''}`;
