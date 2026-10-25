@@ -135,8 +135,26 @@ let seq = 0;
 const compiled = new Map();
 const LOCAL_FLAGS = { c: '-O1 -std=c17', cpp: '-O1 -std=c++20' };
 
+const clangFails = new Map();
+
+// Fails the worker's requests and starts over with a new one next time:
+// a worker remembers a failed download of the compiler, so it cannot retry
+const dropClang = (w, err) => {
+  w.terminate();
+  if (clang === w) clang = null;
+  for (const fail of clangFails.values()) fail(err);
+  clangFails.clear();
+};
+
 const clangWorker = () => {
-  if (!clang) clang = new Worker('workers/clang.worker.js', { type: 'module' });
+  if (!clang) {
+    const w = new Worker('workers/clang.worker.js', { type: 'module' });
+    w.addEventListener('error', (e) => {
+      e.preventDefault();
+      dropClang(w, new Error(e.message || 'worker failed'));
+    });
+    clang = w;
+  }
   return clang;
 };
 
@@ -147,9 +165,14 @@ const askClang = (msg, onProgress) => new Promise((resolve, reject) => {
     if (data.id !== id) return;
     if (data.type === 'progress') { onProgress?.(data.percent); return; }
     w.removeEventListener('message', onMsg);
-    if (data.type === 'error') reject(new Error(data.message)); else resolve(data);
+    clangFails.delete(id);
+    if (data.type !== 'error') { resolve(data); return; }
+    const err = new Error(data.message);
+    reject(err);
+    dropClang(w, err);
   };
   w.addEventListener('message', onMsg);
+  clangFails.set(id, (err) => { w.removeEventListener('message', onMsg); reject(err); });
   w.postMessage({ ...msg, id, base: clangBase() });
 });
 
