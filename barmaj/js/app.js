@@ -36,10 +36,21 @@ let power = null;
 let pythonVersion = null;
 
 // ---------------------------------------------------------------- layout
-const fitViewport = () => {
+// Changing these restyles the whole page, so the many events fired while the
+// keyboard slides in are folded into one update per frame, and only on change
+let viewport = '';
+const fitViewportNow = () => {
   const vv = window.visualViewport;
-  document.documentElement.style.setProperty('--vvh', `${vv ? vv.height : innerHeight}px`);
-  document.documentElement.style.setProperty('--vvt', `${vv ? vv.offsetTop : 0}px`);
+  const h = `${Math.round(vv ? vv.height : innerHeight)}px`;
+  const top = `${Math.round(vv ? vv.offsetTop : 0)}px`;
+  if (viewport === h + top) return;
+  viewport = h + top;
+  document.documentElement.style.setProperty('--vvh', h);
+  document.documentElement.style.setProperty('--vvt', top);
+};
+let viewportFrame = 0;
+const fitViewport = () => {
+  if (!viewportFrame) viewportFrame = requestAnimationFrame(() => { viewportFrame = 0; fitViewportNow(); });
 };
 
 // Theme variables, effects and personal touches; cached for the next first paint
@@ -181,7 +192,7 @@ const openFile = async (id) => {
   settings.current = f.id;
   saveSettings();
   editor.setDoc(f.code);
-  editor.setLanguage(lang.hl);
+  editor.setLanguage(lang.hl, lang.id);
   keybar.setLanguage(lang);
   refreshHeader();
   refreshInputPane();
@@ -983,7 +994,14 @@ const install = async () => {
     await installPrompt.userChoice.catch(() => {});
     installPrompt = null;
   } else if (isIOS) {
-    sheet({ title: t('menu.install'), className: 'small', body: h('p', { class: 'note' }, t('install.ios')) });
+    sheet({
+      title: t('menu.install'),
+      className: 'small',
+      body: h('ol', { class: 'install-steps' },
+        h('li', { html: t('install.ios1', { share: icon('iosShare') }) }),
+        h('li', { html: t('install.ios2') }),
+        h('li', {}, t('install.ios3'))),
+    });
   }
 };
 
@@ -1115,7 +1133,7 @@ let hadController = !!navigator.serviceWorker?.controller;
 fillIcons();
 applyI18n();
 applyTheme();
-fitViewport();
+fitViewportNow();
 window.visualViewport?.addEventListener('resize', fitViewport);
 window.visualViewport?.addEventListener('scroll', fitViewport);
 addEventListener('resize', fitViewport);
@@ -1141,7 +1159,7 @@ const editor = new Editor($('#editor'), {
 });
 editor.configure(settings);
 const keybar = new Keybar($('#keybar'), editor);
-power = new PowerMode($('#codePane'), () => editor.caretCoords());
+power = new PowerMode($('#codePane'), (read, write) => editor.measureCaret(read, write));
 const term = new Term($('#term'));
 updateKeybar();
 coarse.addEventListener('change', updateKeybar);
@@ -1191,6 +1209,12 @@ if (!(await incoming())) {
   openFile(start);
 }
 registerSW();
+
+// Opened from the download page: show an iPhone how to add Barmaj to the home screen
+if (new URLSearchParams(location.search).has('install')) {
+  history.replaceState(null, '', location.pathname);
+  if (isIOS && !standalone) install();
+}
 
 // Exposed for automated tests
 self.barmaj = { run, openFile, setTab, get file() { return file; }, editor, term, settings, read, write, applyTheme, openLook, openSnap };

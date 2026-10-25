@@ -56,6 +56,18 @@
   .lang { position: absolute; top: 14px; inset-inline-end: 16px; display: flex; gap: 4px; }
   .lang button { border: 1px solid var(--line); background: var(--panel); color: var(--muted); border-radius: 10px; padding: 4px 10px; font: 600 13px system-ui; cursor: pointer; }
   .lang button[aria-pressed="true"] { color: var(--text); border-color: var(--pink); }
+  main { display: flex; flex-direction: column; }
+  .ios-only, .inapp { display: none; }
+  .ios .ios-only { display: flex; }
+  .ios .android-only { display: none; }
+  .ios .ios-card { order: 1; }
+  .ios .feats { order: 2; }
+  .ios footer { order: 3; }
+  .is-inapp .inapp { display: block; }
+  .inapp { margin: 0 0 18px; padding: 14px 16px; border-radius: 16px; background: rgba(255, 196, 0, .12); border: 1px solid rgba(255, 196, 0, .5); }
+  .inapp p { margin: 0 0 10px; }
+  .inapp .btn { margin: 0; font-size: 16px; padding: 12px; }
+  .share-ic { display: inline-block; width: 18px; height: 18px; vertical-align: -3px; color: var(--cyan); }
 </style>
 </head>
 <body>
@@ -65,11 +77,19 @@
   <button type="button" data-l="en" aria-pressed="false">EN</button>
 </div>
 <main>
+  <section class="inapp">
+    <p data-t="inapp">راك فاتح هذي الصفحة من داخل تطبيق (إنستغرام، فيسبوك…) وما يخليكش تحمّل. اضغط <b>⋯</b> فوق واختار <b>فتح في المتصفح</b>.</p>
+    <a class="btn android-only" id="openChrome" href="#" data-t="openChrome">افتح في Chrome</a>
+  </section>
   <section class="hero">
     <img src="../icons/icon-512.png" alt="">
     <h1 data-t="title">برمج</h1>
     <p class="tag" data-t="tag">شغّل كل لغات البرمجة من هاتفك</p>
-    <a class="btn" href="Barmaj.apk" download>
+    <a class="btn ios-only" href="../?install">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V3M7 8l5-5 5 5M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"/></svg>
+      <span data-t="iosBtn">ثبّت على iPhone</span>
+    </a>
+    <a class="btn android-only" href="Barmaj.apk" download>
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg>
       <span><span data-t="download">حمّل لـ Android</span> <small>APK · <span id="size">≈ 1 MB</span></small></span>
     </a>
@@ -83,7 +103,7 @@
     <li><b data-t="free">مجاني</b><span data-t="f4">بلا حساب وبلا إعلانات</span></li>
   </ul>
 
-  <section class="card">
+  <section class="card android-only">
     <h2 data-t="howTitle">كيفاش تثبّتو</h2>
     <ol>
       <li data-t="s1">اضغط <b>حمّل لـ Android</b> فوق.</li>
@@ -93,9 +113,14 @@
     </ol>
   </section>
 
-  <section class="card">
+  <section class="card ios-card">
     <h2 data-t="iosTitle">عندك iPhone؟</h2>
-    <p data-t="ios">افتح <a href="../">برمج</a> في Safari، اضغط زر المشاركة ⬆︎ ثم "إضافة إلى الشاشة الرئيسية".</p>
+    <ol>
+      <li data-t="i1">افتح <a href="../?install">برمج</a> في <b>Safari</b>.</li>
+      <li data-t="i2">اضغط زر المشاركة <svg class="share-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V3M7 8l5-5 5 5M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"/></svg> تحت.</li>
+      <li data-t="i3">هبط واختار <b>إضافة إلى الشاشة الرئيسية</b>، ومن بعد <b>إضافة</b>.</li>
+      <li data-t="i4">برمج يبان مع تطبيقاتك ويخدم حتى بلا إنترنت.</li>
+    </ol>
   </section>
 
   <footer>
@@ -104,6 +129,16 @@
   </footer>
 </main>
 <script>
+  // iPhone gets the Add to Home Screen steps; apps such as Instagram open links in
+  // their own browser, which cannot download the APK
+  var ua = navigator.userAgent;
+  var ios = /iphone|ipad|ipod/i.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  var inApp = /Instagram|FBAN|FBAV|FB_IAB|musical_ly|TikTok|Snapchat|Line\//.test(ua);
+  if (ios) document.documentElement.classList.add('ios');
+  if (inApp) document.documentElement.classList.add('is-inapp');
+  document.getElementById('openChrome').href = 'intent://' + location.host + location.pathname + '#Intent;scheme=https;package=com.android.chrome;end';
+  var SHARE = document.querySelector('.share-ic').outerHTML;
+
   // Translations; the page is static so it works anywhere
   var T = {
     fr: {
@@ -113,7 +148,13 @@
       s2: 'Ouvrez <b>Barmaj.apk</b> depuis les notifications ou les téléchargements.',
       s3: 'Si le téléphone refuse, touchez <b>Paramètres</b> et activez <b>Autoriser cette source</b>, puis revenez.',
       s4: 'Touchez <b>Installer</b>. Barmaj apparaît avec vos applications.',
-      iosTitle: 'Vous avez un iPhone ?', ios: 'Ouvrez <a href="../">Barmaj</a> dans Safari, touchez Partager ⬆︎ puis « Sur l’écran d’accueil ».',
+      iosTitle: 'Vous avez un iPhone ?', iosBtn: 'Installer sur iPhone',
+      i1: 'Ouvrez <a href="../?install">Barmaj</a> dans <b>Safari</b>.',
+      i2: 'Touchez le bouton Partager ' + SHARE + ' en bas.',
+      i3: 'Choisissez <b>Sur l’écran d’accueil</b>, puis <b>Ajouter</b>.',
+      i4: 'Barmaj apparaît avec vos applications et marche même hors ligne.',
+      inapp: 'Cette page est ouverte dans une application (Instagram, Facebook…) qui bloque le téléchargement. Touchez <b>⋯</b> en haut puis <b>Ouvrir dans le navigateur</b>.',
+      openChrome: 'Ouvrir dans Chrome',
       foot: 'L’application se met à jour toute seule avec le site.',
     },
     en: {
@@ -123,7 +164,13 @@
       s2: 'Open <b>Barmaj.apk</b> from the notification or your downloads.',
       s3: 'If the phone blocks it, tap <b>Settings</b>, turn on <b>Allow from this source</b>, then go back.',
       s4: 'Tap <b>Install</b>. Barmaj shows up with your apps.',
-      iosTitle: 'Have an iPhone?', ios: 'Open <a href="../">Barmaj</a> in Safari, tap Share ⬆︎ then "Add to Home Screen".',
+      iosTitle: 'Have an iPhone?', iosBtn: 'Install on iPhone',
+      i1: 'Open <a href="../?install">Barmaj</a> in <b>Safari</b>.',
+      i2: 'Tap the Share button ' + SHARE + ' at the bottom.',
+      i3: 'Choose <b>Add to Home Screen</b>, then <b>Add</b>.',
+      i4: 'Barmaj shows up with your apps and works even offline.',
+      inapp: 'This page is open inside an app (Instagram, Facebook…) that blocks downloads. Tap <b>⋯</b> at the top, then <b>Open in browser</b>.',
+      openChrome: 'Open in Chrome',
       foot: 'The app updates itself whenever the site is updated.',
     },
   };

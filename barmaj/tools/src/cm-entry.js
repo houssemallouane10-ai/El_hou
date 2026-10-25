@@ -23,7 +23,8 @@ export {
 export { searchKeymap, highlightSelectionMatches, openSearchPanel, closeSearchPanel } from '@codemirror/search';
 export {
   autocompletion, completionKeymap, closeBrackets, closeBracketsKeymap, completeAnyWord,
-  insertBracket,
+  insertBracket, snippetCompletion, nextSnippetField, hasNextSnippetField, acceptCompletion,
+  completionStatus,
 } from '@codemirror/autocomplete';
 export { tags, tagHighlighter, highlightTree } from '@lezer/highlight';
 
