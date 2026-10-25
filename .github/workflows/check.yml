@@ -1,0 +1,28 @@
+name: Check live site
+
+# Run by hand from the Actions tab: opens the published site in Chrome and
+# logs errors, matches shown and whether video plays.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install Playwright (uses the runner's Chrome)
+        run: npm install --no-save playwright@1.59.1
+
+      - name: Visit the site
+        env:
+          SITE_URL: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/
+        run: node scripts/check-site.mjs
