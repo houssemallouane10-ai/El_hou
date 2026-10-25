@@ -32,6 +32,9 @@ jobs:
         with:
           node-version: 22
 
+      - name: Stamp the Barmaj service worker
+        run: node barmaj/tools/stamp.mjs
+
       - id: pages
         uses: actions/configure-pages@v5
 
