@@ -1,0 +1,81 @@
+{
+  "packageId": "io.github.houssemallouane10ai.barmaj",
+  "host": "houssemallouane10-ai.github.io",
+  "name": "برمج · Barmaj",
+  "launcherName": "برمج",
+  "display": "standalone",
+  "themeColor": "#0D0819",
+  "themeColorDark": "#0D0819",
+  "navigationColor": "#07040F",
+  "navigationColorDark": "#07040F",
+  "navigationDividerColor": "#07040F",
+  "navigationDividerColorDark": "#07040F",
+  "backgroundColor": "#07040F",
+  "enableNotifications": false,
+  "startUrl": "/El_hou/barmaj/",
+  "iconUrl": "https://houssemallouane10-ai.github.io/El_hou/barmaj/icons/icon-512.png",
+  "maskableIconUrl": "https://houssemallouane10-ai.github.io/El_hou/barmaj/icons/maskable-512.png",
+  "splashScreenFadeOutDuration": 300,
+  "signingKey": {
+    "path": "./barmaj.keystore",
+    "alias": "barmaj"
+  },
+  "appVersionName": "1.0.0",
+  "appVersionCode": 1,
+  "shortcuts": [
+    {
+      "name": "Python",
+      "shortName": "Python",
+      "url": "https://houssemallouane10-ai.github.io/El_hou/barmaj/?new=python",
+      "chosenIconUrl": "https://houssemallouane10-ai.github.io/El_hou/barmaj/icons/icon-192.png"
+    },
+    {
+      "name": "C++",
+      "shortName": "C++",
+      "url": "https://houssemallouane10-ai.github.io/El_hou/barmaj/?new=cpp",
+      "chosenIconUrl": "https://houssemallouane10-ai.github.io/El_hou/barmaj/icons/icon-192.png"
+    },
+    {
+      "name": "JavaScript",
+      "shortName": "JavaScript",
+      "url": "https://houssemallouane10-ai.github.io/El_hou/barmaj/?new=javascript",
+      "chosenIconUrl": "https://houssemallouane10-ai.github.io/El_hou/barmaj/icons/icon-192.png"
+    },
+    {
+      "name": "HTML",
+      "shortName": "HTML",
+      "url": "https://houssemallouane10-ai.github.io/El_hou/barmaj/?new=html",
+      "chosenIconUrl": "https://houssemallouane10-ai.github.io/El_hou/barmaj/icons/icon-192.png"
+    }
+  ],
+  "generatorApp": "barmaj/tools/android.mjs",
+  "webManifestUrl": "https://houssemallouane10-ai.github.io/El_hou/barmaj/manifest.webmanifest",
+  "fallbackType": "customtabs",
+  "features": {},
+  "alphaDependencies": {
+    "enabled": false
+  },
+  "enableSiteSettingsShortcut": false,
+  "isChromeOSOnly": false,
+  "isMetaQuest": false,
+  "fullScopeUrl": "https://houssemallouane10-ai.github.io/El_hou/barmaj/",
+  "minSdkVersion": 21,
+  "shareTarget": {
+    "action": "https://houssemallouane10-ai.github.io/El_hou/barmaj/",
+    "method": "GET",
+    "params": {
+      "title": "title",
+      "text": "text",
+      "url": "url"
+    }
+  },
+  "orientation": "default",
+  "fingerprints": [],
+  "additionalTrustedOrigins": [],
+  "retainedBundles": [],
+  "protocolHandlers": [],
+  "fileHandlers": [],
+  "launchHandlerClientMode": "",
+  "displayOverride": [],
+  "appVersion": "1.0.0"
+}

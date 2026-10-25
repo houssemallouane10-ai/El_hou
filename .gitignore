@@ -1,1 +1,7 @@
 barmaj/tools/node_modules/
+barmaj/tools/.cache/
+barmaj/android/.gradle/
+barmaj/android/build/
+barmaj/android/app/build/
+barmaj/android/local.properties
+*.keystore

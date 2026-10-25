@@ -8,7 +8,8 @@ import { dirname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const app = join(dirname(fileURLToPath(import.meta.url)), '..');
-const skip = /^(tools\/|sw\.js$|README\.md$)|\.(LICENSE|md|map)$/;
+// The Android project and the APK are not part of the web app
+const skip = /^(tools\/|android\/|download\/|sw\.js$|README\.md$)|\.(LICENSE|md|map)$/;
 
 const walk = async (dir) => (await Promise.all((await readdir(dir, { withFileTypes: true })).map((e) => {
   const p = join(dir, e.name);
