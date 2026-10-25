@@ -5,6 +5,7 @@ import { t, languageName } from './i18n.js';
 import { store } from './store.js';
 import { icon } from './icons.js';
 import { esc } from './util.js';
+import { mountYouTube } from './yt.js';
 
 const Hls = () => window.Hls;
 
@@ -103,7 +104,8 @@ export class StreamPlayer {
     this.container.innerHTML = `
       <div class="player" tabindex="0" data-state="idle">
         <video playsinline webkit-playsinline preload="auto" crossorigin="anonymous"></video>
-        <iframe class="pl-frame" hidden allow="autoplay; fullscreen; picture-in-picture; encrypted-media" referrerpolicy="no-referrer"></iframe>
+        <iframe class="pl-frame" hidden allow="autoplay; fullscreen; picture-in-picture; encrypted-media" referrerpolicy="strict-origin-when-cross-origin"></iframe>
+        <div class="pl-yt" hidden></div>
         <div class="pl-shade"></div>
         <div class="pl-badges">
           <span class="pl-live" hidden><i></i>${t('player.live')}</span>
@@ -137,6 +139,7 @@ export class StreamPlayer {
     this.root = $('.player');
     this.video = $('video');
     this.frame = $('.pl-frame');
+    this.ytHost = $('.pl-yt');
     this.ui = {
       live: $('.pl-live'), q: $('.pl-q'), demo: $('.pl-demo'), spinner: $('.pl-spinner'), big: $('.pl-big'),
       unmute: $('.pl-unmute'), msg: $('.pl-msg'), stats: $('.pl-stats'), toast: $('.pl-toast'),
@@ -197,7 +200,7 @@ export class StreamPlayer {
     });
     v.addEventListener('error', () => {
       // hls.js reports its own errors; this catches native/mp4 playback
-      if (!this.hls && this.current && this.current.type !== 'iframe') this.failover();
+      if (!this.hls && this.current && !this.embedded(this.current)) this.failover();
     });
 
     // Auto-hide controls while playing
@@ -287,10 +290,16 @@ export class StreamPlayer {
     this.ui.q.hidden = true;
     this.ui.live.hidden = true;
     this.root.dataset.state = 'loading';
-    this.root.classList.toggle('is-frame', src.type === 'iframe');
-    this.spin(src.type !== 'iframe');
+    this.root.classList.toggle('is-frame', this.embedded(src));
+    this.spin(!this.embedded(src));
     this.emit('source', i, { auto });
 
+    if (src.type === 'youtube') {
+      // Plays in the page; an unplayable video moves on to the next source
+      this.ytHost.hidden = false;
+      this.yt = mountYouTube(this.ytHost, src.videoId, { onError: () => this.failover() });
+      return;
+    }
     if (src.type === 'iframe') {
       this.frame.hidden = false;
       this.frame.src = src.url;
@@ -409,6 +418,13 @@ export class StreamPlayer {
     this.video.load();
     this.frame.removeAttribute('src');
     this.frame.hidden = true;
+    this.yt?.destroy();
+    this.yt = null;
+    this.ytHost.hidden = true;
+  }
+
+  embedded(src) {
+    return src.type === 'iframe' || src.type === 'youtube';
   }
 
   destroy() {
@@ -464,7 +480,7 @@ export class StreamPlayer {
 
   tick() {
     const v = this.video;
-    if (!this.current || this.current.type === 'iframe' || v.paused || v.ended || v.seeking) {
+    if (!this.current || this.embedded(this.current) || v.paused || v.ended || v.seeking) {
       this.stallFor = 0;
       this.lastTime = v.currentTime;
       if (this.showStats) this.renderStats();

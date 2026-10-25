@@ -12,6 +12,7 @@ import { ARABIC_NAMES } from './arabic-names.mjs';
 const DATA_DIR = new URL('../data/', import.meta.url);
 const OUT = new URL('highlights.json', DATA_DIR);
 const CHANNEL_CACHE = new URL('yt-channels.json', DATA_DIR);
+const EMBED_CACHE = new URL('yt-embed.json', DATA_DIR);
 
 const DAYS_BACK = 3;
 const KEEP_DAYS = 10;
@@ -262,6 +263,30 @@ async function resolveChannelId(source, cache) {
   return null;
 }
 
+/**
+ * Marks which videos may play on other sites. YouTube's oEmbed endpoint
+ * answers 401/403 when the owner turned embedding off and 404 when the video
+ * is gone; those videos would only show a "Watch on YouTube" link.
+ */
+async function checkEmbeddable(ids, cache) {
+  const unknown = [...new Set(ids)].filter((id) => !(id in cache));
+  for (let i = 0; i < unknown.length; i += 8) {
+    await Promise.all(
+      unknown.slice(i, i + 8).map(async (id) => {
+        try {
+          const url = `https://www.youtube.com/oembed?format=json&url=${encodeURIComponent(`https://www.youtube.com/watch?v=${id}`)}`;
+          const res = await fetch(url, { headers: { 'user-agent': 'Mozilla/5.0 (compatible; MudarrajHighlights/1.0)' } });
+          if (res.ok) cache[id] = true;
+          else if ([401, 403, 404].includes(res.status)) cache[id] = false;
+        } catch {
+          /* unknown for now; checked again next run */
+        }
+      }),
+    );
+  }
+  return cache;
+}
+
 async function readJson(url, fallback) {
   try {
     return JSON.parse(await readFile(url, 'utf8'));
@@ -346,6 +371,9 @@ async function main() {
   await mkdir(DATA_DIR, { recursive: true });
   const previous = await previousData('highlights.json', { matches: {}, latest: [] });
   const cache = await previousData('yt-channels.json', {});
+  const embeds = await previousData('yt-embed.json', {});
+  // Compare against what's live, before blocked videos are cleaned out below
+  const published = JSON.stringify({ m: previous.matches, l: previous.latest });
   const cacheBefore = JSON.stringify(cache);
 
   const videos = [];
@@ -365,14 +393,33 @@ async function main() {
     }
   }
 
+  // Only keep videos that can play inside the site
+  await checkEmbeddable(videos.map((v) => v.videoId), embeds);
+  const blockedBy = {};
+  videos.forEach((v) => embeds[v.videoId] === false && (blockedBy[v.channel] = (blockedBy[v.channel] || 0) + 1));
+  Object.entries(blockedBy).forEach(([ch, n]) => console.log(`  ${ch}: ${n} videos can't be embedded, skipped`));
+  const playableVideos = videos.filter((v) => embeds[v.videoId] !== false);
+  const ok = (id) => embeds[id] !== false;
+  Object.entries(previous.matches || {}).forEach(([id, h]) => {
+    if (h.ar && !ok(h.ar.videoId)) delete h.ar;
+    if (!ok(h.videoId)) {
+      if (h.ar) Object.assign(h, h.ar);
+      else delete previous.matches[id];
+    }
+  });
+  previous.latest = (previous.latest || []).filter((v) => ok(v.videoId));
+
   const matches = await finishedMatches();
   console.log(`  ${matches.length} finished matches in the last ${DAYS_BACK} days`);
-  const out = buildOutput(matches, videos, previous);
+  const out = buildOutput(matches, playableVideos, previous);
 
   const changed =
-    JSON.stringify({ m: previous.matches, l: previous.latest }) !== JSON.stringify({ m: out.matches, l: out.latest }) ||
+    published !== JSON.stringify({ m: out.matches, l: out.latest }) ||
     JSON.stringify(cache) !== cacheBefore;
   await writeFile(CHANNEL_CACHE, `${JSON.stringify(cache, null, 2)}\n`);
+  // Keep the embed cache to the videos still in play
+  const keep = new Set([...videos.map((v) => v.videoId), ...Object.values(out.matches).flatMap((h) => [h.videoId, h.ar?.videoId]), ...out.latest.map((v) => v.videoId)]);
+  await writeFile(EMBED_CACHE, `${JSON.stringify(Object.fromEntries(Object.entries(embeds).filter(([id]) => keep.has(id))))}\n`);
   await writeFile(OUT, `${JSON.stringify({ updatedAt: changed ? new Date().toISOString() : previous.updatedAt || null, ...out })}\n`);
   await setOutput('changed', changed);
   const arabic = Object.values(out.matches).filter((h) => h.ar).length;

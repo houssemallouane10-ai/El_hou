@@ -1,7 +1,19 @@
 // Official highlight videos, matched to finished matches by the scheduled
 // GitHub Action (scripts/highlights.mjs) and published as data/highlights.json.
 
+import { store } from './store.js';
+
 const VIDEO_ID = /^[\w-]{11}$/;
+
+// Videos that failed to play in this browser (e.g. blocked in the viewer's
+// country) are hidden from then on
+const blocked = new Set(store.get('hlBlocked', []));
+const playable = (id) => VIDEO_ID.test(id || '') && !blocked.has(id);
+
+export function markUnplayable(videoId) {
+  blocked.add(videoId);
+  store.set('hlBlocked', [...blocked].slice(-300));
+}
 const MAX_AGE = 10 * 60_000;
 
 let data = { matches: {}, latest: [], updatedAt: null };
@@ -28,20 +40,22 @@ export function loadHighlights({ force = false } = {}) {
 }
 
 /** The match's highlights, in Arabic when an Arabic version exists. */
-export function highlightFor(matchId) {
+export const highlightFor = (matchId) => highlightsFor(matchId)[0] || null;
+
+/** Every playable highlight for a match: Arabic first, then the original. */
+export function highlightsFor(matchId) {
   const h = data.matches[matchId];
-  if (!h) return null;
-  if (h.ar && VIDEO_ID.test(h.ar.videoId)) return { ...h, ...h.ar, lang: 'ar' };
-  return VIDEO_ID.test(h.videoId) ? h : null;
+  if (!h) return [];
+  const list = [];
+  if (h.ar && playable(h.ar.videoId)) list.push({ ...h, ...h.ar, lang: 'ar' });
+  if (playable(h.videoId) && h.videoId !== h.ar?.videoId) list.push({ ...h, lang: '' });
+  return list;
 }
 
 /** Latest videos, Arabic ones first. */
-export const latestHighlights = () => [
-  ...data.latest.filter((v) => v.lang === 'ar'),
-  ...data.latest.filter((v) => v.lang !== 'ar'),
-];
-
-export const embedUrl = (videoId, autoplay = false) =>
-  `https://www.youtube-nocookie.com/embed/${videoId}?rel=0&modestbranding=1&playsinline=1${autoplay ? '&autoplay=1' : ''}`;
+export const latestHighlights = () => {
+  const list = data.latest.filter((v) => playable(v.videoId));
+  return [...list.filter((v) => v.lang === 'ar'), ...list.filter((v) => v.lang !== 'ar')];
+};
 
 export const thumbUrl = (videoId) => `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`;

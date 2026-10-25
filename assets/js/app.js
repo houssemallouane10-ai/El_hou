@@ -1,6 +1,7 @@
 import { SITE, REFRESH, COMMENTARY_LANGS, LEAGUES } from './config.js';
 import { REGIONS, DEFAULT_REGION, CHANNELS, channelsFor, coverage } from './channels.js';
-import { loadHighlights, highlightFor, latestHighlights, embedUrl, thumbUrl } from './highlights.js';
+import { loadHighlights, highlightFor, highlightsFor, latestHighlights, markUnplayable, thumbUrl } from './highlights.js';
+import { mountYouTube } from './yt.js';
 import { t, getLang, setLang, onLangChange, applyDocumentLang, languageName, formatTime, formatDay, formatShortDay } from './i18n.js';
 import { loadDay, loadFixtures, loadSummary, dayKey, addDays } from './api.js';
 import { predict, grade } from './predict.js';
@@ -729,9 +730,15 @@ function buildMatchBody(page) {
   Promise.all([sourcesFor(m), loadHighlights()]).then(([list]) => {
     if (matchPage !== page) return;
     // A finished match opens on its official highlights when we have them
-    const h = isOver(m) ? highlightFor(m.id) : null;
-    page.sources = h ? [{ type: 'iframe', url: embedUrl(h.videoId, true), label: t('hl.label'), lang: 'multi', id: `hl#${h.videoId}`, highlight: true }, ...list] : list;
-    player.load(page.sources, { lang: store.get('commentaryLang', null) || getLang(), start: h ? 0 : undefined });
+    // A finished match opens on its official highlights, Arabic first; if
+    // one can't play here the player moves on to the next
+    const hls = isOver(m) ? highlightsFor(m.id) : [];
+    const hlSources = hls.map((h) => ({
+      type: 'youtube', videoId: h.videoId, label: `${t('hl.label')}${h.lang === 'ar' ? ` · ${t('hl.arabic')}` : ''}`,
+      lang: h.lang || 'multi', id: `hl#${h.videoId}`, highlight: true,
+    }));
+    page.sources = [...hlSources, ...list];
+    player.load(page.sources, { lang: store.get('commentaryLang', null) || getLang(), start: hlSources.length ? 0 : undefined });
     renderStreams(page);
   });
 
@@ -1029,6 +1036,8 @@ function renderHighlights() {
   </div>`;
 }
 
+let dialogPlayer = null;
+
 function openVideo(videoId, title) {
   if (!/^[\w-]{11}$/.test(videoId)) return;
   let dlg = document.getElementById('hlDialog');
@@ -1036,16 +1045,35 @@ function openVideo(videoId, title) {
     dlg = document.createElement('dialog');
     dlg.id = 'hlDialog';
     dlg.className = 'hl-dialog';
-    dlg.innerHTML = `<div class="hl-modal"><header><h3 dir="auto"></h3><button type="button" class="iconbtn" data-close aria-label="${t('hl.close')}">✕</button></header><div class="hl-frame"><iframe allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen referrerpolicy="strict-origin-when-cross-origin" title="video"></iframe></div></div>`;
+    dlg.innerHTML = `<div class="hl-modal"><header><h3 dir="auto"></h3><button type="button" class="iconbtn" data-close aria-label="${t('hl.close')}">✕</button></header><div class="hl-frame"></div><p class="hl-error" hidden></p></div>`;
     document.body.appendChild(dlg);
-    const close = () => dlg.close();
     dlg.addEventListener('click', (e) => {
-      if (e.target === dlg || e.target.closest('[data-close]')) close();
+      if (e.target === dlg || e.target.closest('[data-close]')) dlg.close();
     });
-    dlg.addEventListener('close', () => dlg.querySelector('iframe').removeAttribute('src'));
+    dlg.addEventListener('close', () => {
+      dialogPlayer?.destroy();
+      dialogPlayer = null;
+    });
   }
+  const err = dlg.querySelector('.hl-error');
+  err.hidden = true;
   dlg.querySelector('h3').textContent = title;
-  dlg.querySelector('iframe').src = embedUrl(videoId, true);
+  dialogPlayer?.destroy();
+  dialogPlayer = mountYouTube(dlg.querySelector('.hl-frame'), videoId, {
+    onError: (code) => {
+      // Never send the viewer to YouTube. 100/101/150 mean the video can't
+      // play here at all, so hide it from now on; anything else may be a
+      // passing network problem.
+      dialogPlayer?.destroy();
+      const permanent = [100, 101, 150].includes(code);
+      if (permanent) {
+        markUnplayable(videoId);
+        document.querySelectorAll(`[data-video="${videoId}"]`).forEach((b) => b.closest('.hcard')?.remove());
+      }
+      err.textContent = t(permanent ? 'hl.unavailable' : 'hl.failed');
+      err.hidden = false;
+    },
+  });
   if (dlg.showModal) dlg.showModal();
   else dlg.setAttribute('open', '');
 }
