@@ -499,6 +499,11 @@ textarea.field { min-height: 160px; resize: vertical; flex: 1; font-size: 15px; 
 }
 .kb-key.kb-ic { padding: 0; width: 38px; color: var(--muted); }
 .kb-key .ic { width: 18px; height: 18px; }
+.install-steps { margin: 0; padding-inline-start: 22px; line-height: 1.7; }
+.install-steps li { margin-bottom: 8px; }
+.install-steps .ic { width: 18px; height: 18px; vertical-align: -3px; color: var(--accent); }
+.kb-key.kb-wide { font-size: 14px; padding: 0 9px; }
+.kb-key.kb-comment { color: var(--hl-comment); font-style: italic; }
 .kb-key.on, .kb-pad.on { background: var(--accent); color: var(--accent-ink); }
 .kb-pad { width: 56px; background: var(--panel-2); border: 1px dashed var(--line-2); color: var(--muted); touch-action: none; }
 
@@ -709,7 +714,7 @@ input[type="range"] { accent-color: var(--accent); width: 130px; }
   background-position: 6px 0;
 }
 
-.fx-canvas { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 5; }
+.fx-canvas { position: absolute; left: 0; top: 0; pointer-events: none; z-index: 5; }
 .fx-combo {
   position: absolute;
   top: 10px;
@@ -723,19 +728,11 @@ input[type="range"] { accent-color: var(--accent); width: 130px; }
   transform: scale(.8);
   transition: opacity .25s, transform .25s;
 }
-.fx-combo.on { opacity: 1; transform: scale(1); animation: combo-pop .22s ease-out; }
+.fx-combo.on { opacity: 1; transform: scale(1); }
 .fx-combo b { font: 800 28px/1 var(--mono); color: var(--accent); text-shadow: 0 0 14px var(--accent); letter-spacing: -.02em; }
 .fx-combo span { font-size: 12px; font-weight: 700; color: var(--text); opacity: .85; white-space: nowrap; }
 .fx-combo.lvl2 b { font-size: 34px; color: var(--rb1); text-shadow: 0 0 18px var(--rb1); }
 .fx-combo.lvl3 b, .fx-combo.lvl4 b { font-size: 40px; color: var(--rb2); text-shadow: 0 0 22px var(--rb2), 0 0 40px var(--accent); }
-@keyframes combo-pop { 0% { transform: scale(1.35); } 100% { transform: scale(1); } }
-.fx-shake { animation: shake .3s cubic-bezier(.36, .07, .19, .97); }
-@keyframes shake {
-  20% { transform: translate(-3px, 2px) rotate(-.3deg); }
-  40% { transform: translate(4px, -2px) rotate(.3deg); }
-  60% { transform: translate(-3px, -1px); }
-  80% { transform: translate(2px, 2px); }
-}
 .fx-win .sdot { animation: win .9s ease-out; }
 @keyframes win {
   0% { box-shadow: 0 0 0 0 var(--ok); }

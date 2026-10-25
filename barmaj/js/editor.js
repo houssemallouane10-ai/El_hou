@@ -10,6 +10,8 @@ const {
   searchKeymap, highlightSelectionMatches, autocompletion, completionKeymap, closeBrackets,
   closeBracketsKeymap, completeAnyWord, insertBracket, tags: t, Prec, undo, redo, indentMore, indentLess,
   ViewPlugin, RangeSetBuilder, syntaxTree, ensureSyntaxTree, tagHighlighter, highlightTree,
+  snippetCompletion, nextSnippetField, hasNextSnippetField, acceptCompletion, completionStatus, toggleComment,
+  EditorSelection,
 } = CM;
 
 // One table drives both the editor colours and the code image (snap.js)
@@ -120,6 +122,31 @@ const indentGuides = ViewPlugin.fromClass(class {
 
 
 
+// Shortcuts (js/snippets.js): typing "pri" in C offers printf("") with the
+// cursor between the quotes; a last stop after the snippet lets Tab leave it
+const FIELD = /[#$]\{((?:\\[{}]|[^{}])*)\}/g;
+const preview = (tpl) => {
+  const first = tpl.split('\n')[0].replace(FIELD, (_, name) => name || '…').replace(/\\([{}])/g, '$1').trim();
+  return tpl.includes('\n') ? `${first} …` : first;
+};
+const NOT_CODE = /string|comment|regexp|char|attribute|tagname/i;
+
+const shortcutSource = (list) => {
+  // Shortcuts rank above plain words, and the first of a list above the next
+  const options = list.map(([label, tpl], i) => snippetCompletion(/\$\{\}$/.test(tpl) ? tpl : `${tpl}\${}`, {
+    label, detail: preview(tpl), type: 'snippet', boost: 3 - i / list.length,
+  }));
+  return (ctx) => {
+    const word = ctx.matchBefore(/[#@]?[\w$.]+$/);
+    if (!word && !ctx.explicit) return null;
+    const from = word ? word.from : ctx.pos;
+    // After "<" the HTML grammar completes tag names itself
+    if (/<\/?$/.test(ctx.state.sliceDoc(Math.max(0, from - 2), from))) return null;
+    if (NOT_CODE.test(syntaxTree(ctx.state).resolveInner(ctx.pos, -1).name)) return null;
+    return { from, options, validFor: /^[#@]?[\w$.]*$/ };
+  };
+};
+
 const theme = EditorView.theme({
   '&': { height: '100%', color: 'var(--code-fg)', backgroundColor: 'var(--code-bg)', fontSize: 'var(--code-size)' },
   '.cm-scroller': { fontFamily: 'var(--mono)', lineHeight: '1.6', overscrollBehavior: 'contain' },
@@ -148,6 +175,9 @@ const theme = EditorView.theme({
   '.cm-tooltip-autocomplete > ul > li': { padding: '6px 10px !important' },
   '.cm-tooltip-autocomplete > ul > li[aria-selected]': { backgroundColor: 'var(--accent)', color: 'var(--accent-ink)' },
   '.cm-completionIcon': { opacity: '.6' },
+  '.cm-completionIcon-snippet::after': { content: "'⚡'", fontSize: '.85em' },
+  '.cm-completionDetail': { fontStyle: 'normal', opacity: '.7', marginInlineStart: '1em' },
+  '.cm-snippetField': { backgroundColor: 'var(--code-match)', borderRadius: '3px' },
   '.cm-errline': { backgroundColor: 'var(--err-line)' },
   '.cm-warnline': { backgroundColor: 'var(--warn-line)' },
   '.cm-mark-gutter': { width: '10px' },
@@ -208,9 +238,10 @@ export class Editor {
       complete: new Compartment(),
       rainbow: new Compartment(),
       guides: new Compartment(),
+      shortcuts: new Compartment(),
     };
     // Current content of each compartment, reused when a new document state is created
-    this.cur = { lang: [], indent: [], wrap: [], numbers: [], brackets: [], complete: [], rainbow: [], guides: [] };
+    this.cur = { lang: [], indent: [], wrap: [], numbers: [], brackets: [], complete: [], rainbow: [], guides: [], shortcuts: [] };
     this.runKeys = keymap.of([
       { key: 'Mod-Enter', run: () => { onRun(); return true; } },
       { key: 'Shift-Enter', run: () => { onRun(); return true; } },
@@ -249,6 +280,7 @@ export class Editor {
         c.wrap.of(cur.wrap),
         c.rainbow.of(cur.rainbow),
         c.guides.of(cur.guides),
+        c.shortcuts.of(cur.shortcuts),
         EditorState.languageData.of(() => [{ autocomplete: completeAnyWord }]),
         EditorView.contentAttributes.of({ autocapitalize: 'off', autocorrect: 'off', spellcheck: 'false', translate: 'no' }),
         theme,
@@ -282,11 +314,17 @@ export class Editor {
     });
   }
 
-  async setLanguage(hl) {
+  async setLanguage(hl, id) {
     const token = ++this.langToken;
-    const support = await loadGrammar(hl);
+    const [support, { snippets }] = await Promise.all([loadGrammar(hl), import('./snippets.js')]);
     if (token !== this.langToken) return;
-    this.set({ lang: support });
+    // One source per language: the editor tracks a source by identity
+    const list = snippets[id];
+    const source = list && shortcutSource(list);
+    this.set({
+      lang: support,
+      shortcuts: source ? EditorState.languageData.of(() => [{ autocomplete: source }]) : [],
+    });
   }
 
   // Replace the whole document (switching files) with a fresh undo history
@@ -298,22 +336,41 @@ export class Editor {
 
   focus() { this.view.focus(); }
 
+  // ‸ in the text marks where the cursor ends up
   type(text) {
     const v = this.view;
     if (this.closeBracketsOn && text.length === 1) {
       const tr = insertBracket(v.state, text);
       if (tr) { v.dispatch(tr); return; }
     }
-    v.dispatch(v.state.update(v.state.replaceSelection(text), { scrollIntoView: true, userEvent: 'input.type' }));
+    const caret = text.indexOf('‸');
+    if (caret < 0) {
+      v.dispatch(v.state.update(v.state.replaceSelection(text), { scrollIntoView: true, userEvent: 'input.type' }));
+      return;
+    }
+    const insert = text.replace('‸', '');
+    v.dispatch(v.state.update(v.state.changeByRange((r) => ({
+      changes: { from: r.from, to: r.to, insert },
+      range: EditorSelection.cursor(r.from + caret),
+    })), { scrollIntoView: true, userEvent: 'input.type' }));
   }
 
   tab(back) { (back ? indentLess : indentMore)(this.view); }
 
-  // Insert the indent unit at the cursor (like a Tab key) when nothing is selected
+  // Tab: takes the highlighted suggestion, else moves to the next place of a
+  // shortcut, else indents like a Tab key
   tabKey() {
     const v = this.view;
+    if (completionStatus(v.state) === 'active' && acceptCompletion(v)) return;
+    if (hasNextSnippetField(v.state) && nextSnippetField(v)) return;
     if (!v.state.selection.main.empty) { indentMore(v); return; }
     this.type(v.state.facet(indentUnit));
+  }
+
+  // Comments the current line(s) out, or back in; `fallback` is typed when the
+  // language has no comment syntax known to the editor
+  comment(fallback) {
+    if (!toggleComment(this.view) && fallback) this.type(`${fallback} `);
   }
 
   undo() { undo(this.view); }
@@ -358,10 +415,14 @@ export class Editor {
 
   openSearch() { CM.openSearchPanel(this.view); }
 
-  // Screen position of the cursor, for the typing effects
-  caretCoords() {
-    const v = this.view;
-    return v.coordsAtPos(v.state.selection.main.head);
+  // Screen position of the cursor for the typing effects, read during the
+  // editor's own layout pass: read(coords) runs before write(result)
+  measureCaret(read, write) {
+    this.view.requestMeasure({
+      key: 'caret-fx',
+      read: (v) => read(v.coordsAtPos(v.state.selection.main.head)),
+      write,
+    });
   }
 
   // Lines of [text, token class] pairs for the code image; uses the selection if there is one

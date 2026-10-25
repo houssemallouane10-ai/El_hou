@@ -10,12 +10,24 @@ const CHEERS = {
   en: ['Great!', 'Awesome! 💪', 'On fire 🔥', 'Unstoppable! ⚡', 'Legendary 👑'],
 };
 const MILESTONES = [20, 50, 100, 200, 400];
+const SPARK_AREA = 240;
+const SHAKE = [
+  { transform: 'none' },
+  { transform: 'translate(-3px, 2px) rotate(-.3deg)' },
+  { transform: 'translate(4px, -2px) rotate(.3deg)' },
+  { transform: 'translate(-3px, -1px)' },
+  { transform: 'translate(2px, 2px)' },
+  { transform: 'none' },
+];
 
+// Sparks are placed from the cursor position measured during the editor's own
+// layout pass (measure), so typing never forces an extra layout
 export class PowerMode {
-  constructor(host, getCaret) {
+  constructor(host, measure) {
     this.host = host;
-    this.getCaret = getCaret;
+    this.measure = measure;
     this.particles = [];
+    this.queued = [];
     this.combo = 0;
     this.canvas = document.createElement('canvas');
     this.canvas.className = 'fx-canvas';
@@ -23,18 +35,16 @@ export class PowerMode {
     this.badge.className = 'fx-combo';
     this.badge.setAttribute('aria-hidden', 'true');
     host.append(this.canvas, this.badge);
+    // A small canvas that follows the cursor: a canvas as big as the editor
+    // would be sent to the screen whole on every frame, which phones feel
+    const dpr = Math.min(1.5, devicePixelRatio || 1);
+    this.canvas.width = this.canvas.height = SPARK_AREA * dpr;
+    this.canvas.style.width = this.canvas.style.height = `${SPARK_AREA}px`;
     this.ctx = this.canvas.getContext('2d');
-    new ResizeObserver(() => this.resize()).observe(host);
-    this.resize();
-    this.readColors();
-  }
-
-  resize() {
-    const r = this.host.getBoundingClientRect();
-    const dpr = Math.min(2, devicePixelRatio || 1);
-    this.canvas.width = Math.max(1, r.width * dpr);
-    this.canvas.height = Math.max(1, r.height * dpr);
     this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    this.ox = 0;
+    this.oy = 0;
+    this.readColors();
   }
 
   readColors() {
@@ -43,12 +53,33 @@ export class PowerMode {
   }
 
   hit(kind) {
-    const caret = this.getCaret();
-    if (caret) {
-      const box = this.host.getBoundingClientRect();
-      const x = caret.left - box.left;
-      const y = (caret.top + caret.bottom) / 2 - box.top;
-      const n = kind === 'delete' ? 4 : reduced.matches ? 3 : 9;
+    if (kind === 'type') this.bump();
+    this.queued.push(kind);
+    // One measure per frame; ask again if an earlier one never came back
+    if (this.queued.length > 1 && performance.now() - this.asked < 300) return;
+    this.asked = performance.now();
+    this.measure(
+      (caret) => caret && { caret, box: this.host.getBoundingClientRect() },
+      (at) => this.spawn(at),
+    );
+  }
+
+  spawn(at) {
+    const kinds = this.queued.slice(-6);
+    this.queued = [];
+    if (!at) return;
+    const x = at.caret.left - at.box.left;
+    const y = (at.caret.top + at.caret.bottom) / 2 - at.box.top;
+    // Move the canvas to the cursor unless sparks are still flying close by
+    const margin = SPARK_AREA / 4;
+    const inside = x > this.ox + margin && x < this.ox + SPARK_AREA - margin && y > this.oy + margin && y < this.oy + SPARK_AREA - margin;
+    if (!this.particles.length || !inside) {
+      this.ox = Math.round(x - SPARK_AREA / 2);
+      this.oy = Math.round(y - SPARK_AREA / 2);
+      this.canvas.style.transform = `translate(${this.ox}px, ${this.oy}px)`;
+    }
+    for (const kind of kinds) {
+      const n = kind === 'delete' ? 3 : reduced.matches ? 3 : 7;
       for (let i = 0; i < n; i++) {
         const a = Math.random() * Math.PI * 2;
         const speed = 1.2 + Math.random() * 3.2;
@@ -61,10 +92,9 @@ export class PowerMode {
           color: kind === 'delete' ? '#8d97a9' : this.colors[(Math.random() * this.colors.length) | 0],
         });
       }
-      if (this.particles.length > 400) this.particles.splice(0, this.particles.length - 400);
-      if (!this.raf) this.raf = requestAnimationFrame(() => this.frame());
     }
-    if (kind === 'type') this.bump();
+    if (this.particles.length > 160) this.particles.splice(0, this.particles.length - 160);
+    if (!this.raf) this.raf = requestAnimationFrame(() => this.frame());
   }
 
   bump() {
@@ -80,14 +110,10 @@ export class PowerMode {
     label.textContent = level ? CHEERS[lang()][Math.min(level, 5) - 1] : 'combo';
     this.badge.replaceChildren(num, label);
     this.badge.className = `fx-combo on lvl${Math.min(level, 4)}`;
-    this.badge.style.animation = 'none';
-    void this.badge.offsetWidth;
-    this.badge.style.animation = '';
+    // Web animations restart without forcing a layout (unlike toggling a class)
+    this.badge.animate?.([{ transform: 'scale(1.35)' }, { transform: 'scale(1)' }], { duration: 220, easing: 'ease-out' });
     if (hitMilestone && !reduced.matches) {
-      this.host.classList.remove('fx-shake');
-      void this.host.offsetWidth;
-      this.host.classList.add('fx-shake');
-      setTimeout(() => this.host.classList.remove('fx-shake'), 320);
+      this.host.animate?.(SHAKE, { duration: 300, easing: 'cubic-bezier(.36, .07, .19, .97)' });
       navigator.vibrate?.(18);
     }
   }
@@ -98,29 +124,30 @@ export class PowerMode {
   }
 
   frame() {
-    const { ctx } = this;
-    const w = this.canvas.width;
-    const h = this.canvas.height;
-    ctx.clearRect(0, 0, w, h);
+    const { ctx, ox, oy } = this;
+    ctx.clearRect(0, 0, SPARK_AREA, SPARK_AREA);
     this.particles = this.particles.filter((p) => p.life > 0.02);
+    // A faint halo around each spark instead of shadowBlur, which is slow on phones
     for (const p of this.particles) {
       p.x += p.vx;
       p.y += p.vy;
       p.vy += 0.16;
       p.vx *= 0.98;
       p.life *= 0.93;
-      ctx.globalAlpha = p.life;
+      const r = p.size * (0.5 + p.life / 2);
       ctx.fillStyle = p.color;
-      ctx.shadowColor = p.color;
-      ctx.shadowBlur = 8;
+      ctx.globalAlpha = p.life * 0.3;
       ctx.beginPath();
-      ctx.arc(p.x, p.y, p.size * (0.5 + p.life / 2), 0, Math.PI * 2);
+      ctx.arc(p.x - ox, p.y - oy, r * 2.4, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.globalAlpha = p.life;
+      ctx.beginPath();
+      ctx.arc(p.x - ox, p.y - oy, r, 0, Math.PI * 2);
       ctx.fill();
     }
     ctx.globalAlpha = 1;
-    ctx.shadowBlur = 0;
     this.raf = this.particles.length ? requestAnimationFrame(() => this.frame()) : null;
-    if (!this.raf) ctx.clearRect(0, 0, w, h);
+    if (!this.raf) ctx.clearRect(0, 0, SPARK_AREA, SPARK_AREA);
   }
 }
 
