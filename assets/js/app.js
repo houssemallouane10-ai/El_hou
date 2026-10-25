@@ -2,7 +2,7 @@ import { SITE, REFRESH, COMMENTARY_LANGS, LEAGUES } from './config.js';
 import { REGIONS, DEFAULT_REGION, CHANNELS, channelsFor, coverage } from './channels.js';
 import { loadHighlights, highlightFor, latestHighlights, embedUrl, thumbUrl } from './highlights.js';
 import { t, getLang, setLang, onLangChange, applyDocumentLang, languageName, formatTime, formatDay, formatShortDay } from './i18n.js';
-import { loadDay, refreshLeagues, loadSummary, dayKey, addDays } from './api.js';
+import { loadDay, loadFixtures, loadSummary, dayKey, addDays } from './api.js';
 import { predict, grade } from './predict.js';
 import { sourcesFor, addUserLink } from './streams.js';
 import { StreamPlayer } from './player.js';
@@ -119,7 +119,8 @@ async function fetchDay(offset, opts) {
   const res = await loadDay(offset, opts);
   index(res.matches);
   state.days[offset] = res;
-  state.updatedAt = new Date();
+  // Show when the data was published, not when this tab fetched it
+  state.updatedAt = res.updatedAt ? new Date(res.updatedAt) : new Date();
   return res;
 }
 
@@ -141,14 +142,12 @@ async function pollLive() {
   }
   if (today.source !== 'espn') return;
   const now = Date.now();
-  const hot = dayMatches(0).concat(dayMatches(-1)).filter(
+  const hot = dayMatches(0).concat(dayMatches(-1)).some(
     (m) => isLive(m) || (isUpcoming(m) && m.kickoff - now < 10 * 60_000 && now - m.kickoff < 3 * 3600_000),
   );
-  const slugs = new Set(hot.map((m) => m.league.slug));
-  if (!slugs.size) return;
-  const fresh = await refreshLeagues(slugs);
-  index(fresh);
-  state.updatedAt = new Date();
+  if (!hot) return;
+  await loadFixtures({ force: true });
+  await Promise.all([-1, 0, 1].map((o) => fetchDay(o)));
   render({ soft: true });
 }
 
@@ -656,6 +655,12 @@ async function renderMatch(slug, id) {
   }
   if (matchPage !== page) return;
   if (!page.match) {
+    // Opened from a link before the match list loaded: wait for it once
+    await state.ready;
+    if (matchPage !== page) return;
+    page.match = state.byId.get(id) || null;
+  }
+  if (!page.match) {
     app.querySelector('.mp-board').innerHTML = `<div class="empty">${t('match.notFound')}</div>`;
     return;
   }
@@ -1137,13 +1142,16 @@ function boot() {
     else if (matchPage) renderTabs(matchPage);
   });
   render();
-  initialLoad().catch(() => render());
+  state.ready = initialLoad().catch(() => render());
 
   setInterval(() => {
     pollLive().catch(() => {});
   }, REFRESH.live);
   setInterval(() => {
-    Promise.all([fetchDay(0, { force: true }), fetchDay(1), loadHighlights({ force: true })]).then(() => render({ soft: true })).catch(() => {});
+    Promise.all([loadFixtures({ force: true }), loadHighlights({ force: true })])
+      .then(() => Promise.all([-1, 0, 1].map((o) => fetchDay(o))))
+      .then(() => render({ soft: true }))
+      .catch(() => {});
   }, REFRESH.idle);
   setInterval(tickCountdown, 1000);
 }

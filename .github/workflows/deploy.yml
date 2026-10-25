@@ -1,13 +1,14 @@
 name: Deploy site
 
-# Publishes the site to GitHub Pages on every push to main, and every
-# 20 minutes refreshes data/highlights.json (official highlight videos for
-# finished matches), redeploying only when something new was found.
+# Publishes the site to GitHub Pages on every push to main. Every 5 minutes
+# it also refreshes the match data the site reads (data/fixtures.json and
+# data/summary/, from ESPN) and data/highlights.json (official highlight
+# videos), redeploying only when something changed.
 on:
   push:
     branches: [main]
   schedule:
-    - cron: '7,27,47 * * * *'
+    - cron: '*/5 * * * *'
   workflow_dispatch:
 
 permissions:
@@ -24,7 +25,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     outputs:
-      changed: ${{ steps.highlights.outputs.changed }}
+      changed: ${{ steps.highlights.outputs.changed == 'true' || steps.fixtures.outputs.changed == 'true' }}
     steps:
       - uses: actions/checkout@v4
 
@@ -37,6 +38,12 @@ jobs:
 
       - id: pages
         uses: actions/configure-pages@v5
+
+      - id: fixtures
+        name: Fetch fixtures and scores
+        env:
+          PREVIOUS_BASE_URL: ${{ steps.pages.outputs.base_url }}
+        run: node scripts/fixtures.mjs
 
       - id: highlights
         name: Find highlights
@@ -51,7 +58,7 @@ jobs:
         run: sleep 75
 
       - uses: actions/upload-pages-artifact@v3
-        if: github.event_name != 'schedule' || steps.highlights.outputs.changed == 'true'
+        if: github.event_name != 'schedule' || steps.highlights.outputs.changed == 'true' || steps.fixtures.outputs.changed == 'true'
         with:
           path: .
 

@@ -10,11 +10,12 @@ export const API = {
   sportsdb: 'https://www.thesportsdb.com/api/v1/json/123',
 };
 
-// Polling intervals (ms)
+// Polling intervals (ms). The published data is refreshed every ~5 minutes,
+// so polling faster than once a minute only re-reads the same file.
 export const REFRESH = {
-  live: 30_000,
+  live: 60_000,
   idle: 5 * 60_000,
-  matchLive: 20_000,
+  matchLive: 60_000,
 };
 
 // ESPN league slugs, in display order. Unknown slugs are skipped silently.

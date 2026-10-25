@@ -18,9 +18,13 @@
 - **القنوات الناقلة**: صفحة فيها beIN SPORTS، Arena Sport، FOX، Sky Sports، DAZN، Movistar Plus+، CANAL+، TNT Sports وغيرهم: اختار منطقتك وتشوف واش تبث كل قناة اليوم وغدًا، مع رابط المنصة الرسمية. نفس المعلومة تظهر في صفحة كل مباراة. الحقوق مكتوبة في `assets/js/channels.js` (موسم 2026-27) وتقدر تحدّثها كل موسم.
 - **واجهة بثلاث لغات**: العربية، Français، English. وضع ليلي ونهاري. يخدم على الهاتف والكمبيوتر.
 
+## المباريات والنتائج
+
+ESPN ما يخليش المتصفحات تقرا البيانات تاعو من موقع آخر. لهاذا GitHub Actions (`scripts/fixtures.mjs`) يجيب كل 5 دقائق المباريات والنتائج والإحصائيات والتشكيلات، وينشرهم مع الموقع في `data/fixtures.json` و`data/summary/`. الموقع يقرا هاذ الملفات ويعاود يقراهم كل دقيقة وقت الماتشات.
+
 ## الملخصات التلقائية
 
-كل 20 دقيقة يخدم GitHub Actions (`.github/workflows/deploy.yml`) هكذا:
+كل 5 دقائق يخدم GitHub Actions (`.github/workflows/deploy.yml`) هكذا:
 1. يجيب المباريات اللي كملت في آخر 3 أيام من ESPN.
 2. يقرا الفيديوهات الجديدة من القنوات الرسمية في يوتيوب: Premier League، LALIGA، Serie A، Bundesliga، Ligue 1، CBS Sports Golazo، TNT Sports، MLS، دوري روشن، CAF TV، Liga Portugal، Eredivisie، EFL.
 3. يقرا تاني القنوات الرسمية العربية: beIN SPORTS وAD Sports، وثمانية وON Time Sports كي ينشرو ملخصات.
@@ -35,7 +39,7 @@
 1. لازم الملفات يكونو في الفرع `main`، لأن الخدمة الأوتوماتيكية تاع GitHub تخدم غير منو.
 2. في المستودع على GitHub: **Settings ← Pages ← Build and deployment ← Source: GitHub Actions**.
 3. الموقع يتنشر وحدو، ويكون على:
-   **https://houssemallouane10-ai.github.io/Nadouch/**
+   **https://houssemallouane10-ai.github.io/El_hou/**
 
 ## إضافة روابط البث
 
