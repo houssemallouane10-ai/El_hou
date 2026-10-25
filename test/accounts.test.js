@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { after, before, describe, it } from 'node:test';
-import { OWNER_CODE, PASSWORD, nextPhone, signUp, startTestServer, validJob } from './helpers.js';
+import { PASSWORD, nextPhone, signUp, startTestServer, validJob } from './helpers.js';
 
 describe('accounts', () => {
   let server;
@@ -77,23 +77,27 @@ describe('accounts', () => {
     assert.equal((await client.get('/api/me/summary')).status, 401);
   });
 
-  it('makes owners only with the owner code, at sign-up or later from settings', async () => {
-    const phone = nextPhone();
-    const body = { name: 'صاحب المنصة', phone, password: PASSWORD, role: 'employer', wilayaCode: 62, acceptTerms: true };
-    const wrong = await server.client().post('/api/auth/register', { ...body, ownerCode: 'not-the-code' });
-    assert.deepEqual(wrong.data.error.fields, { ownerCode: 'wrong_code' });
-    const owner = await server.client().post('/api/auth/register', { ...body, ownerCode: ` ${OWNER_CODE} ` });
-    assert.equal(owner.status, 201, 'a wrong code creates nothing, so the phone is still free');
-    assert.deepEqual([owner.data.user.isOwner, owner.data.user.isAdmin], [true, true]);
+  it('makes the first account of a new platform its owner, and no other', async () => {
+    const fresh = await startTestServer({ withOwner: false });
+    try {
+      assert.equal((await fresh.client().get('/api/session')).data.setupRequired, true);
+      const first = await signUp(fresh, { name: 'صاحب المنصة', role: 'employer' });
+      assert.deepEqual([first.user.isOwner, first.user.isAdmin], [true, true]);
+      assert.equal((await first.client.get('/api/admin/dashboard')).status, 200);
+      assert.equal((await fresh.client().get('/api/session')).data.setupRequired, false);
+      const second = await signUp(fresh);
+      assert.deepEqual([second.user.isOwner, second.user.isAdmin], [false, false]);
 
-    const { client, user } = await signUp(server);
-    assert.deepEqual([user.isOwner, user.isAdmin], [false, false]);
-    assert.deepEqual((await client.post('/api/me/owner', { ownerCode: 'guess-guess' })).data.error.fields, { ownerCode: 'wrong_code' });
-    assert.deepEqual((await client.post('/api/me/owner', {})).data.error.fields, { ownerCode: 'required' });
-    const claimed = await client.post('/api/me/owner', { ownerCode: OWNER_CODE });
-    assert.deepEqual([claimed.data.user.isOwner, claimed.data.user.isAdmin], [true, true]);
-    assert.equal((await client.get('/api/admin/dashboard')).status, 200);
-    assert.equal((await server.client().post('/api/me/owner', { ownerCode: OWNER_CODE })).status, 401);
+      const leave = await first.client.post('/api/me/deletion', { password: PASSWORD });
+      assert.deepEqual([leave.status, leave.data.error.code], [409, 'LAST_OWNER'], 'the only owner cannot delete the account');
+      fresh.services.accounts.setOwnerByPhone(second.phone, true);
+      assert.equal((await first.client.post('/api/me/deletion', { password: PASSWORD })).status, 204);
+      assert.equal((await fresh.client().post('/api/auth/register', {
+        name: 'زائر', phone: nextPhone(), password: PASSWORD, role: 'seeker', wilayaCode: 16, acceptTerms: true,
+      })).data.user.isOwner, false, 'ownership is never handed to a later sign-up');
+    } finally {
+      await fresh.close();
+    }
   });
 
   it('requires a headline and a category before listing a worker profile', async () => {

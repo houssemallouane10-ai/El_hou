@@ -208,6 +208,18 @@ const MIGRATIONS = [
     name: 'owners recorded on the account',
     sql: 'ALTER TABLE users ADD COLUMN is_owner INTEGER NOT NULL DEFAULT 0;',
   },
+  {
+    version: 4,
+    name: 'owner-managed platform settings',
+    sql: `
+      CREATE TABLE settings (
+        key TEXT PRIMARY KEY,
+        value TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        updated_by INTEGER REFERENCES users (id) ON DELETE SET NULL
+      );
+    `,
+  },
 ];
 
 // `upTo` stops at a given version (used by tests to build an older schema).

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { after, before, describe, it } from 'node:test';
-import { PASSWORD, PLACES, nextPhone, signUp, signUpOwner, startTestServer, validJob } from './helpers.js';
+import { PASSWORD, PLACES, nextPhone, signUp, startTestServer, validJob } from './helpers.js';
 
 describe('places across the country', () => {
   let server;
@@ -148,7 +148,7 @@ describe('terms, owners and moderators', () => {
   let owner;
   before(async () => {
     server = await startTestServer();
-    owner = await signUpOwner(server, { name: 'المالك' });
+    owner = server.owner;
   });
   after(() => server.close());
 

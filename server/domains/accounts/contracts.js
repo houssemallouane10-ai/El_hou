@@ -17,13 +17,6 @@ export const parseRegistration = (input) => createValidator(input)
   .accepted('acceptTerms')
   .result();
 
-// Optional at sign-up: the deployment's owner code (OWNER_CODE), typed by the platform owner.
-export const readOwnerCodeInput = (input) => (typeof input?.ownerCode === 'string' ? input.ownerCode.trim().slice(0, 200) : '');
-
-export const parseOwnerClaim = (input) => createValidator(input)
-  .secret('ownerCode', { max: 200 })
-  .result();
-
 export const parseLogin = (input) => createValidator(input)
   .phone('phone', { required: true, mobileOnly: true })
   .secret('password', { max: LIMITS.password.max })

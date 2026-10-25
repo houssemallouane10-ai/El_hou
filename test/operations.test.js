@@ -8,26 +8,18 @@ import { createServices } from '../server/services.js';
 import { createBackups } from '../server/shared/db/backups.js';
 import { openDatabase } from '../server/shared/db/database.js';
 import { startupWarnings } from '../server/startup-checks.js';
-import { OWNER_CODE, createTestClock, signUp, startTestServer } from './helpers.js';
+import { createTestClock, signUp, startTestServer } from './helpers.js';
+
+const FINGERPRINT = Array.from({ length: 32 }, (_, index) => (index + 16).toString(16).toUpperCase()).join(':');
 
 describe('running the platform', () => {
-  it('reads hosting settings and refuses owner codes that are too short', () => {
+  it('reads hosting settings from the environment', () => {
     assert.equal(loadConfig({ RENDER_EXTERNAL_URL: 'https://khedmati.onrender.com/' }).publicUrl, 'https://khedmati.onrender.com');
     assert.equal(loadConfig({ PUBLIC_URL: 'https://khedmati.dz', RENDER_EXTERNAL_URL: 'https://x.onrender.com' }).publicUrl, 'https://khedmati.dz');
     assert.equal(loadConfig({}).backupDays, 7);
     assert.equal(loadConfig({ BACKUP_DAYS: '0' }).backupDays, 0);
-    assert.equal(loadConfig({ OWNER_CODE: '  long-enough-code ' }).ownerCode, 'long-enough-code');
-    assert.throws(() => loadConfig({ OWNER_CODE: 'short' }), /at least 8 characters/);
-  });
-
-  it('accepts no owner code at all when none is configured', async () => {
-    const server = await startTestServer({ env: { OWNER_CODE: '' } });
-    try {
-      const { client } = await signUp(server);
-      assert.deepEqual((await client.post('/api/me/owner', { ownerCode: OWNER_CODE })).data.error.fields, { ownerCode: 'wrong_code' });
-    } finally {
-      await server.close();
-    }
+    const bare = FINGERPRINT.replace(/:/g, '').toLowerCase();
+    assert.deepEqual(loadConfig({ ANDROID_SHA256_FINGERPRINTS: bare }).androidApp.fingerprints, [FINGERPRINT]);
   });
 
   it('names and removes owners from the command line helpers', async () => {
@@ -35,8 +27,7 @@ describe('running the platform', () => {
     try {
       const { phone } = await signUp(server);
       const { accounts } = server.services;
-      assert.equal(accounts.hasOwner(), false);
-      assert.deepEqual([accounts.setOwnerByPhone(phone, true).isOwner, accounts.hasOwner()], [true, true]);
+      assert.equal(accounts.setOwnerByPhone(phone, true).isOwner, true);
       const revoked = accounts.setOwnerByPhone(phone, false);
       assert.deepEqual([revoked.isOwner, revoked.isAdmin], [false, true], 'a removed owner stays a moderator');
       assert.throws(() => accounts.setOwnerByPhone('0559999999', true), /USER_NOT_FOUND/);
@@ -45,17 +36,52 @@ describe('running the platform', () => {
     }
   });
 
-  it('warns about missing production settings until an owner exists', async () => {
-    const server = await startTestServer();
+  it('warns about what a new production platform still needs', async () => {
+    const server = await startTestServer({ withOwner: false });
     try {
-      const config = loadConfig({ NODE_ENV: 'production', ADMIN_PHONES: '0661234567', OWNER_CODE: OWNER_CODE });
-      const warnings = startupWarnings({ config, services: server.services });
-      assert.equal(warnings.length, 4);
-      assert.match(warnings.join('\n'), /ADMIN_PHONES is no longer used/);
-      assert.match(warnings.join('\n'), /No owner yet: sign up/);
-      await signUp(server, { ownerCode: OWNER_CODE });
-      const configured = loadConfig({ NODE_ENV: 'production', OWNER_CODE, PUBLIC_URL: 'https://khedmati.dz', SUPPORT_EMAIL: 'contact@khedmati.dz' });
+      const production = loadConfig({ NODE_ENV: 'production' });
+      const warnings = startupWarnings({ config: production, services: server.services });
+      assert.equal(warnings.length, 3);
+      assert.match(warnings[0], /New platform: open the site now/);
+      const owner = await signUp(server);
+      await owner.client.patch('/api/admin/settings', { supportEmail: 'contact@khedmati.dz' });
+      const configured = loadConfig({ NODE_ENV: 'production', PUBLIC_URL: 'https://khedmati.dz' });
       assert.deepEqual(startupWarnings({ config: configured, services: server.services }), []);
+    } finally {
+      await server.close();
+    }
+  });
+
+  it('lets only owners manage the support contact and the Android app from the admin console', async () => {
+    const server = await startTestServer({ env: { SUPPORT_WHATSAPP: '0661000000' } });
+    try {
+      const { owner } = server;
+      const moderator = await signUp(server);
+      await owner.client.patch(`/api/admin/users/${moderator.user.id}`, { isAdmin: true });
+      assert.equal((await moderator.client.get('/api/admin/settings')).data.error.code, 'OWNER_ONLY');
+      assert.equal((await server.client().get('/api/admin/settings')).status, 401);
+
+      const initial = (await owner.client.get('/api/admin/settings')).data;
+      assert.deepEqual(initial.settings, { supportWhatsapp: '0661000000', supportEmail: '', androidPackage: 'dz.khedmati.app', androidFingerprints: [] });
+      assert.match(initial.assetLinksUrl, /^http:\/\/127\.0\.0\.1:\d+\/\.well-known\/assetlinks\.json$/);
+      assert.deepEqual((await server.client().get('/.well-known/assetlinks.json')).data, []);
+
+      const invalid = await owner.client.patch('/api/admin/settings', { supportEmail: 'nope', androidPackage: '1bad', androidFingerprints: ['AB:CD'] });
+      assert.deepEqual(invalid.data.error.fields, { supportEmail: 'invalid_email', androidPackage: 'invalid', androidFingerprints: 'invalid_fingerprint' });
+
+      const saved = await owner.client.patch('/api/admin/settings', {
+        supportWhatsapp: '',
+        supportEmail: 'contact@khedmati.dz',
+        androidFingerprints: [FINGERPRINT.toLowerCase().replace(/:/g, ' ')],
+      });
+      assert.deepEqual(saved.data.settings, {
+        supportWhatsapp: '', supportEmail: 'contact@khedmati.dz', androidPackage: 'dz.khedmati.app', androidFingerprints: [FINGERPRINT],
+      }, 'a saved empty value overrides the environment');
+      assert.deepEqual((await server.client().get('/api/meta')).data.support, { whatsapp: null, email: 'contact@khedmati.dz' });
+      const links = (await server.client().get('/.well-known/assetlinks.json')).data;
+      assert.deepEqual(links[0].target, { namespace: 'android_app', package_name: 'dz.khedmati.app', sha256_cert_fingerprints: [FINGERPRINT] });
+      assert.match((await server.client().get('/privacy')).data, /contact@khedmati\.dz/);
+      assert.doesNotMatch((await server.client().get('/privacy')).data, /0661000000/);
     } finally {
       await server.close();
     }

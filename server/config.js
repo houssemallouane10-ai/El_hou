@@ -1,6 +1,7 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { isMobilePhone, normalizePhone } from '../shared/phone.js';
+import { ANDROID_PACKAGE, EMAIL, SHA256_FINGERPRINT, normalizeFingerprint } from './shared/formats.js';
 
 const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -23,29 +24,17 @@ const readNonNegativeInt = (value, fallback) => {
   return Number.isInteger(number) && number >= 0 ? number : fallback;
 };
 
-const ANDROID_PACKAGE = /^[a-zA-Z][a-zA-Z0-9_]*(\.[a-zA-Z][a-zA-Z0-9_]*)+$/;
-const SHA256_FINGERPRINT = /^([0-9A-F]{2}:){31}[0-9A-F]{2}$/;
-const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const OWNER_CODE_MIN_LENGTH = 8;
-
-// The secret that turns an account into an owner (at sign-up or from Settings). Short codes are
-// refused at start-up: phone numbers are not verified, so the code is what proves ownership.
-const readOwnerCode = (value) => {
-  const code = String(value ?? '').trim();
-  if (code && code.length < OWNER_CODE_MIN_LENGTH) throw new Error(`OWNER_CODE must be at least ${OWNER_CODE_MIN_LENGTH} characters`);
-  return code;
-};
-
 // The Android app (a Trusted Web Activity) proves it belongs to this site through
 // /.well-known/assetlinks.json. Fingerprints are the SHA-256 of the signing certificates: the
-// Play App Signing key from Play Console and, for testing, the upload key.
+// Play App Signing key from Play Console and, for testing, the upload key. These environment
+// values are defaults; owners normally enter them in the admin console (Settings).
 const readAndroidApp = (env) => {
   const packageName = String(env.ANDROID_PACKAGE_NAME ?? '').trim();
-  const fingerprints = readList(env.ANDROID_SHA256_FINGERPRINTS).map((item) => item.toUpperCase());
+  const fingerprints = readList(env.ANDROID_SHA256_FINGERPRINTS).map(normalizeFingerprint);
   const invalid = fingerprints.filter((item) => !SHA256_FINGERPRINT.test(item));
   if (invalid.length > 0) throw new Error(`ANDROID_SHA256_FINGERPRINTS has malformed entries: ${invalid.join(', ')}`);
   if (packageName && !ANDROID_PACKAGE.test(packageName)) throw new Error(`ANDROID_PACKAGE_NAME is not a valid package name: ${packageName}`);
-  return packageName && fingerprints.length > 0 ? { packageName, fingerprints } : null;
+  return { packageName, fingerprints };
 };
 
 export const loadConfig = (env = process.env) => {
@@ -63,9 +52,6 @@ export const loadConfig = (env = process.env) => {
     // Render provides RENDER_EXTERNAL_URL (https://<service>.onrender.com) to every web service.
     publicUrl: String(env.PUBLIC_URL || env.RENDER_EXTERNAL_URL || '').replace(/\/+$/, ''),
     trustProxy: readTrustProxy(env.TRUST_PROXY),
-    ownerCode: readOwnerCode(env.OWNER_CODE),
-    // No longer used (owners now prove themselves with OWNER_CODE); kept to warn old setups.
-    legacyAdminPhones: readList(env.ADMIN_PHONES).length > 0,
     supportWhatsapp: isMobilePhone(normalizePhone(env.SUPPORT_WHATSAPP)) ? normalizePhone(env.SUPPORT_WHATSAPP) : '',
     supportEmail: EMAIL.test(String(env.SUPPORT_EMAIL ?? '').trim()) ? String(env.SUPPORT_EMAIL).trim() : '',
     androidApp: readAndroidApp(env),

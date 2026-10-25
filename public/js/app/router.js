@@ -25,6 +25,7 @@ const ROUTES = [
   { path: '/messages/:id', tabbar: false, auth: true, load: () => import('../features/messages/thread-view.js') },
   { path: '/login', tabbar: false, guestOnly: true, load: () => import('../features/auth/login-view.js') },
   { path: '/register', tabbar: false, guestOnly: true, load: () => import('../features/auth/register-view.js') },
+  { path: '/setup', tabbar: false, guestOnly: true, setup: true, load: () => import('../features/auth/register-view.js') },
   { path: '/forgot', tabbar: false, load: () => import('../features/auth/forgot-view.js') },
   { path: '/admin', tab: 'me', admin: true, load: () => import('../features/admin/admin-view.js') },
   { path: '/about', tab: 'me', page: 'about', load: () => import('../features/pages/static-view.js') },
@@ -106,6 +107,15 @@ const show = async ({ restoreScroll = false, focus = true } = {}) => {
   const scrollTarget = restoreScroll ? savedScroll() : null;
   visibleKey = history.state?.key ?? null;
 
+  // First run: until the owner account exists, every screen but the legal pages leads to /setup.
+  if (store.setupRequired && !route.setup && !route.page) {
+    navigate('/setup', { replace: true });
+    return;
+  }
+  if (route.setup && !store.setupRequired) {
+    navigate('/register', { replace: true });
+    return;
+  }
   if (route.auth && !store.user) {
     navigate(`/login?next=${encodeURIComponent(url.pathname + url.search)}`, { replace: true });
     return;
@@ -141,6 +151,7 @@ const show = async ({ restoreScroll = false, focus = true } = {}) => {
     params,
     query: url.searchParams,
     page: resolved.page,
+    setup: Boolean(resolved.setup),
     signal: controller.signal,
     navigate,
     setTitle,

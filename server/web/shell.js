@@ -52,9 +52,9 @@ const renderPageBody = (text) => parsePageText(text).map((part) => {
   return `<p>${escapeHtml(part.text)}</p>`;
 }).join('\n');
 
-const contactLines = ({ supportWhatsapp, supportEmail }) => [
-  supportWhatsapp && `${arabic.pages.contact.whatsapp}: ${supportWhatsapp}`,
-  supportEmail && `${arabic.pages.contact.email}: ${supportEmail}`,
+const contactLines = ({ whatsapp, email }) => [
+  whatsapp && `${arabic.pages.contact.whatsapp}: ${whatsapp}`,
+  email && `${arabic.pages.contact.email}: ${email}`,
 ].filter(Boolean);
 
 const renderStaticPage = (key, support) => {
@@ -94,7 +94,7 @@ const metaForPath = (pathname, services) => {
   };
 };
 
-export const createShell = ({ publicDir, cacheTemplate, services, support = {} }) => {
+export const createShell = ({ publicDir, cacheTemplate, services }) => {
   const templatePath = path.join(publicDir, 'index.html');
   let template = null;
   const loadTemplate = () => {
@@ -125,7 +125,8 @@ export const createShell = ({ publicDir, cacheTemplate, services, support = {} }
       const page = loadTemplate()
         .replace(TITLE_TAG, `<title>${escapeHtml(meta.title)}</title>`)
         .replace(META_BLOCK, `<!-- meta:start -->\n    ${tags.join('\n    ')}\n    <!-- meta:end -->`);
-      return pageKey ? page.replace(OUTLET_BLOCK, `<!-- outlet:start -->${renderStaticPage(pageKey, support)}<!-- outlet:end -->`) : page;
+      if (!pageKey) return page;
+      return page.replace(OUTLET_BLOCK, `<!-- outlet:start -->${renderStaticPage(pageKey, services.platform.support())}<!-- outlet:end -->`);
     },
   };
 };

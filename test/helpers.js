@@ -4,7 +4,7 @@ import { createServices } from '../server/services.js';
 import { DAY_MS } from '../server/shared/clock.js';
 import { openDatabase } from '../server/shared/db/database.js';
 
-export const OWNER_CODE = 'test-owner-code';
+export const OWNER_PHONE = '0660000000';
 export const PASSWORD = 'password123';
 
 export const createTestClock = (start = '2026-10-01T09:00:00.000Z') => {
@@ -22,13 +22,14 @@ export const createTestClock = (start = '2026-10-01T09:00:00.000Z') => {
 
 const silentLogger = { info() {}, error: (...args) => console.error(...args) };
 
-export const startTestServer = async ({ env = {}, clock = createTestClock() } = {}) => {
+// Every test server starts like a platform after its first-run setup: `owner` is the first
+// account, so accounts created by tests are regular users. Pass `withOwner: false` for a new one.
+export const startTestServer = async ({ env = {}, clock = createTestClock(), withOwner = true } = {}) => {
   const config = loadConfig({
     NODE_ENV: 'test',
     DATABASE_FILE: ':memory:',
     RATE_LIMITS: 'off',
     LOG_REQUESTS: 'off',
-    OWNER_CODE,
     ...env,
   });
   const db = openDatabase(':memory:');
@@ -38,11 +39,12 @@ export const startTestServer = async ({ env = {}, clock = createTestClock() } = 
     const listening = app.listen(0, '127.0.0.1', () => resolve(listening));
   });
   const baseUrl = `http://127.0.0.1:${server.address().port}`;
-  return {
+  const testServer = {
     baseUrl,
     clock,
     db,
     services,
+    owner: null,
     client: () => createClient(baseUrl),
     close: () => new Promise((resolve) => {
       server.closeAllConnections();
@@ -52,6 +54,8 @@ export const startTestServer = async ({ env = {}, clock = createTestClock() } = 
       });
     }),
   };
+  if (withOwner) testServer.owner = await signUp(testServer, { name: 'المالك', role: 'employer', phone: OWNER_PHONE });
+  return testServer;
 };
 
 // A cookie-keeping JSON client that behaves like one browser.
@@ -107,15 +111,12 @@ export const PLACES = {
   algiers: { wilayaCode: 16, communeId: 554 },
 };
 
-export const signUp = async (server, { name = 'مستخدم تجريبي', role = 'seeker', phone = nextPhone(), wilayaCode = 62, ownerCode } = {}) => {
+export const signUp = async (server, { name = 'مستخدم تجريبي', role = 'seeker', phone = nextPhone(), wilayaCode = 62 } = {}) => {
   const client = server.client();
-  const response = await client.post('/api/auth/register', { name, phone, password: PASSWORD, role, wilayaCode, acceptTerms: true, ownerCode });
+  const response = await client.post('/api/auth/register', { name, phone, password: PASSWORD, role, wilayaCode, acceptTerms: true });
   if (response.status !== 201) throw new Error(`sign up failed: ${response.status} ${JSON.stringify(response.data)}`);
   return { client, user: response.data.user, phone };
 };
-
-// An owner (and therefore admin) of the test deployment.
-export const signUpOwner = (server, options = {}) => signUp(server, { ...options, ownerCode: OWNER_CODE });
 
 export const validJob = (overrides = {}) => ({
   title: 'مطلوب بائع في محل مواد غذائية',

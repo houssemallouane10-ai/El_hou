@@ -34,10 +34,6 @@ export const createAccountsRoutes = ({ accounts, applications, jobs, messaging, 
     res.status(204).end();
   });
 
-  router.post('/me/owner', requireUser, limits.sensitive, (req, res) => {
-    res.json({ user: accounts.claimOwnership(req.user.id, req.body) });
-  });
-
   router.put('/me/alerts', requireUser, (req, res) => {
     res.json(accounts.setAlerts(req.user.id, req.body));
   });

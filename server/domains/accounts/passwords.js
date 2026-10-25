@@ -1,4 +1,4 @@
-import { createHash, randomBytes, scrypt as scryptCallback, timingSafeEqual } from 'node:crypto';
+import { randomBytes, scrypt as scryptCallback, timingSafeEqual } from 'node:crypto';
 import { promisify } from 'node:util';
 
 const scrypt = promisify(scryptCallback);
@@ -29,13 +29,6 @@ export const burnPasswordCheck = async (password) => {
   decoyHash ??= await hashPassword('khedmati-decoy-password');
   await verifyPassword(password, decoyHash);
   return false;
-};
-
-// Constant-time check of a typed secret (the owner code) against the configured one.
-export const matchesSecret = (candidate, expected) => {
-  if (!expected || typeof candidate !== 'string') return false;
-  const digest = (value) => createHash('sha256').update(value.trim()).digest();
-  return timingSafeEqual(digest(candidate), digest(expected));
 };
 
 const TEMPORARY_ALPHABET = 'abcdefghjkmnpqrstuvwxyz23456789';

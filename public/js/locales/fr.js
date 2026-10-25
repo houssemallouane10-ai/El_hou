@@ -493,10 +493,6 @@ export default {
     deleteForever: 'Supprimer définitivement',
     accountDeleted: 'Votre compte a été supprimé. Bonne continuation !',
     version: 'Khedmati — version {version}',
-    ownerClaim: 'Propriétaire ? Saisissez le code propriétaire',
-    ownerTitle: 'Code propriétaire',
-    ownerText: 'Saisissez le code secret défini sur le serveur (OWNER_CODE) pour obtenir tous les droits d’administration.',
-    ownerDone: 'Vous êtes propriétaire de la plateforme 👑 Voici la console d’administration',
   },
 
   auth: {
@@ -526,9 +522,6 @@ export default {
     agreePrefix: 'J’ai lu et j’accepte les',
     agreeAnd: ' et la ',
     agreeSuffix: '.',
-    ownerToggle: 'Je suis le propriétaire (j’ai le code propriétaire)',
-    ownerCode: 'Code propriétaire',
-    ownerCodeHint: 'Le code secret défini sur le serveur (OWNER_CODE). Laissez vide si vous n’êtes pas le propriétaire.',
     ownerWelcome: 'Bienvenue {name} ! Vous êtes maintenant propriétaire de la plateforme 👑',
     wilaya: 'Votre wilaya',
     wilayaHint: 'Nous affichons d’abord les offres de votre wilaya ; vous pourrez en changer à tout moment.',
@@ -542,6 +535,14 @@ export default {
     forgotStep3: 'Connectez-vous puis changez-le dans les paramètres.',
     contactSupport: 'Contacter l’équipe sur WhatsApp',
     forgotWhatsapp: 'Bonjour, j’ai oublié le mot de passe de mon compte Khedmati.',
+  },
+
+  setup: {
+    title: 'Configurer votre plateforme',
+    subtitle: 'Une seule étape et Khedmati est en ligne.',
+    ownerTitle: 'Ce compte sera celui du propriétaire',
+    ownerText: 'Le premier compte créé sur la plateforme détient la console d’administration et tous les droits : signalements, bannissements, modérateurs et paramètres.',
+    button: 'Créer le compte propriétaire',
   },
 
   report: {
@@ -570,6 +571,7 @@ export default {
   admin: {
     title: 'Administration',
     tabs: {
+      settings: 'Paramètres',
       overview: 'Vue d’ensemble',
       reports: 'Signalements',
       users: 'Utilisateurs',
@@ -616,6 +618,21 @@ export default {
       listed: 'Annuaire',
     },
     byWilaya: 'Activité par wilaya',
+    settings: {
+      contact: 'Contact des utilisateurs',
+      contactHint: 'Affiché sur « mot de passe oublié » et sur les pages confidentialité et suppression de compte. Google Play demande au moins un contact.',
+      whatsapp: 'Numéro WhatsApp du support',
+      email: 'E-mail du support',
+      android: 'Application Android (Google Play)',
+      androidHint: 'Relie l’application à votre site pour qu’elle s’ouvre en plein écran, sans barre de navigateur.',
+      package: 'Nom du paquet (Package ID)',
+      packageHint: 'Le même que dans PWABuilder.',
+      fingerprints: 'Empreintes SHA-256',
+      fingerprintsHint: 'Dans Play Console : App integrity → App signing → « App signing key certificate ». Une empreinte par ligne.',
+      linked: 'Application reliée',
+      notLinked: 'Aucune empreinte pour l’instant',
+      saved: 'Paramètres enregistrés',
+    },
     makeAdmin: 'Nommer modérateur',
     removeAdmin: 'Retirer la modération',
     makeAdminConfirm: 'Cette personne pourra traiter les signalements, masquer des offres et bannir des comptes. Continuer ?',
@@ -814,6 +831,7 @@ Vous pouvez consulter et modifier vos informations à tout moment, et supprimer 
     OWNER_ONLY: 'Action réservée au propriétaire de la plateforme',
     CANNOT_CHANGE_OWNER: 'Les droits du propriétaire ne peuvent pas être modifiés',
     USER_BANNED: 'Ce compte est banni',
+    LAST_OWNER: 'Vous êtes le seul propriétaire de la plateforme : ce compte ne peut pas être supprimé',
   },
 
   fieldErrors: {
@@ -831,7 +849,8 @@ Vous pouvez consulter et modifier vos informations à tout moment, et supprimer 
     required_for_listing: 'Requis pour apparaître dans l’annuaire',
     wrong_password: 'Mot de passe incorrect',
     must_accept: 'Vous devez accepter les conditions d’utilisation et la politique de confidentialité',
-    wrong_code: 'Code incorrect',
+    invalid_email: 'Saisissez une adresse e-mail valide',
+    invalid_fingerprint: 'Empreinte invalide : 32 paires de caractères comme AB:CD:…',
     wrong_wilaya: 'Cette commune n’appartient pas à la wilaya choisie',
   },
 };

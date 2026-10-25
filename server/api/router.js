@@ -7,6 +7,7 @@ import { createJobsRoutes } from '../domains/jobs/index.js';
 import { createMessagingRoutes } from '../domains/messaging/index.js';
 import { createModerationRoutes } from '../domains/moderation/index.js';
 import { createNotificationsRoutes } from '../domains/notifications/index.js';
+import { createPlatformRoutes } from '../domains/platform/index.js';
 import { apiNotFound } from '../shared/http/errors.js';
 import { createRateLimiter, limitBy } from '../shared/http/rate-limit.js';
 import { requireJsonBody, sameOriginOnly } from '../shared/http/security.js';
@@ -43,10 +44,11 @@ const requestLog = (logger) => (req, res, next) => {
 };
 
 export const createApiRouter = ({ config, services, logger }) => {
-  const { accounts, applications, bookmarks, jobs, messaging, moderation, notifications } = services;
+  const { accounts, applications, bookmarks, jobs, messaging, moderation, notifications, platform } = services;
   const router = Router();
   const cookie = createSessionCookie({ ttlMs: accounts.sessions.ttlMs });
   const limits = createLimits(config);
+  const publicUrlOf = (req) => config.publicUrl || `${req.protocol}://${req.get('host')}`;
 
   if (config.logRequests) router.use(requestLog(logger));
   router.use(noStore);
@@ -76,13 +78,14 @@ export const createApiRouter = ({ config, services, logger }) => {
       stats: { activeJobs, ...accounts.publicStats(wilayaCode) },
       categories,
       jobsByWilaya: jobs.countsByWilaya(),
-      support: { whatsapp: config.supportWhatsapp || null, email: config.supportEmail || null },
+      support: platform.support(),
     });
   });
 
   // Everything the app needs at start-up in one round trip.
+  // `setupRequired` is true on a brand-new platform: the first account created becomes the owner.
   router.get('/session', (req, res) => {
-    if (!req.user) return res.json({ user: null, saved: { jobs: [], workers: [] }, summary: null });
+    if (!req.user) return res.json({ user: null, saved: { jobs: [], workers: [] }, summary: null, setupRequired: accounts.needsSetup() });
     return res.json({ user: req.user, saved: bookmarks.ids(req.user.id), summary: summaryFor(req.user.id) });
   });
 
@@ -96,6 +99,7 @@ export const createApiRouter = ({ config, services, logger }) => {
   router.use(createBookmarksRoutes({ bookmarks }));
   router.use(createNotificationsRoutes({ notifications }));
   router.use(createMessagingRoutes({ messaging, limits }));
+  router.use(createPlatformRoutes({ platform, publicUrlOf }));
   router.use(createModerationRoutes({ moderation, accounts, jobs, limits }));
   router.use(apiNotFound);
 

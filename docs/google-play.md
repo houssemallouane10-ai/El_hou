@@ -1,126 +1,152 @@
-# خدمتي: من الصفر إلى Google Play
+# خدمتي: من الصفر إلى Google Play — دليل بالنقرات
 
-كل شيء جاهز في الكود. ما بقي عليك ثلاث مراحل فقط، وكلها من المتصفح (لا تحتاج برمجة):
+كل الكود جاهز. ما بقي يحتاج حساباتك أنت (الاستضافة وGoogle Play) ولا يستطيع أحد غيرك فتحها أو الدفع فيها.
+اتبع المراحل بالترتيب، كل خطوة فيها اسم الزر كما يظهر على الشاشة (أغلب الأزرار بالإنجليزية).
 
 | المرحلة | المدة | التكلفة |
 | --- | --- | --- |
-| [1. ضع الموقع على الإنترنت](#1-ضع-الموقع-على-الإنترنت) | 10 دقائق | حوالي 7 دولار في الشهر (Render) |
-| [2. كن أنت المالك والمتحكم](#2-كن-أنت-المالك-والمتحكم) | دقيقة واحدة | مجاني |
-| [3. انشره على Google Play](#3-انشره-على-google-play) | ساعة، ثم 14 يومًا من الاختبار | 25 دولار مرة واحدة |
+| [1. ضع الموقع على الإنترنت](#1-ضع-الموقع-على-الإنترنت) | 15 دقيقة | حوالي 7 دولار في الشهر |
+| [2. كن أنت المالك](#2-كن-أنت-المالك) | دقيقتان | مجاني |
+| [3. انشر التطبيق على Google Play](#3-انشر-التطبيق-على-google-play) | ساعة + 14 يومًا من الاختبار | 25 دولار مرة واحدة |
 
-تحتاج **بطاقة دفع دولية باسمك** (Visa أو Mastercard، البطاقات المسبقة الدفع لا يقبلها Google)، و**بريد Gmail**،
-و**هاتف أندرويد**.
+**تحتاج قبل البداية:**
 
-> كيف يعمل التطبيق على Google Play؟ التطبيق الذي يُثبَّت من المتجر يفتح موقعك بملء الشاشة (تقنية Trusted Web Activity).
-> لذلك **كل تحديث تضعه على الموقع يصل فورًا لكل المستخدمين** دون رفع نسخة جديدة على المتجر.
+- **بطاقة دفع دولية باسمك** تعمل في الشراء من الإنترنت (Visa أو Mastercard). Google لا يقبل البطاقات المسبقة الدفع.
+- **حساب Gmail**، و**حساب GitHub** (عندك واحد: هو الذي فيه مستودع `Nadouch`).
+- **هاتف أندرويد**، ويُفضّل **حاسوب** للمرحلة 3.
+
+> التطبيق على Google Play يفتح موقعك بملء الشاشة (تقنية Trusted Web Activity)، لذلك **كل تحديث على الموقع يصل لكل
+> المستخدمين فورًا** دون رفع نسخة جديدة على المتجر.
 
 ---
 
 ## 1. ضع الموقع على الإنترنت
 
-1. أنشئ حسابًا مجانيًا على [render.com](https://render.com) (بحساب GitHub أو Gmail) وأضف بطاقتك في **Billing**.
-2. اضغط هذا الزر:
+الاستضافة على **Render**: خادم في فرانكفورت (الأقرب للجزائر)، قرص دائم لقاعدة البيانات، ونسخة احتياطية تلقائية كل يوم.
+كل الإعدادات جاهزة في الملف `render.yaml`، فلن تكتب أي قيمة.
 
-   [![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/houssemallouane10-ai/Nadouch/tree/claude/idea-suggestion-app-1dgg56)
+1. افتح [dashboard.render.com/register](https://dashboard.render.com/register) واضغط **GitHub** لتسجّل بحساب GitHub نفسه.
+   وافق على الصلاحيات التي يطلبها Render (**Authorize**).
+2. أضف بطاقتك: صورتك أعلى الشاشة ← **Billing** ← **Add payment method** (أو **Add card**).
+3. افتح هذا الرابط (هو زر النشر):
 
-   > إن لم يعمل الزر: في Render اختر **New → Blueprint**، اربط حساب GitHub، اختر المستودع `Nadouch` والفرع
-   > `claude/idea-suggestion-app-1dgg56`. (بعد دمج الفرع في `main` يكفي اختيار `main`.)
+   **[نشر خدمتي على Render](https://render.com/deploy?repo=https://github.com/houssemallouane10-ai/Nadouch/tree/claude/idea-suggestion-app-1dgg56)**
 
-3. يطلب منك Render قيمة واحدة: **`SUPPORT_EMAIL`** — اكتب بريدك (يظهر في صفحتي الخصوصية وحذف الحساب).
-4. اضغط **Apply** وانتظر بضع دقائق حتى تظهر الحالة **Live**.
-5. رابط موقعك يظهر أعلى صفحة الخدمة، مثل `https://khedmati.onrender.com`. افتحه: التطبيق يعمل.
-
-الإعداد جاهز في الملف `render.yaml`: خادم في فرانكفورت (الأقرب للجزائر)، قرص دائم لقاعدة البيانات، **نسخة احتياطية
-تلقائية كل يوم** (آخر 7 أيام في `/data/backups`)، و`OWNER_CODE` سرّي يُولَّد تلقائيًا.
+4. تظهر صفحة **Blueprint** فيها خدمة واحدة اسمها `khedmati` (Web Service، Starter، Frankfurt، Disk 1 GB).
+   اكتب أي اسم في **Blueprint Name** (مثلًا `khedmati`) ثم اضغط **Deploy Blueprint** (أو **Apply**).
+5. انتظر 3 إلى 5 دقائق. افتح الخدمة `khedmati`: عندما تظهر **Live** بالأخضر فالموقع يعمل.
+6. **رابط موقعك** مكتوب أعلى صفحة الخدمة، مثل `https://khedmati.onrender.com`. انسخه واحتفظ به.
+7. **انتقل فورًا إلى المرحلة 2**: أول من يُنشئ حسابًا في موقع جديد يصبح مالكه.
 
 <details>
-<summary>دومين باسمك (اختياري، مثل khedmati.com)</summary>
+<summary>إذا لم يعمل رابط النشر في الخطوة 3</summary>
 
-اشترِ الدومين (Namecheap أو Cloudflare، حوالي 10 دولارات في السنة)، ثم في Render: **Settings → Custom Domains → Add**
-واتبع التعليمات، وأضف في **Environment** المتغير `PUBLIC_URL=https://khedmati.com`.
-افعل ذلك **قبل** صنع تطبيق أندرويد (المرحلة 3)، لأن التطبيق يرتبط بعنوان الموقع.
+في Render اضغط **+ New** ← **Blueprint** ← **Connect GitHub** إن طُلب منك ← اختر المستودع `Nadouch` ←
+في **Branch** اختر `claude/idea-suggestion-app-1dgg56` ← اترك **Blueprint Path** على `render.yaml` ← **Deploy Blueprint**.
 </details>
 
-## 2. كن أنت المالك والمتحكم
+<details>
+<summary>دومين باسمك مثل khedmati.com (اختياري، يمكن تأجيله)</summary>
 
-1. في Render افتح خدمتك ← **Environment** ← انسخ قيمة **`OWNER_CODE`** (رمز المالك السري).
-2. افتح موقعك ← **إنشاء حساب** ← املأ معلوماتك (رقم هاتفك وكلمة سر قوية).
-3. تحت خانة الموافقة على الشروط اضغط **«أنا صاحب المنصة (عندي رمز المالك)»** والصق الرمز ← **إنشاء الحساب**.
-4. تدخل مباشرة إلى **لوحة الإدارة**، وتظهر لك شارة «مالك المنصة» في «حسابي».
+اشترِ الدومين (Namecheap أو Cloudflare، حوالي 10 دولارات في السنة). في Render: الخدمة ← **Settings** ← **Custom Domains**
+← **Add Custom Domain** واتبع التعليمات، ثم **Environment** ← **Add Environment Variable**: `PUBLIC_URL` = `https://khedmati.com`.
+افعل ذلك **قبل** المرحلة 3، لأن تطبيق أندرويد يرتبط برابط الموقع.
+</details>
 
-ماذا يستطيع المالك؟
+## 2. كن أنت المالك
 
-- **كل صلاحيات الإدارة**: البلاغات، حجب العروض وتمييزها، حظر الحسابات وتوثيقها، كلمة سر مؤقتة لمن نسيها،
-  والأرقام والنشاط في كل ولاية.
-- **وحده** يعيّن المشرفين ويزيلهم: لوحة الإدارة ← المستخدمون ← «تعيين مشرفًا».
-- لا أحد يستطيع سحب صلاحياتك أو حظرك من التطبيق.
+1. افتح رابط موقعك. بما أن المنصة جديدة تظهر لك شاشة **«إعداد منصتك»** مكتوب فيها
+   «هذا الحساب سيكون حساب المالك».
+2. املأ: نوع الحساب، اسمك، رقم هاتفك، **كلمة سر قوية**، ولايتك، وضع علامة على الموافقة على الشروط.
+3. اضغط **«إنشاء حساب المالك»**. تدخل مباشرة إلى **لوحة الإدارة** وتظهر لك شارة «مالك المنصة» في «حسابي».
+4. في لوحة الإدارة افتح تبويب **«الإعدادات»** وأضف **رقم واتساب الدعم** و/أو **البريد الإلكتروني للدعم** ← **حفظ**.
+   (Google Play يشترط وسيلة تواصل تظهر في صفحة الخصوصية.)
 
-نصائح:
+بعد أول حساب لا تظهر هذه الشاشة لأحد، وكل من يسجّل بعدك مستخدم عادي.
 
-- **لا تعطِ `OWNER_CODE` لأحد**: من يعرفه يصبح مالكًا. لمساعديك استعمل «تعيين مشرفًا».
-- إن كان عندك حساب من قبل: **الإعدادات ← «صاحب المنصة؟ أدخل رمز المالك»** في أسفل الصفحة.
-- إن نسيت كلمة سرك: في Render افتح **Shell** واكتب `npm run reset-password -- 06XXXXXXXX` لتحصل على كلمة سر مؤقتة.
-- رقم واتساب للدعم (اختياري): أضف في **Environment** المتغير `SUPPORT_WHATSAPP=06XXXXXXXX`، فيظهر في «نسيت كلمة السر»
-  وصفحات الخصوصية.
+**ما يستطيعه المالك:** كل صلاحيات الإدارة (البلاغات، حجب العروض، حظر الحسابات وتوثيقها، كلمة سر مؤقتة لمن نسيها،
+الأرقام حسب الولاية)، و**وحده** يعيّن المشرفين ويزيلهم (لوحة الإدارة ← المستخدمون ← «تعيين مشرفًا») ويغيّر الإعدادات.
+لا أحد يستطيع حظره أو سحب صلاحياته، ولا يُحذف حسابه ما دام المالك الوحيد.
 
-## 3. انشره على Google Play
+> نسيت كلمة سرك؟ في Render افتح الخدمة ← **Shell** واكتب: `npm run reset-password -- 06XXXXXXXX` (رقمك)،
+> فتظهر لك كلمة سر مؤقتة. ادخل بها ثم غيّرها من الإعدادات.
 
-### أ. صنع تطبيق أندرويد (5 دقائق)
+## 3. انشر التطبيق على Google Play
 
-1. افتح [pwabuilder.com](https://www.pwabuilder.com)، الصق رابط موقعك واضغط **Start**.
-2. **Package for stores ← Android ← Generate Package**، واملأ:
+### أ. صنع ملف التطبيق (10 دقائق، على الحاسوب أسهل)
 
-   | الحقل | القيمة |
+1. افتح [pwabuilder.com](https://www.pwabuilder.com)، الصق رابط موقعك واضغط **Start**. انتظر التقرير.
+2. اضغط **Package For Stores**، ثم في خانة **Android** اضغط **Generate Package**.
+3. تأكد من هذه الخانات ثم اضغط **Download Package**:
+
+   | الخانة | اكتب |
    | --- | --- |
-   | Package ID | `dz.khedmati.app` (نفس `ANDROID_PACKAGE_NAME` في Render، **لا يتغير أبدًا بعد النشر**) |
-   | App name / Launcher name | خدمتي |
-   | Version / Version code | `1.0.0` / `1` |
-   | Signing key | **Create new** |
+   | Package ID | `dz.khedmati.app` (**لا يتغير أبدًا بعد النشر**) |
+   | App name | خدمتي |
+   | Launcher name | خدمتي |
+   | App version / version code | `1.0.0` / `1` |
+   | Signing key | **New** (اتركه كما هو) |
 
-3. حمّل الملف المضغوط. فيه ملف **`.aab`** (ترفعه إلى Google Play)، وملف **`.apk`** (تجربه على هاتفك)،
-   و**`signing.keystore` + `signing-key-info.txt`**.
+4. فك ضغط الملف الذي نزل. ستجد فيه:
+   - ملفًا ينتهي بـ **`.aab`**: هذا ما ترفعه إلى Google Play.
+   - ملفًا ينتهي بـ **`.apk`**: لتجرّب التطبيق على هاتفك قبل النشر.
+   - **`signing.keystore`** و**`signing-key-info.txt`**: مفتاح توقيع تطبيقك.
 
-> ⚠️ احفظ `signing.keystore` و`signing-key-info.txt` في مكانين آمنين (Google Drive + فلاشة). كل تحديث للتطبيق يحتاجهما.
-> ولا تضعهما أبدًا في GitHub: المستودع عام.
+> ⚠️ احفظ `signing.keystore` و`signing-key-info.txt` في مكانين (Google Drive + فلاشة). كل تحديث مستقبلي يحتاجهما.
+> **لا ترفعهما إلى GitHub أبدًا**: المستودع عام ويراه الجميع.
 
-### ب. حساب Google Play Console
+### ب. حساب المطوّر في Google Play (25 دولار مرة واحدة)
 
-1. ادخل [play.google.com/console](https://play.google.com/console) واختر حسابًا **شخصيًا (Personal)**.
-2. ادفع **25 دولارًا** وأكمل التحقق من هويتك (بطاقة التعريف).
-3. **Create app**: الاسم «خدمتي»، اللغة الافتراضية **العربية**، **App**، **Free**.
+1. افتح [play.google.com/console/signup](https://play.google.com/console/signup) بحساب Gmail الخاص بك.
+2. اختر **Yourself** (حساب شخصي)، واملأ معلوماتك كما في بطاقة التعريف.
+3. ادفع **25 دولارًا** ثم أكمل **التحقق من الهوية** (صورة بطاقة التعريف وإثبات الهاتف). قد يأخذ التحقق من يوم إلى أيام.
 
-### ج. الملء (كل شيء جاهز للنسخ)
+### ج. إنشاء التطبيق
 
-| ماذا | من أين |
+في Play Console اضغط **Create app** واملأ: **App name** خدمتي ← **Default language** Arabic ← **App** ← **Free** ←
+ضع علامة على الإقرارات ← **Create app**.
+
+### د. ملء الأقسام المطلوبة
+
+في **Dashboard** تجد قائمة **Set up your app**: اضغط على كل مهمة واملأها هكذا (كل النصوص جاهزة للنسخ):
+
+| المهمة | ماذا تضع |
 | --- | --- |
-| نصوص المتجر بالعربية والفرنسية | [`store/listing.md`](../store/listing.md) |
-| الأيقونة، صورة العرض، 7 لقطات للهاتف | `store/icon-512.png`، `store/feature-graphic.png`، `store/screenshots/` |
-| أمان البيانات، الإعلانات، الجمهور (18+)، تصنيف المحتوى | [`store/data-safety.md`](../store/data-safety.md) |
-| سياسة الخصوصية | `https://موقعك/privacy` |
-| رابط حذف الحساب | `https://موقعك/account-deletion` |
-| حساب للمراجع (App access) | سجّل حسابًا ثانيًا عاديًا وأعطِ رقمه وكلمة سره |
+| Privacy policy | `https://رابط-موقعك/privacy` |
+| App access | **All or some functionality is restricted** ← أنشئ حسابًا عاديًا ثانيًا في موقعك وضع رقمه وكلمة سره هنا |
+| Ads | **No** |
+| Content rating | املأ الاستبيان بصدق: لا عنف ولا محتوى جنسي، **المستخدمون يتواصلون فيما بينهم: Yes** |
+| Target audience | **18 and over** |
+| Data safety | انسخ الإجابات من [`store/data-safety.md`](../store/data-safety.md)، ورابط حذف الحساب: `https://رابط-موقعك/account-deletion` |
+| Government apps / Financial features / Health | **No** / لا شيء / لا شيء |
+| Store listing | النصوص من [`store/listing.md`](../store/listing.md)، والصور من مجلد [`store/`](../store/): الأيقونة `icon-512.png`، صورة العرض `feature-graphic.png`، ولقطات الهاتف في `store/screenshots/` |
+| App category | **Business** |
 
-### د. ربط التطبيق بموقعك (حتى لا يظهر شريط المتصفح)
+### هـ. الاختبار المغلق: 12 شخصًا على الأقل لمدة 14 يومًا
 
-1. في Play Console: **Test and release → Setup → App integrity → App signing** (أو **Release → Setup → App integrity**)
-   انسخ **SHA-256** من خانة **App signing key certificate**.
-2. انسخ أيضًا بصمة SHA-256 من ملف `signing-key-info.txt`.
-3. في Render ← **Environment** أضف:
-   `ANDROID_SHA256_FINGERPRINTS` = البصمتان مفصولتان بفاصلة: `AA:BB:…,11:22:…` ← **Save** (يعيد التشغيل تلقائيًا).
-4. تحقق: `https://موقعك/.well-known/assetlinks.json` يعرض اسم الحزمة والبصمتين.
+الحسابات الشخصية الجديدة لا تستطيع النشر للجميع قبل هذا الاختبار.
 
-### هـ. الاختبار المغلق: 12 شخصًا × 14 يومًا (إلزامي للحسابات الشخصية الجديدة)
+1. **Test and release** ← **Testing** ← **Closed testing** ← افتح المسار الموجود (Alpha) ← **Create new release**.
+2. في **App bundles** ارفع ملف **`.aab`** ← اكتب ملاحظة (مثلًا: «النسخة الأولى») ← **Next** ← **Save and publish**
+   (أو **Start rollout to Closed testing**).
+3. في تبويب **Testers**: **Create email list**، أضف بريد Gmail لـ **14 شخصًا على الأقل** (العائلة والأصدقاء) ← **Save**.
+4. انسخ **رابط الانضمام** (Join on the web / Copy link) وأرسله لهم على واتساب. كل واحد يفتحه على هاتفه الأندرويد ←
+   **Become a tester** ← يثبّت «خدمتي» من Play Store ← يستعمله ويتركه مثبتًا **14 يومًا متتالية**.
 
-1. **Testing → Closed testing → Create track**، ارفع ملف `.aab` وأنشئ إصدارًا.
-2. أضف بريد Gmail لـ 14 شخصًا على الأقل (عائلة وأصدقاء)، وأرسل لهم **رابط الاشتراك**.
-3. كل واحد: يقبل الدعوة ← يثبّت «خدمتي» من Play Store ← يستعمله ويتركه مثبتًا **14 يومًا متتالية**.
-   إن نزل العدد تحت 12 قد يبدأ العدّ من جديد، لذلك خذ أكثر من 12.
-4. بعد 14 يومًا: **Dashboard → Apply for production** وأجب عن الأسئلة (ماذا جرّب المختبرون).
+### و. اربط التطبيق بموقعك (حتى لا يظهر شريط المتصفح أعلى التطبيق)
 
-### و. النشر للجميع
+1. في Play Console: **Test and release** ← **App integrity** (أو **Setup** ← **App integrity**) ← **App signing**.
+2. انسخ **SHA-256 certificate fingerprint** من خانة **App signing key certificate**.
+3. افتح موقعك ← لوحة الإدارة ← **الإعدادات** ← **بصمات SHA-256**: الصق البصمة.
+   أضف في سطر ثانٍ البصمة الموجودة في ملف `signing-key-info.txt` ← **حفظ**.
+4. تظهر عبارة **«التطبيق مربوط»**. أعد فتح التطبيق على هاتفك: يجب أن يختفي شريط المتصفح.
 
-بعد الموافقة: **Production → Create new release** ← ارفع `.aab` ← اختر الجزائر (ودولًا أخرى إن أردت) ← **Start rollout**.
-المراجعة تأخذ من يوم إلى بضعة أيام.
+### ز. بعد 14 يومًا: النشر للجميع
+
+1. في **Dashboard** اضغط **Apply for production** وأجب عن الأسئلة (من جرّب التطبيق وماذا لاحظتم).
+2. بعد الموافقة: **Test and release** ← **Production** ← **Create new release** ← اختر نفس ملف `.aab`
+   (أو **Promote release** من الاختبار المغلق) ← اختر الدول (الجزائر، ويمكن إضافة غيرها) ← **Start rollout to Production**.
+3. المراجعة تأخذ عادة من يوم إلى بضعة أيام، ثم يظهر «خدمتي» في Google Play للجميع.
 
 ---
 
@@ -128,19 +154,28 @@
 
 | الحالة | ماذا تفعل |
 | --- | --- |
-| تحديث أي شيء في التطبيق | يكفي تحديث الموقع (Render ينشر تلقائيًا كل تعديل في GitHub). لا شيء على Google Play |
-| شرط Google السنوي (كل أوت يرفع مستوى Android المطلوب) | أعد التوليد في PWABuilder بنفس الـ Package ID ونفس `signing.keystore`، رقم version code أكبر، وارفعه |
-| شريط المتصفح يظهر أعلى التطبيق | بصمة App signing غير موجودة في `ANDROID_SHA256_FINGERPRINTS` |
-| أريد مشرفين يساعدونني | لوحة الإدارة ← المستخدمون ← «تعيين مشرفًا» |
-| فقدت بيانات أو أريد الرجوع ليوم سابق | النسخ اليومية في `/data/backups` (انظر «نسخ احتياطي» في README) |
+| أي تحديث في التطبيق | يكفي تحديث الموقع: Render يعيد النشر تلقائيًا عند كل تعديل في GitHub. لا شيء على Google Play |
+| شرط Google السنوي (كل أوت يرفع نسخة أندرويد المطلوبة) | أعد صنع الملف في PWABuilder بنفس الـ Package ID ونفس `signing.keystore` ورقم version code أكبر، وارفعه |
+| تريد مشرفين يساعدونك | لوحة الإدارة ← المستخدمون ← «تعيين مشرفًا» |
+| مراقبة المحتوى | راجع البلاغات بانتظام: Google يشترط إشرافًا فعليًا |
+| الرجوع إلى بيانات يوم سابق | النسخ اليومية محفوظة في `/data/backups` (انظر «نسخ احتياطي» في README) |
 
-راجع البلاغات بانتظام من لوحة الإدارة: Google يشترط إشرافًا فعليًا على المحتوى الذي ينشره المستخدمون.
+## إذا تعطلت
+
+| المشكلة | الحل |
+| --- | --- |
+| Render يطلب بطاقة أو يرفض النشر | الخطة Starter مدفوعة لأن قاعدة البيانات تحتاج قرصًا دائمًا: أضف البطاقة في Billing |
+| فتحت الموقع ولم تظهر «إعداد منصتك» | شخص آخر سجّل قبلك (نادر جدًا). سجّل حسابك، ثم في Render ← **Shell** اكتب `npm run make-owner -- رقمك` و`npm run make-owner -- رقمه --revoke`، ومن لوحة الإدارة أزل إشرافه واحظره |
+| PWABuilder يعطي أخطاء | تأكد أن الموقع **Live** وأن الرابط يبدأ بـ `https://` |
+| شريط المتصفح يظهر أعلى التطبيق | البصمة ناقصة أو خاطئة في لوحة الإدارة ← الإعدادات (الخطوة و) |
+| «Your app must target Android 16 (API 36)» | أعد صنع الملف في PWABuilder (آخر نسخة) |
+| المراجع لم يستطع الدخول | تحقق من الرقم وكلمة السر في App access |
 
 ## مراجع رسمية
 
 - [متطلبات الاختبار للحسابات الشخصية الجديدة](https://support.google.com/googleplay/android-developer/answer/14151465)
-- [سياسة المحتوى الذي ينشره المستخدمون (UGC)](https://support.google.com/googleplay/android-developer/answer/9876937)
+- [سياسة المحتوى الذي ينشره المستخدمون](https://support.google.com/googleplay/android-developer/answer/9876937)
 - [شروط حذف الحساب](https://support.google.com/googleplay/android-developer/answer/13327111)
-- [شرط مستوى Android المستهدف](https://developer.android.com/google/play/requirements/target-sdk)
+- [نسخة أندرويد المطلوبة](https://developer.android.com/google/play/requirements/target-sdk)
 - [Trusted Web Activity](https://developer.chrome.com/docs/android/trusted-web-activity)
-- [زر Deploy to Render](https://render.com/docs/deploy-to-render) و[إصدار Node على Render](https://render.com/docs/node-version)
+- [زر Deploy to Render](https://render.com/docs/deploy-to-render) و[Blueprints على Render](https://render.com/docs/blueprint-spec)

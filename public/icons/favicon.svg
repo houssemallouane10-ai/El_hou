@@ -1,13 +1,22 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- خدمتي: the letter خ (IBM Plex Sans Arabic Bold, SIL Open Font License) with an amber dot. -->
   <defs>
     <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#11A06F"/>
-      <stop offset="1" stop-color="#065C41"/>
+      <stop offset="0" stop-color="#19B07B"/>
+      <stop offset=".55" stop-color="#0A7A55"/>
+      <stop offset="1" stop-color="#054F37"/>
     </linearGradient>
+    <linearGradient id="shine" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fff" stop-opacity=".16"/>
+      <stop offset=".5" stop-color="#fff" stop-opacity="0"/>
+    </linearGradient>
+    <radialGradient id="dot" cx=".38" cy=".32" r=".75">
+      <stop offset="0" stop-color="#FFD27A"/>
+      <stop offset="1" stop-color="#F2A93B"/>
+    </radialGradient>
   </defs>
-  <rect width="512" height="512" rx="116" fill="url(#bg)"/>
-  <path d="M196 190v-34a36 36 0 0 1 36-36h48a36 36 0 0 1 36 36v34" fill="none" stroke="#fff" stroke-width="28" stroke-linecap="round"/>
-  <rect x="112" y="186" width="288" height="210" rx="42" fill="#fff"/>
-  <rect x="112" y="262" width="288" height="14" fill="#0A7A55" opacity=".16"/>
-  <rect x="224" y="244" width="64" height="50" rx="15" fill="#F2B14C"/>
+  <rect width="512" height="512" rx="118" fill="url(#bg)"/>
+  <rect width="512" height="512" rx="118" fill="url(#shine)"/>
+  <path transform="translate(149.20 319.55) scale(0.31 -0.31)" fill="#fff" d="M337 -304Q263 -304 205.0 -285.0Q147 -266 106.5 -230.0Q66 -194 44.5 -142.5Q23 -91 23 -25Q23 81 96.0 152.5Q169 224 325 273L524 335V341L169 349V278H54V353Q54 429 92.5 464.5Q131 500 219 495L610 471V244L387 184Q317 165 269.0 148.0Q221 131 191.0 110.5Q161 90 147.5 63.5Q134 37 134 1V-11Q134 -46 144.5 -72.5Q155 -99 180.0 -117.0Q205 -135 245.5 -144.5Q286 -154 346 -154Q415 -154 479.0 -128.5Q543 -103 591 -56L666 -174Q605 -235 518.5 -269.5Q432 -304 337 -304Z"/>
+  <circle cx="250.57" cy="118.98" r="25" fill="url(#dot)"/>
 </svg>

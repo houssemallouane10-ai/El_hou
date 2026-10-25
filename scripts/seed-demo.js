@@ -42,12 +42,16 @@ const wilayaOf = { 365: 62, 372: 62, 391: 62, 364: 12, 366: 12, 554: 16, 571: 16
 let phoneCounter = 0;
 const nextPhone = () => `05550000${String(++phoneCounter).padStart(2, '0')}`;
 
-const createUser = async ({ name, role, communeId, profile = {}, verified = false }) => {
-  const { user } = await accounts.register({ name, phone: nextPhone(), password: PASSWORD, role, wilayaCode: wilayaOf[communeId], acceptTerms: true });
+const createUser = async ({ name, role, communeId, profile = {}, verified = false, phone = nextPhone() }) => {
+  const { user } = await accounts.register({ name, phone, password: PASSWORD, role, wilayaCode: wilayaOf[communeId], acceptTerms: true });
   accounts.updateProfile(user.id, { communeId, ...profile });
   if (verified) accounts.adminSetVerified(user.id, true);
   return user;
 };
+
+at(24 * 21);
+// Created first, so it is the platform's owner (first-run setup).
+const admin = await createUser({ name: 'إدارة خدمتي', role: 'employer', communeId: PLACES.birElAter, phone: '0555000000' });
 
 at(24 * 20);
 const employers = {
@@ -76,8 +80,6 @@ const workers = {
   nurse: await createUser({ name: 'سارة دراجي', role: 'seeker', communeId: PLACES.batna, profile: { isListed: true, headline: 'ممرضة مؤهلة', category: 'health', experienceYears: 6, skills: ['علاجات', 'استقبال', 'متابعة المرضى'] } }),
 };
 
-const admin = await createUser({ name: 'إدارة خدمتي', role: 'employer', communeId: PLACES.birElAter });
-accounts.setOwnerByPhone(admin.phone, true);
 accounts.setAlerts(workers.driver.id, { categories: ['transport'], wilayaCode: 12 });
 
 const job = (hoursAgo, employer, data) => {

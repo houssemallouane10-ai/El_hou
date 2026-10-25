@@ -5,9 +5,11 @@ import { createJobsService } from './domains/jobs/index.js';
 import { createMessagingService } from './domains/messaging/index.js';
 import { createModerationService } from './domains/moderation/index.js';
 import { createNotificationsService } from './domains/notifications/index.js';
+import { createPlatformService } from './domains/platform/index.js';
 
 // Composition root for the domain services. Dependencies point one way:
-// accounts, notifications <- jobs <- applications, bookmarks, messaging <- moderation.
+// accounts, notifications <- jobs <- applications, bookmarks, messaging <- moderation;
+// platform (owner-managed settings) stands alone.
 export const createServices = ({ db, clock, config }) => {
   const accounts = createAccountsService({ db, clock, config });
   const notifications = createNotificationsService({ db, clock });
@@ -16,7 +18,8 @@ export const createServices = ({ db, clock, config }) => {
   const bookmarks = createBookmarksService({ db, clock, jobs, accounts });
   const messaging = createMessagingService({ db, clock, accounts, jobs });
   const moderation = createModerationService({ db, clock, accounts, jobs, applications, messaging, notifications });
-  return { accounts, notifications, jobs, applications, bookmarks, messaging, moderation };
+  const platform = createPlatformService({ db, clock, config });
+  return { accounts, notifications, jobs, applications, bookmarks, messaging, moderation, platform };
 };
 
 // Fills search text for rows migrated without it, a batch at a time until none are left.

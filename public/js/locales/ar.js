@@ -493,10 +493,6 @@ export default {
     deleteForever: 'حذف نهائي',
     accountDeleted: 'تم حذف حسابك. نتمنى لك التوفيق!',
     version: 'خدمتي — الإصدار {version}',
-    ownerClaim: 'صاحب المنصة؟ أدخل رمز المالك',
-    ownerTitle: 'رمز المالك',
-    ownerText: 'أدخل الرمز السري الموجود في إعدادات الخادم (OWNER_CODE) لتحصل على كل صلاحيات الإدارة.',
-    ownerDone: 'أصبحت مالك المنصة 👑 هذه لوحة الإدارة',
   },
 
   auth: {
@@ -526,9 +522,6 @@ export default {
     agreePrefix: 'قرأت وأوافق على',
     agreeAnd: ' و',
     agreeSuffix: '',
-    ownerToggle: 'أنا صاحب المنصة (عندي رمز المالك)',
-    ownerCode: 'رمز المالك',
-    ownerCodeHint: 'الرمز السري الموجود في إعدادات الخادم (OWNER_CODE). اتركه فارغًا إن لم تكن صاحب المنصة.',
     ownerWelcome: 'مرحبًا {name}! أنت الآن مالك المنصة 👑',
     wilaya: 'ولايتك',
     wilayaHint: 'نعرض لك عروض ولايتك أولًا، ويمكنك تغييرها في أي وقت.',
@@ -542,6 +535,14 @@ export default {
     forgotStep3: 'سجّل الدخول بها ثم غيّرها من الإعدادات.',
     contactSupport: 'راسل الإدارة على واتساب',
     forgotWhatsapp: 'السلام عليكم، نسيت كلمة السر لحسابي في خدمتي.',
+  },
+
+  setup: {
+    title: 'إعداد منصتك',
+    subtitle: 'خطوة واحدة وتبدأ خدمتي العمل.',
+    ownerTitle: 'هذا الحساب سيكون حساب المالك',
+    ownerText: 'أول حساب يُنشأ في المنصة يملك لوحة الإدارة وكل الصلاحيات: البلاغات، الحظر، تعيين المشرفين والإعدادات.',
+    button: 'إنشاء حساب المالك',
   },
 
   report: {
@@ -574,6 +575,7 @@ export default {
       reports: 'البلاغات',
       users: 'المستخدمون',
       jobs: 'العروض',
+      settings: 'الإعدادات',
     },
     kpi: {
       users: 'مستخدم',
@@ -616,6 +618,21 @@ export default {
       listed: 'في الدليل',
     },
     byWilaya: 'النشاط حسب الولاية',
+    settings: {
+      contact: 'التواصل مع المستخدمين',
+      contactHint: 'يظهر في «نسيت كلمة السر» وفي صفحتي الخصوصية وحذف الحساب. Google Play يطلب وسيلة تواصل واحدة على الأقل.',
+      whatsapp: 'رقم واتساب الدعم',
+      email: 'البريد الإلكتروني للدعم',
+      android: 'تطبيق أندرويد (Google Play)',
+      androidHint: 'لربط التطبيق بموقعك حتى يفتح بملء الشاشة دون شريط المتصفح.',
+      package: 'اسم الحزمة (Package ID)',
+      packageHint: 'نفس الاسم الذي كتبته في PWABuilder.',
+      fingerprints: 'بصمات SHA-256',
+      fingerprintsHint: 'من Play Console: App integrity ← App signing ← «App signing key certificate». بصمة في كل سطر.',
+      linked: 'التطبيق مربوط',
+      notLinked: 'لم تُضف بصمة بعد',
+      saved: 'تم حفظ الإعدادات',
+    },
     makeAdmin: 'تعيين مشرفًا',
     removeAdmin: 'إزالة الإشراف',
     makeAdminConfirm: 'سيتمكن هذا الشخص من مراجعة البلاغات وحجب العروض وحظر الحسابات. هل تريد المتابعة؟',
@@ -814,6 +831,7 @@ export default {
     OWNER_ONLY: 'هذا الإجراء لمالك المنصة فقط',
     CANNOT_CHANGE_OWNER: 'لا يمكن تغيير صلاحيات المالك',
     USER_BANNED: 'هذا الحساب محظور',
+    LAST_OWNER: 'أنت المالك الوحيد للمنصة، لا يمكن حذف هذا الحساب',
   },
 
   fieldErrors: {
@@ -831,7 +849,8 @@ export default {
     required_for_listing: 'مطلوب لإظهار ملفك في دليل العمّال',
     wrong_password: 'كلمة السر غير صحيحة',
     must_accept: 'يجب الموافقة على شروط الاستخدام وسياسة الخصوصية للمتابعة',
-    wrong_code: 'الرمز غير صحيح',
+    invalid_email: 'أدخل بريدًا إلكترونيًا صحيحًا',
+    invalid_fingerprint: 'بصمة غير صحيحة: 32 زوجًا من الأحرف مثل AB:CD:…',
     wrong_wilaya: 'هذه البلدية لا تتبع الولاية المختارة',
   },
 };

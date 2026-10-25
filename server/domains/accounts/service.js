@@ -6,18 +6,16 @@ import {
   parseAlertSettings,
   parseDirectoryQuery,
   parseLogin,
-  parseOwnerClaim,
   parsePasswordChange,
   parsePasswordConfirmation,
   parseProfileUpdate,
   parseRegistration,
-  readOwnerCodeInput,
   toAdminView,
   toCardView,
   toProfileView,
   toSelfView,
 } from './contracts.js';
-import { burnPasswordCheck, generateTemporaryPassword, hashPassword, matchesSecret, verifyPassword } from './passwords.js';
+import { burnPasswordCheck, generateTemporaryPassword, hashPassword, verifyPassword } from './passwords.js';
 import { createAccountsRepository } from './repository.js';
 import { createSessionStore } from './sessions.js';
 
@@ -26,8 +24,9 @@ const LAST_SEEN_RESOLUTION_MS = 5 * 60 * 1000;
 export const createAccountsService = ({ db, clock, config }) => {
   const repository = createAccountsRepository(db);
   const sessions = createSessionStore({ db, clock, ttlDays: config.sessionDays });
-  // Owners proved they know the deployment's OWNER_CODE (or were named from the server's command
-  // line). They are always admins, and the only ones who appoint or remove admins.
+  // The owner is the first account ever created on the platform (first-run setup), or an account
+  // named from the server's command line. Owners are always admins, and the only ones who appoint
+  // or remove admins.
   const now = () => clock.now().toISOString();
   const isOwner = (user) => Boolean(user.is_owner);
   const self = (user) => toSelfView(user, { isOwner: isOwner(user) });
@@ -66,13 +65,14 @@ export const createAccountsService = ({ db, clock, config }) => {
     async register(input, { userAgent } = {}) {
       const data = parseRegistration(input);
       const { wilayaCode } = resolvePlace({ wilayaCode: data.wilayaCode });
-      const ownerCode = readOwnerCodeInput(input);
-      if (ownerCode && !matchesSecret(ownerCode, config.ownerCode)) throw invalid({ ownerCode: 'wrong_code' });
       if (repository.findByPhone(data.phone)) throw conflict('PHONE_TAKEN');
       const passwordHash = await hashPassword(data.password);
       let id;
       try {
-        id = repository.insert({ ...data, wilayaCode, passwordHash, isOwner: Boolean(ownerCode), now: now() });
+        // One transaction, so two simultaneous first sign-ups cannot both become owners.
+        id = db.transaction(() => repository.insert({
+          ...data, wilayaCode, passwordHash, isOwner: !repository.hasAnyAccount(), now: now(),
+        }))();
       } catch (error) {
         if (error.code === 'SQLITE_CONSTRAINT_UNIQUE') throw conflict('PHONE_TAKEN');
         throw error;
@@ -136,23 +136,19 @@ export const createAccountsService = ({ db, clock, config }) => {
       sessions.closeOthers(id, currentToken);
     },
 
+    // The last owner cannot leave: the platform would have nobody to appoint moderators.
     async deleteAccount(id, input) {
       const { password } = parsePasswordConfirmation(input);
       const user = requireActiveUser(id);
       if (!(await verifyPassword(password, user.password_hash))) throw invalid({ password: 'wrong_password' });
+      if (user.is_owner && repository.countOwners() <= 1) throw conflict('LAST_OWNER');
       repository.remove(id);
     },
 
-    // An existing account becomes an owner with the deployment's owner code.
-    claimOwnership(id, input) {
-      const { ownerCode } = parseOwnerClaim(input);
-      const user = requireActiveUser(id);
-      if (!matchesSecret(ownerCode, config.ownerCode)) throw invalid({ ownerCode: 'wrong_code' });
-      if (!user.is_owner) repository.grantOwner(id);
-      return self(repository.findById(id));
-    },
-
     hasOwner: () => repository.hasOwner(),
+
+    // A brand-new platform: the next account created becomes its owner.
+    needsSetup: () => !repository.hasAnyAccount(),
 
     // Alerts follow the chosen categories, in one wilaya or (wilayaCode null) the whole country.
     setAlerts(id, input) {

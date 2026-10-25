@@ -14,12 +14,7 @@ const staticHeaders = (res, filePath) => {
 
 export const createWebRouter = ({ config, services }) => {
   const router = Router();
-  const shell = createShell({
-    publicDir: config.publicDir,
-    cacheTemplate: config.isProduction,
-    services,
-    support: { supportWhatsapp: config.supportWhatsapp, supportEmail: config.supportEmail },
-  });
+  const shell = createShell({ publicDir: config.publicDir, cacheTemplate: config.isProduction, services });
   const serviceWorker = createServiceWorker(config);
   const baseUrlOf = (req) => config.publicUrl || `${req.protocol}://${req.get('host')}`;
 
@@ -31,7 +26,7 @@ export const createWebRouter = ({ config, services }) => {
 
   // Digital Asset Links: lets the Play Store app open this site full screen, without a URL bar.
   router.get('/.well-known/assetlinks.json', (req, res) => {
-    const app = config.androidApp;
+    const app = services.platform.androidApp();
     const statements = app ? [{
       relation: ['delegate_permission/common.handle_all_urls'],
       target: { namespace: 'android_app', package_name: app.packageName, sha256_cert_fingerprints: app.fingerprints },

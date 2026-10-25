@@ -1,6 +1,8 @@
 # One-click hosting on Render (https://render.com), used by the "Deploy to Render" button.
 # A web service with a 1 GB persistent disk for the SQLite database and its daily backups.
 # Persistent disks need a paid instance type: "starter" is the smallest one.
+# Nothing to fill in: the first account created on the site becomes its owner, and the owner sets
+# the support contact and the Android app from the admin console (Settings).
 services:
   - type: web
     name: khedmati
@@ -21,12 +23,3 @@ services:
         value: /data
       - key: TRUST_PROXY
         value: "1"
-      # The secret that makes you the owner: copy it from the service's Environment tab and enter
-      # it in the app when you sign up ("I own this platform").
-      - key: OWNER_CODE
-        generateValue: true
-      # Shown in the privacy and account deletion pages (Google Play wants a contact).
-      - key: SUPPORT_EMAIL
-        sync: false
-      - key: ANDROID_PACKAGE_NAME
-        value: dz.khedmati.app

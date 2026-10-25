@@ -1,13 +1,13 @@
 import assert from 'node:assert/strict';
 import { after, before, describe, it } from 'node:test';
-import { PASSWORD, signUp, signUpOwner, startTestServer, validJob } from './helpers.js';
+import { PASSWORD, signUp, startTestServer, validJob } from './helpers.js';
 
 describe('moderation and admin', () => {
   let server;
   let admin;
   before(async () => {
     server = await startTestServer();
-    admin = await signUpOwner(server, { name: 'المشرف' });
+    admin = server.owner;
   });
   after(() => server.close());
 

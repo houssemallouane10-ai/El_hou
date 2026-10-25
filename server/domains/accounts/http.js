@@ -42,3 +42,8 @@ export const requireAdmin = (req, res, next) => {
   if (!req.user) return next(unauthenticated());
   return next(req.user.isAdmin ? undefined : forbidden('ADMIN_ONLY'));
 };
+
+export const requireOwner = (req, res, next) => {
+  if (!req.user) return next(unauthenticated());
+  return next(req.user.isOwner ? undefined : forbidden('OWNER_ONLY'));
+};

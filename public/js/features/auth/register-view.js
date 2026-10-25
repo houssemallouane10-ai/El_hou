@@ -15,19 +15,29 @@ import { toast, withBusy } from '../../shared/ui.js';
 const ROLE_DETAILS = { seeker: 'auth.seekerHint', employer: 'auth.employerHint' };
 
 export default {
-  mount(root, { navigate, query, setTitle }) {
+  mount(root, { navigate, query, setTitle, setup }) {
     const next = query.get('next') ? safeNext(query.get('next')) : null;
-    const presetRole = ROLES.some((role) => role.id === query.get('role')) ? query.get('role') : 'seeker';
-    setTitle(t('auth.registerTitle'));
+    const presetRole = ROLES.some((role) => role.id === query.get('role')) ? query.get('role') : (setup ? 'employer' : 'seeker');
+    const title = setup ? t('setup.title') : t('auth.registerTitle');
+    setTitle(title);
 
     render(root, html`
-      ${appBar({ back: true, backTo: '/' })}
+      ${setup ? null : appBar({ back: true, backTo: '/' })}
       <div class="page page-auth">
         <div class="auth-head">
           <img src="/icons/logo.svg" alt="" width="64" height="64">
-          <h1 class="auth-title">${t('auth.registerTitle')}</h1>
-          <p class="muted">${t('auth.registerSubtitle')}</p>
+          <h1 class="auth-title">${title}</h1>
+          <p class="muted">${setup ? t('setup.subtitle') : t('auth.registerSubtitle')}</p>
         </div>
+        ${setup ? html`
+          <div class="notice notice-success setup-notice">
+            ${icon('shield')}
+            <div>
+              <strong>${t('setup.ownerTitle')}</strong>
+              <p>${t('setup.ownerText')}</p>
+            </div>
+          </div>
+        ` : null}
         <form class="form card card-pad" id="register-form" novalidate>
           <fieldset class="field" data-field="role">
             <legend class="field-label">${t('auth.roleQuestion')}</legend>
@@ -59,13 +69,9 @@ export default {
             </label>
             <p class="field-error" hidden></p>
           </div>
-          <details class="owner-claim">
-            <summary>${icon('shield')}<span>${t('auth.ownerToggle')}</span></summary>
-            ${field({ name: 'ownerCode', label: t('auth.ownerCode'), hint: t('auth.ownerCodeHint'), control: passwordInput({ name: 'ownerCode', autocomplete: 'off' }) })}
-          </details>
-          <button class="btn btn-primary btn-lg btn-block" type="submit">${t('auth.registerButton')}</button>
+          <button class="btn btn-primary btn-lg btn-block" type="submit">${setup ? t('setup.button') : t('auth.registerButton')}</button>
         </form>
-        <p class="auth-switch">${t('auth.haveAccount')} <a href="/login${next ? `?next=${encodeURIComponent(next)}` : ''}">${t('auth.login')}</a></p>
+        ${setup ? null : html`<p class="auth-switch">${t('auth.haveAccount')} <a href="/login${next ? `?next=${encodeURIComponent(next)}` : ''}">${t('auth.login')}</a></p>`}
       </div>
     `);
 

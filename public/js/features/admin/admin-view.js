@@ -4,7 +4,7 @@ import { store } from '../../app/store.js';
 import { api, isAbort } from '../../shared/api.js';
 import { appBar, avatar, emptyState, errorState, jobStateBadge, loadMore, skeletonCards, verifiedMark } from '../../shared/components.js';
 import { formatNumber, timeAgo } from '../../shared/format.js';
-import { select } from '../../shared/forms.js';
+import { field, handleFormError, input, readForm, select, textarea } from '../../shared/forms.js';
 import { $, html, on, render } from '../../shared/html.js';
 import { label, t } from '../../shared/i18n.js';
 import { icon } from '../../shared/icons.js';
@@ -12,6 +12,7 @@ import { placeLabel, wilayaOptions } from '../../shared/places.js';
 import { confirmDialog, copyText, openLayer, toast, toastError, withBusy } from '../../shared/ui.js';
 
 const TABS = ['overview', 'reports', 'users', 'jobs'];
+const OWNER_TABS = [...TABS, 'settings'];
 const REPORT_FILTERS = ['open', 'resolved', 'dismissed'];
 const USER_FILTERS = ['all', 'banned', 'verified', 'unverified_employers', 'admins'];
 const JOB_FILTERS = ['all', 'active', 'closed', 'expired', 'hidden', 'featured'];
@@ -60,6 +61,29 @@ const overviewMarkup = (data) => html`
     ${kpi('eye-off', data.jobs.hidden, t('admin.kpi.hiddenJobs'))}
   </div>
   ${byWilayaMarkup(data.byWilaya ?? [])}
+`;
+
+// Owner-only: the contact shown to users, and the Android app allowed to open the site full screen.
+const settingsMarkup = ({ settings, assetLinksUrl }) => html`
+  <form class="form" id="platform-settings" novalidate>
+    <section class="form-section">
+      <h2 class="form-section-title">${icon('phone')}${t('admin.settings.contact')}</h2>
+      <p class="muted text-sm">${t('admin.settings.contactHint')}</p>
+      ${field({ name: 'supportWhatsapp', label: t('admin.settings.whatsapp'), optional: true, control: input({ name: 'supportWhatsapp', value: settings.supportWhatsapp, type: 'tel', inputmode: 'tel', placeholder: '06XX XX XX XX', dir: 'ltr' }) })}
+      ${field({ name: 'supportEmail', label: t('admin.settings.email'), optional: true, control: input({ name: 'supportEmail', value: settings.supportEmail, type: 'email', inputmode: 'email', placeholder: 'contact@example.com', dir: 'ltr' }) })}
+    </section>
+    <section class="form-section">
+      <h2 class="form-section-title">${icon('smartphone')}${t('admin.settings.android')}</h2>
+      <p class="muted text-sm">${t('admin.settings.androidHint')}</p>
+      ${field({ name: 'androidPackage', label: t('admin.settings.package'), hint: t('admin.settings.packageHint'), control: input({ name: 'androidPackage', value: settings.androidPackage, dir: 'ltr' }) })}
+      ${field({ name: 'androidFingerprints', label: t('admin.settings.fingerprints'), optional: true, hint: t('admin.settings.fingerprintsHint'), control: textarea({ name: 'androidFingerprints', value: settings.androidFingerprints.join('\n'), rows: 4, placeholder: 'AB:CD:EF:…' }) })}
+      <p class="text-sm">${settings.androidFingerprints.length
+        ? html`<span class="badge badge-success">${icon('circle-check')}${t('admin.settings.linked')}</span>`
+        : html`<span class="badge badge-warning">${t('admin.settings.notLinked')}</span>`}
+        <a class="text-link" href="${assetLinksUrl}" target="_blank" rel="noopener" data-external dir="ltr">assetlinks.json</a></p>
+    </section>
+    <button class="btn btn-primary btn-block" type="submit">${icon('check')}${t('common.save')}</button>
+  </form>
 `;
 
 const filterChips = (name, options, value, prefix) => html`
@@ -145,8 +169,9 @@ const jobItem = (job) => html`
 
 export default {
   mount(root, { query, replaceQuery, setTitle }) {
+    const tabs = store.user?.isOwner ? OWNER_TABS : TABS;
     const state = {
-      tab: TABS.includes(query.get('tab')) ? query.get('tab') : 'overview',
+      tab: tabs.includes(query.get('tab')) ? query.get('tab') : 'overview',
       reports: 'open',
       users: 'all',
       jobs: 'all',
@@ -169,7 +194,7 @@ export default {
       </div>
     `);
 
-    const renderTabs = () => render($(root, '[data-tabs]'), TABS.map((tab) => html`
+    const renderTabs = () => render($(root, '[data-tabs]'), tabs.map((tab) => html`
       <button class="tab-link ${state.tab === tab ? 'is-active' : ''}" type="button" data-tab="${tab}">${t(`admin.tabs.${tab}`)}</button>
     `));
 
@@ -187,6 +212,7 @@ export default {
       `;
       const controls = {
         overview: null,
+        settings: null,
         reports: filterChips('reports', REPORT_FILTERS, state.reports, 'admin.reportFilters'),
         users: html`${search(t('admin.searchUsers'))}${wilayaFilter}${filterChips('users', USER_FILTERS, state.users, 'admin.userFilters')}`,
         jobs: html`${search(t('admin.searchJobs'))}${wilayaFilter}${filterChips('jobs', JOB_FILTERS, state.jobs, 'admin.jobFilters')}`,
@@ -222,6 +248,10 @@ export default {
           render(content, overviewMarkup(await api.get('/api/admin/dashboard', null, { signal: requestController.signal })));
           return;
         }
+        if (state.tab === 'settings') {
+          render(content, settingsMarkup(await api.get('/api/admin/settings', null, { signal: requestController.signal })));
+          return;
+        }
         const [path, params] = endpoint();
         const data = await api.get(path, { ...params, page: state.page }, { signal: requestController.signal });
         state.items = append ? [...state.items, ...data.items] : data.items;
@@ -253,6 +283,25 @@ export default {
     });
 
     on(root, 'click', '[data-tab]', (event, button) => switchTab(button.dataset.tab));
+
+    on(root, 'submit', '#platform-settings', (event, form) => {
+      event.preventDefault();
+      const values = readForm(form);
+      withBusy($(form, 'button[type="submit"]'), async () => {
+        try {
+          const data = await api.patch('/api/admin/settings', {
+            supportWhatsapp: values.supportWhatsapp,
+            supportEmail: values.supportEmail,
+            androidPackage: values.androidPackage,
+            androidFingerprints: values.androidFingerprints.split(/[\n,]+/).map((line) => line.trim()).filter(Boolean),
+          });
+          render($(root, '[data-content]'), settingsMarkup(data));
+          toast(t('admin.settings.saved'), { type: 'success' });
+        } catch (error) {
+          handleFormError(form, error);
+        }
+      });
+    });
 
     on(root, 'click', '[data-filter]', (event, button) => {
       state[button.dataset.filter] = button.dataset.value;

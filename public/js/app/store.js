@@ -9,6 +9,8 @@ const state = {
   savedWorkers: new Set(),
   summary: { ...EMPTY_SUMMARY },
   meta: null,
+  // A brand-new platform: the first account created becomes its owner.
+  setupRequired: false,
 };
 
 const listeners = new Set();
@@ -27,6 +29,9 @@ export const store = {
   get meta() {
     return state.meta;
   },
+  get setupRequired() {
+    return state.setupRequired;
+  },
   isSaved: (kind, id) => (kind === 'job' ? state.savedJobs : state.savedWorkers).has(id),
 
   subscribe(listener) {
@@ -34,8 +39,9 @@ export const store = {
     return () => listeners.delete(listener);
   },
 
-  setSession({ user, saved, summary }) {
+  setSession({ user, saved, summary, setupRequired = false }) {
     state.user = user ?? null;
+    state.setupRequired = Boolean(setupRequired);
     state.savedJobs = new Set(saved?.jobs ?? []);
     state.savedWorkers = new Set(saved?.workers ?? []);
     state.summary = { ...EMPTY_SUMMARY, ...(summary ?? {}) };
