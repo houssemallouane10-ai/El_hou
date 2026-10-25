@@ -30,8 +30,8 @@ export const SOURCES = [
   { key: 'mls', name: 'Major League Soccer', handles: ['@MLS'], leagues: ['usa.1'] },
   { key: 'spl', name: 'Roshn Saudi League', handles: ['@SPL', '@SaudiProLeague'], leagues: ['ksa.1'] },
   { key: 'caf', name: 'CAF TV', handles: ['@CAFTV', '@CAFonline'], leagues: ['caf.champions', 'caf.confed'] },
-  { key: 'ligaportugal', name: 'Liga Portugal', handles: ['@LigaPortugal'], leagues: ['por.1'] },
-  { key: 'eredivisie', name: 'Eredivisie', handles: ['@eredivisie'], leagues: ['ned.1'] },
+  { key: 'ligaportugal', name: 'Liga Portugal', handles: ['@LigaPortugal', '@ligaportugalbetclic', '@LigaPortugalOficial'], leagues: ['por.1'] },
+  { key: 'eredivisie', name: 'Eredivisie', handles: ['@eredivisie', '@EredivisieOfficial', '@ESPNNL'], leagues: ['ned.1'] },
   { key: 'efl', name: 'EFL', handles: ['@EFL'], leagues: ['eng.league_cup'] },
 ];
 

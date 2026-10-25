@@ -41,6 +41,12 @@ jobs:
           PREVIOUS_BASE_URL: ${{ steps.pages.outputs.base_url }}
         run: node scripts/highlights.mjs
 
+      # The repo's branch-based Pages build also runs on push; let it finish
+      # first so this deployment (with highlights) is the one that stays live
+      - name: Wait for the branch build
+        if: github.event_name == 'push'
+        run: sleep 75
+
       - uses: actions/upload-pages-artifact@v3
         if: github.event_name != 'schedule' || steps.highlights.outputs.changed == 'true'
         with:
