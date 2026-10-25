@@ -1080,6 +1080,67 @@ h1, h2, h3, h4 { font-family: var(--font-display); font-weight: 700; line-height
 .pc-t b { overflow-wrap: anywhere; }
 .pcard .pred-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 
+/* ---------- Channels ---------- */
+
+.chans { padding-block: 32px 64px; display: flex; flex-direction: column; gap: 22px; }
+.chans-head h1 { font-size: clamp(30px, 4vw, 44px); }
+.chans-head p { margin: 8px 0 0; max-width: 64ch; }
+.sec-h { font-size: 20px; margin-bottom: 12px; }
+.rchips { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: thin; }
+.rchips .chip { flex: none; }
+
+.chan {
+  --cc: #333;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border-radius: 10px;
+  background: var(--cc);
+  color: #fff;
+  font-size: 14px;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.14);
+  white-space: nowrap;
+}
+.chan .ic { width: 1.1em; height: 1.1em; opacity: 0.85; }
+.chan b { font-weight: 700; unicode-bidi: isolate; }
+.chan-lg { font-size: 17px; padding: 8px 14px; }
+.tag-free { font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 6px; color: var(--good); background: color-mix(in srgb, var(--good) 12%, transparent); }
+.chan-links { display: flex; flex-wrap: wrap; gap: 8px; }
+.ic.ext { width: 0.95em; height: 0.95em; opacity: 0.7; }
+
+.onair-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr)); gap: 14px; }
+.onair { display: flex; flex-direction: column; gap: 10px; }
+.onair header { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.onair-n { font-family: var(--font-digits); font-weight: 800; font-size: 26px; color: var(--fg-3); }
+.onair-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+.onair-list a { display: grid; grid-template-columns: 62px minmax(0, 1fr); column-gap: 10px; padding: 7px 8px; border-radius: 8px; }
+.onair-list a:hover { background: var(--surface-2); }
+.oa-time { grid-row: 1 / 3; align-self: center; display: flex; flex-direction: column; font-family: var(--font-digits); font-weight: 800; font-size: 19px; line-height: 1.1; }
+.oa-time small { font-family: var(--font-body); font-weight: 400; font-size: 11px; color: var(--fg-3); }
+.oa-time em { font-style: normal; font-size: 16px; }
+.oa-teams { display: flex; flex-wrap: wrap; gap: 6px; font-size: 14px; min-width: 0; }
+.oa-teams b { font-weight: 600; }
+.oa-teams i { font-style: normal; color: var(--fg-3); }
+.oa-lg { color: var(--fg-3); font-size: 12px; }
+.onair .chan-links { margin-top: auto; }
+
+.chan-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr)); gap: 14px; }
+.chan-card { display: flex; flex-direction: column; gap: 14px; }
+.chan-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.chan-card dl { margin: 0; display: grid; gap: 8px; }
+.chan-card dt { font-size: 12px; color: var(--fg-3); }
+.chan-card dd { margin: 0; font-size: 13.5px; }
+.chan-card .chan-links { margin-top: auto; }
+
+.bc-wrap { display: flex; flex-direction: column; gap: 12px; }
+.chrows { display: flex; flex-direction: column; }
+.chrow { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--line); }
+.chrow .chan-links { margin-inline-start: auto; }
+.sub-h { font-size: 14px; color: var(--fg-2); margin-top: 4px; }
+.link-more { color: var(--accent); font-weight: 600; font-size: 14px; width: max-content; }
+.link-more:hover { text-decoration: underline; }
+
 /* ---------- Footer & toasts ---------- */
 
 .foot { border-top: 1px solid var(--line); background: var(--bg-2); padding-block: 28px calc(28px + env(safe-area-inset-bottom, 0px)); }
@@ -1131,7 +1192,7 @@ h1, h2, h3, h4 { font-family: var(--font-display); font-weight: 700; line-height
   .top-in { gap: 10px; height: 56px; }
   .brand-name { font-size: 20px; }
   .mainnav { position: fixed; z-index: 55; inset: auto 0 0; margin: 0; justify-content: space-around; padding: 6px max(10px, env(safe-area-inset-left, 0px)) calc(6px + env(safe-area-inset-bottom, 0px)) max(10px, env(safe-area-inset-right, 0px)); background: color-mix(in srgb, var(--bg) 90%, transparent); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border-top: 1px solid var(--line); }
-  .mainnav a { flex: 1; justify-content: center; font-size: 13.5px; }
+  .mainnav a { flex: 1; justify-content: center; font-size: 13px; padding-inline: 6px; }
   .foot { padding-bottom: calc(84px + env(safe-area-inset-bottom, 0px)); }
   .toasts { bottom: calc(76px + env(safe-area-inset-bottom, 0px)); }
 

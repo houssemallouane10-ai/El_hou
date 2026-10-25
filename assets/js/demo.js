@@ -3,23 +3,23 @@
 
 const DEMO_LEAGUES = [
   {
-    slug: 'demo.eng', name: { ar: 'الدوري الإنجليزي', fr: 'Premier League', en: 'Premier League' },
+    slug: 'eng.1', name: { ar: 'الدوري الإنجليزي', fr: 'Premier League', en: 'Premier League' },
     teams: [['Arsenal', 'EF0107'], ['Liverpool', 'C8102E'], ['Manchester City', '6CABDD'], ['Chelsea', '034694'], ['Tottenham', '132257'], ['Newcastle', '241F20'], ['Aston Villa', '670E36'], ['Manchester United', 'DA291C']],
   },
   {
-    slug: 'demo.esp', name: { ar: 'الدوري الإسباني', fr: 'LaLiga', en: 'LaLiga' },
+    slug: 'esp.1', name: { ar: 'الدوري الإسباني', fr: 'LaLiga', en: 'LaLiga' },
     teams: [['Real Madrid', 'FEBE10'], ['Barcelona', 'A50044'], ['Atlético Madrid', 'CB3524'], ['Real Sociedad', '0067B1'], ['Villarreal', 'FFE667'], ['Real Betis', '00954C']],
   },
   {
-    slug: 'demo.ksa', name: { ar: 'دوري روشن السعودي', fr: 'Saudi Pro League', en: 'Saudi Pro League' },
+    slug: 'ksa.1', name: { ar: 'دوري روشن السعودي', fr: 'Saudi Pro League', en: 'Saudi Pro League' },
     teams: [['Al Hilal', '005CA9'], ['Al Nassr', 'FCD116'], ['Al Ittihad', 'F2C200'], ['Al Ahli', '006633'], ['Al Ettifaq', '00563F'], ['Al Shabab', 'E2001A']],
   },
   {
-    slug: 'demo.caf', name: { ar: 'دوري أبطال أفريقيا', fr: 'Ligue des champions CAF', en: 'CAF Champions League' },
+    slug: 'caf.champions', name: { ar: 'دوري أبطال أفريقيا', fr: 'Ligue des champions CAF', en: 'CAF Champions League' },
     teams: [['Al Ahly', 'C8102E'], ['MC Alger', 'D52B1E'], ['Wydad AC', 'D71920'], ['Espérance de Tunis', 'C8102E'], ['Mamelodi Sundowns', 'FFD700'], ['CR Belouizdad', 'C8102E']],
   },
   {
-    slug: 'demo.ita', name: { ar: 'الدوري الإيطالي', fr: 'Serie A', en: 'Serie A' },
+    slug: 'ita.1', name: { ar: 'الدوري الإيطالي', fr: 'Serie A', en: 'Serie A' },
     teams: [['Inter', '0068A8'], ['Milan', 'FB090B'], ['Juventus', '1B1B1B'], ['Napoli', '12A0D7'], ['Roma', '8E1F2F'], ['Atalanta', '1E71B8']],
   },
 ];

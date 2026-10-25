@@ -1,4 +1,5 @@
-import { SITE, REFRESH, COMMENTARY_LANGS } from './config.js';
+import { SITE, REFRESH, COMMENTARY_LANGS, LEAGUES } from './config.js';
+import { REGIONS, DEFAULT_REGION, CHANNELS, channelsFor, coverage } from './channels.js';
 import { t, getLang, setLang, onLangChange, applyDocumentLang, languageName, formatTime, formatDay, formatShortDay } from './i18n.js';
 import { loadDay, refreshLeagues, loadSummary, dayKey, addDays } from './api.js';
 import { predict, grade } from './predict.js';
@@ -163,7 +164,8 @@ function renderChrome() {
     const r = a.dataset.route;
     const on = (r === 'home' && state.route.name === 'home' && state.filter !== 'live') ||
       (r === 'live' && state.route.name === 'home' && state.filter === 'live') ||
-      (r === 'predictions' && state.route.name === 'predictions');
+      (r === 'predictions' && state.route.name === 'predictions') ||
+      (r === 'channels' && state.route.name === 'channels');
     a.toggleAttribute('aria-current', on);
   });
   document.getElementById('langSelect').value = getLang();
@@ -507,9 +509,96 @@ function predictionHtml(m) {
   </div>`;
 }
 
+/* ---------- Channels ---------- */
+
+function currentRegion() {
+  const saved = store.get('region');
+  return REGIONS.some((r) => r.id === saved) ? saved : DEFAULT_REGION[getLang()] || 'mena';
+}
+
+const regionName = (id) => REGIONS.find((r) => r.id === id)?.name[getLang()] || id;
+const leagueNameBySlug = (slug) => {
+  const l = LEAGUES.find((x) => x.slug === slug);
+  return l ? l.name[getLang()] || l.name.en : slug;
+};
+const listSep = () => (getLang() === 'ar' ? '، ' : ', ');
+
+function chanBadge(id, big = false) {
+  const c = CHANNELS[id];
+  return `<span class="chan${big ? ' chan-lg' : ''}" style="--cc:${hex(c.color, '#333333')}">${icon('tv')}<b dir="ltr">${esc(c.name)}</b></span>`;
+}
+
+function officialLinks(id) {
+  return `<div class="chan-links">${CHANNELS[id].links
+    .map(([label, url]) => `<a class="btn btn-sm btn-ghost" href="${safeUrl(url)}" target="_blank" rel="noopener noreferrer"><bdi dir="ltr">${esc(label)}</bdi>${icon('ext', 'ext')}</a>`)
+    .join('')}</div>`;
+}
+
+function regionPicker(region) {
+  return `<div class="rchips" role="group" aria-label="${t('ch.region')}">${REGIONS.map(
+    (r) => `<button type="button" class="chip" data-region="${r.id}" aria-pressed="${r.id === region}">${esc(r.name[getLang()])}</button>`,
+  ).join('')}</div>`;
+}
+
 function broadcastersHtml(m) {
-  if (!m.broadcasts?.length) return `<p class="muted">${t('match.noBroadcasters')}</p>`;
-  return `<ul class="bcast">${m.broadcasts.map((b) => `<li>${icon('tv')}<span>${esc(b)}</span></li>`).join('')}</ul>`;
+  const region = currentRegion();
+  const ids = channelsFor(m.league.slug, region);
+  const official = ids.length
+    ? `<div class="chrows">${ids.map((id) => `<div class="chrow">${chanBadge(id)}${CHANNELS[id].free ? `<span class="tag-free">${t('ch.free')}</span>` : ''}${officialLinks(id)}</div>`).join('')}</div>`
+    : `<p class="muted">${t('ch.noneMatch')}</p>`;
+  const espn = m.broadcasts?.length
+    ? `<h4 class="sub-h">${t('ch.espn')}</h4><ul class="bcast">${m.broadcasts.map((b) => `<li>${icon('tv')}<span>${esc(b)}</span></li>`).join('')}</ul>`
+    : '';
+  return `<div class="bc-wrap">${regionPicker(region)}${official}${espn}<a class="link-more" href="#/channels">${t('ch.more')}</a></div>`;
+}
+
+function renderChannels() {
+  teardownMatch();
+  unmountHero();
+  const region = currentRegion();
+  const today = dayKey(new Date());
+  const upcoming = [...dayMatches(0), ...dayMatches(1)].filter((m) => isLive(m) || isUpcoming(m));
+  const byChannel = new Map();
+  upcoming.forEach((m) =>
+    channelsFor(m.league.slug, region).forEach((id) => {
+      if (!byChannel.has(id)) byChannel.set(id, []);
+      byChannel.get(id).push(m);
+    }),
+  );
+
+  const onAir = [...byChannel.entries()]
+    .sort((a, b) => b[1].length - a[1].length)
+    .map(([id, list]) => `<article class="card onair">
+      <header>${chanBadge(id)}<span class="onair-n">${list.length}</span></header>
+      <ol class="onair-list">${list.slice(0, 8).map((m) => `<li><a href="${matchHref(m)}">
+        <span class="oa-time">${isLive(m) ? `<em class="st-live">${esc(m.status.clock || t('status.live'))}</em>` : formatTime(m.kickoff)}<small>${m.day === today ? t('day.today') : t('day.tomorrow')}</small></span>
+        <span class="oa-teams"><b>${esc(m.home.short)}</b><i>–</i><b>${esc(m.away.short)}</b></span>
+        <small class="oa-lg">${lname(m.league)}</small></a></li>`).join('')}</ol>
+      ${officialLinks(id)}
+    </article>`)
+    .join('');
+
+  const cards = Object.keys(CHANNELS).map((id) => {
+    const c = CHANNELS[id];
+    const cov = coverage(id);
+    const regions = c.global ? t('ch.global') : cov.regions.map(regionName).join(listSep());
+    const covers = c.global ? t('ch.fifaplusCovers') : cov.leagues.map(leagueNameBySlug).join(' · ');
+    return `<article class="card chan-card">
+      <div class="chan-top">${chanBadge(id, true)}${c.free ? `<span class="tag-free">${t('ch.free')}</span>` : ''}</div>
+      <dl><div><dt>${t('ch.regions')}</dt><dd>${esc(regions)}</dd></div><div><dt>${t('ch.covers')}</dt><dd>${esc(covers)}</dd></div></dl>
+      ${officialLinks(id)}
+    </article>`;
+  }).join('');
+
+  app.innerHTML = `<div class="wrap chans">
+    <header class="chans-head"><h1>${t('ch.title')}</h1><p class="muted">${t('ch.sub')}</p></header>
+    ${regionPicker(region)}
+    <section><h2 class="sec-h">${t('ch.onAir')} · ${esc(regionName(region))}</h2>
+      ${onAir ? `<div class="onair-grid">${onAir}</div>` : `<div class="empty">${state.days[0] ? t('ch.none') : `<span class="spin"></span>${t('empty.loading')}`}</div>`}
+    </section>
+    <section><h2 class="sec-h">${t('ch.all')}</h2><div class="chan-grid">${cards}</div></section>
+    <p class="notice">${icon('info')}<span>${t('ch.note')}</span></p>
+  </div>`;
 }
 
 function bindPickForms(root) {
@@ -870,6 +959,7 @@ function parseRoute() {
   const parts = h.split('/').filter(Boolean);
   if (parts[0] === 'match' && parts[2]) return { name: 'match', slug: parts[1], id: parts[2] };
   if (parts[0] === 'predictions') return { name: 'predictions' };
+  if (parts[0] === 'channels') return { name: 'channels' };
   if (parts[0] === 'live') return { name: 'home', day: 0, live: true };
   return { name: 'home', day: DAY_ROUTES[parts[0]] ?? 0 };
 }
@@ -879,7 +969,8 @@ function render({ soft = false } = {}) {
   if (r.name === 'match') renderMatch(r.slug, r.id);
   else if (r.name === 'predictions') {
     if (!soft || !app.querySelector('.preds') || !app.querySelector('.preds').contains(document.activeElement)) renderPredictions();
-  } else renderHome({ soft });
+  } else if (r.name === 'channels') renderChannels();
+  else renderHome({ soft });
   renderChrome();
 }
 
@@ -930,6 +1021,13 @@ function boot() {
   state.route = parseRoute();
   if (state.route.live) state.filter = 'live';
   window.addEventListener('hashchange', onRoute);
+  app.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-region]');
+    if (!b) return;
+    store.set('region', b.dataset.region);
+    if (state.route.name === 'channels') renderChannels();
+    else if (matchPage) renderTabs(matchPage);
+  });
   render();
   initialLoad().catch(() => render());
 

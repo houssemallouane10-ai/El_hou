@@ -24,6 +24,7 @@ const P = {
   ball: '<circle cx="12" cy="12" r="9"/><path class="f" d="M12 7.2l3.3 2.4-1.3 3.9h-4l-1.3-3.9z"/><path d="M12 7.2V3.5M15.3 9.6l3.5-1.2M14 13.5l2.2 3.2M10 13.5l-2.2 3.2M8.7 9.6L5.2 8.4"/>',
   card: '<rect class="f" x="7" y="3.5" width="10" height="15" rx="1.5" transform="rotate(8 12 11)"/>',
   swap: '<path d="M7 7h11l-3-3M17 17H6l3 3"/>',
+  ext: '<path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/>',
   search: '<circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/>',
 };
 
