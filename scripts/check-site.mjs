@@ -45,4 +45,19 @@ const firstMatch = await home.getAttribute('.mrow', 'href').catch(() => null);
 await visit(browser, '#/highlights', { width: 1280, height: 900 });
 await visit(browser, '#/channels', { width: 390, height: 844 });
 if (firstMatch) await visit(browser, firstMatch, { width: 1280, height: 900 });
+
+// The other apps published from this repo
+for (const path of ['barmaj/', 'nadouch.html']) {
+  const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
+  const problems = [];
+  page.on('pageerror', (e) => problems.push(`pageerror: ${e.message}`));
+  page.on('console', (m) => m.type() === 'error' && problems.push(`console error: ${m.text().slice(0, 200)}`));
+  page.on('response', (r) => r.status() >= 400 && problems.push(`HTTP ${r.status()}: ${r.url().slice(0, 120)}`));
+  const res = await page.goto(SITE + path, { waitUntil: 'load', timeout: 60_000 }).catch((e) => ({ status: () => e.message }));
+  await page.waitForTimeout(5_000);
+  const info = await page.evaluate(() => ({ title: document.title, text: document.body.innerText.replace(/\s+/g, ' ').slice(0, 140) })).catch(() => ({}));
+  console.log(`\n== ${path} status ${res.status()}`);
+  console.log(JSON.stringify(info));
+  [...new Set(problems)].slice(0, 15).forEach((p) => console.log(`  ${p}`));
+}
 await browser.close();
