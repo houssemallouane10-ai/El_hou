@@ -39,6 +39,7 @@ const paths = {
   pad: '<path d="M8 8l-4 4 4 4M16 8l4 4-4 4M4 12h16"/>',
   wifiOff: '<path d="M12 20h.01M8.5 16.4a5 5 0 0 1 7 0M2 8.8a15 15 0 0 1 4.2-2.8M10.7 5.1A15 15 0 0 1 22 8.8M5 12.9a10 10 0 0 1 5.2-2.8M18.8 12.9a10 10 0 0 0-2-1.5M2 2l20 20"/>',
   bolt: '<path d="M13 2 3 14h9l-1 8 10-12h-9Z"/>',
+  image: '<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21"/>',
 };
 
 export const icon = (name, cls = '') =>

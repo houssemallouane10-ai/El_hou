@@ -25,7 +25,15 @@ const remove = (key) => {
 
 const defaults = {
   uiLang: 'ar',
-  theme: 'auto',
+  theme: 'neon',
+  accent: null,
+  userName: '',
+  powerMode: true,
+  sounds: false,
+  rainbow: true,
+  guides: true,
+  ligatures: true,
+  caret: 'line',
   fontSize: 15,
   wrap: true,
   lineNumbers: true,

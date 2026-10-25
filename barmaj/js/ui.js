@@ -52,8 +52,10 @@ export const sheet = ({ title, body, className = '', onClose, actions }) => {
       if (dy > 90) done();
     });
   });
+  dlg.tabIndex = -1;
   document.body.append(dlg);
   dlg.showModal();
+  dlg.focus();
   return { el: dlg, body: content, close: done };
 };
 

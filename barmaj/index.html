@@ -22,11 +22,17 @@
 <link rel="stylesheet" href="css/app.css">
 <link rel="modulepreload" href="vendor/cm/cm.js">
 <script>
-  // Apply the saved theme and interface language before the first paint
+  // Apply the saved look and interface language before the first paint
   try {
+    var r = document.documentElement;
     var s = JSON.parse(localStorage.getItem('barmaj:settings') || '{}');
-    if (s.theme === 'dark' || s.theme === 'light') document.documentElement.dataset.theme = s.theme;
-    if (s.uiLang === 'fr' || s.uiLang === 'en') { document.documentElement.lang = s.uiLang; document.documentElement.dir = 'ltr'; }
+    var look = JSON.parse(localStorage.getItem('barmaj:look') || 'null');
+    if (look) {
+      for (var k in look.vars) r.style.setProperty(k, look.vars[k]);
+      r.dataset.fx = look.fx;
+      r.style.colorScheme = look.scheme;
+    }
+    if (s.uiLang === 'fr' || s.uiLang === 'en') { r.lang = s.uiLang; r.dir = 'ltr'; }
   } catch (e) {}
 </script>
 </head>

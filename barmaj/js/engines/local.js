@@ -180,7 +180,8 @@ export const runClang = async (langId, file, ctx) => {
       if (compiled.size > 6) compiled.delete(compiled.keys().next().value);
     }
   }
-  if (result.diag) ctx.term.write(result.diag.replace(/\n?$/, '\n'), result.ok ? 'sys' : 'err');
+  // Clang colours its own diagnostics, so they are written as plain output
+  if (result.diag) ctx.term.write(result.diag.replace(/\n?$/, '\n'), result.ok ? 'sys' : 'out');
   if (!result.ok) return { ok: false, compileFailed: true, exitCode: result.exitCode, errText: result.diag };
   ctx.running();
   const r = await runWorker('wasi', file, ctx, { wasm: result.wasm.slice() });

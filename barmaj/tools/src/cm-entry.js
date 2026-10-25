@@ -8,7 +8,7 @@ export {
   Decoration, ViewPlugin, WidgetType, GutterMarker, gutter, placeholder,
 } from '@codemirror/view';
 export {
-  EditorState, EditorSelection, Compartment, StateEffect, StateField, RangeSet, Prec,
+  EditorState, EditorSelection, Compartment, StateEffect, StateField, RangeSet, RangeSetBuilder, Prec,
 } from '@codemirror/state';
 export {
   defaultKeymap, history, historyKeymap, indentWithTab, undo, redo, indentMore, indentLess,
@@ -18,14 +18,14 @@ export {
 } from '@codemirror/commands';
 export {
   indentOnInput, bracketMatching, foldGutter, foldKeymap, syntaxHighlighting, HighlightStyle,
-  indentUnit, LanguageSupport, StreamLanguage,
+  indentUnit, LanguageSupport, StreamLanguage, syntaxTree, ensureSyntaxTree,
 } from '@codemirror/language';
 export { searchKeymap, highlightSelectionMatches, openSearchPanel, closeSearchPanel } from '@codemirror/search';
 export {
   autocompletion, completionKeymap, closeBrackets, closeBracketsKeymap, completeAnyWord,
   insertBracket,
 } from '@codemirror/autocomplete';
-export { tags } from '@lezer/highlight';
+export { tags, tagHighlighter, highlightTree } from '@lezer/highlight';
 
 const legacy = (load, name) => () => load().then((m) => StreamLanguage.define(m[name]));
 

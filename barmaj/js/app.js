@@ -12,6 +12,9 @@ import { Term } from './term.js';
 import { findProblems, findHints } from './hints.js';
 import { shareUrl, decodeShare } from './share.js';
 import { examples } from './examples.js';
+import { themes, resolveTheme, accentVars, ACCENTS } from './themes.js';
+import { PowerMode, keySound, celebrate } from './fx.js';
+import { renderCodeImage } from './snap.js';
 import { $, h, sheet, toast, confirmBox, promptBox, download, pickFiles, fmtBytes, fmtTime, timeAgo } from './ui.js';
 import {
   runWorker, stopLocal, renderWeb, renderMarkdown, preload, warmPython, resetPython, runClang, warmClang, localFlags,
@@ -29,6 +32,7 @@ let saveTimer = null;
 let previewTimer = null;
 let installPrompt = null;
 let offerShown = false;
+let power = null;
 let pythonVersion = null;
 
 // ---------------------------------------------------------------- layout
@@ -38,13 +42,24 @@ const fitViewport = () => {
   document.documentElement.style.setProperty('--vvt', `${vv ? vv.offsetTop : 0}px`);
 };
 
-const applyTheme = () => {
+// Theme variables, effects and personal touches; cached for the next first paint
+const applyTheme = (animate = false) => {
   const root = document.documentElement;
-  if (settings.theme === 'auto') delete root.dataset.theme; else root.dataset.theme = settings.theme;
-  const dark = settings.theme === 'dark' || (settings.theme === 'auto' && !matchMedia('(prefers-color-scheme: light)').matches);
-  root.classList.toggle('is-dark', dark);
-  document.querySelector('meta[name="theme-color"]').content = dark ? '#11151c' : '#ffffff';
-  root.style.setProperty('--code-size', `${settings.fontSize}px`);
+  const th = resolveTheme(settings.theme);
+  const vars = { ...th.vars, ...(settings.accent ? accentVars(settings.accent) : {}), '--code-size': `${settings.fontSize}px` };
+  const fx = [...th.fx, settings.ligatures ? '' : 'no-lig', `caret-${settings.caret}`].filter(Boolean).join(' ');
+  const paint = () => {
+    for (const [k, v] of Object.entries(vars)) root.style.setProperty(k, v);
+    root.dataset.fx = fx;
+    root.style.colorScheme = th.scheme;
+    root.classList.toggle('is-dark', th.scheme === 'dark');
+    delete root.dataset.theme;
+    document.querySelector('meta[name="theme-color"]').content = th.vars['--panel'];
+    power?.readColors();
+  };
+  if (animate && document.startViewTransition && !matchMedia('(prefers-reduced-motion: reduce)').matches) document.startViewTransition(paint);
+  else paint();
+  write('look', { vars, fx, scheme: th.scheme });
 };
 
 const setTab = (tab) => {
@@ -219,6 +234,7 @@ const showWelcome = () => {
   if (!term.empty) return;
   term.el.replaceChildren(h('div', { class: 'welcome' },
     h('img', { class: 'logo', src: 'icons/icon.svg', alt: '' }),
+    settings.userName ? h('p', { class: 'hello' }, t('welcome.hello', { name: settings.userName })) : null,
     h('h3', {}, t('out.empty.title')),
     h('p', {}, t('out.empty.body')),
     h('ul', {},
@@ -280,7 +296,10 @@ const finishRun = (r, { kind, label }) => {
   setRunButton(false);
   if (r.stopped) { setStatus('', t('status.stopped')); term.note(t('status.stopped'), 'sys'); return; }
   const ok = r.ok;
-  if (ok) setStatus('ok', r.preview ? t('out.done') : t('status.ok', { t: fmtTime(r.time) }));
+  if (ok) {
+    setStatus('ok', r.preview ? t('out.done') : t('status.ok', { t: fmtTime(r.time) }));
+    if (!r.preview) celebrate($('#status'));
+  }
   else if (r.compileFailed) setStatus('err', t('status.compile'));
   else if (r.timedOut) setStatus('err', t('status.timeout'));
   else setStatus('err', r.exitCode != null ? t('status.fail', { code: r.exitCode }) : t('status.error'));
@@ -343,7 +362,7 @@ const runLocalEngine = async () => {
     return { ok: false, error: null };
   }
   if (r.exitCode && r.exitCode !== 0 && !r.error) term.note(`exit ${r.exitCode}`, 'sys');
-  return { ...r, errText };
+  return { ...r, errText: errText + (r.errText || '') };
 };
 
 const runCloudEngine = async () => {
@@ -622,7 +641,7 @@ const openHistory = () => {
 const openShare = async () => {
   file.code = editor.value;
   saveFile(file);
-  const url = await shareUrl(file);
+  const url = await shareUrl({ ...file, author: settings.userName });
   const note = h('p', { class: 'note' }, t('share.body'));
   const long = url.length > 7000 ? h('p', { class: 'note bad' }, t('share.long')) : null;
   const copy = async () => {
@@ -733,7 +752,8 @@ const openSettings = () => {
     body: h('div', {},
       h('div', { class: 'set-group' }, t('settings.ui')),
       setRow(t('settings.uiLang'), segment('uiLang', uiLangs.map((u) => [u.id, u.name]), () => { applyI18n(); fillIcons(); refreshAll(); reopen(); })),
-      setRow(t('settings.theme'), segment('theme', [['auto', t('settings.theme.auto')], ['dark', t('settings.theme.dark')], ['light', t('settings.theme.light')]], applyTheme)),
+      h('button', { type: 'button', class: 'set look-link', onclick: () => { s.close(); setTimeout(openLook, 180); } },
+        h('span', {}, t('look.title'), h('small', {}, t('look.sub'))), h('span', { html: icon('sparkle') })),
       h('div', { class: 'set-group' }, t('settings.editor')),
       setRow(t('settings.fontSize'), h('span', { style: 'display:flex;align-items:center;gap:8px;flex:none' }, range, fontVal)),
       setRow(t('settings.tabSize'), segment('tabSize', [[2, '2'], [4, '4'], [8, '8']], () => editor.configure(settings))),
@@ -780,6 +800,110 @@ const openSettings = () => {
             location.reload();
           },
         }))),
+  });
+};
+
+// ---------------------------------------------------------------- look (themes, effects, name)
+const sample = () => {
+  const k = (c, x) => h('span', { style: `color:var(--hl-${c})` }, x);
+  return h('pre', { class: 'tcard-code', dir: 'ltr' },
+    k('kw', 'def '), k('fn', 'greet'), k('punc', '('), 'name', k('punc', '):'), '\n',
+    '    ', k('kw', 'for '), 'i ', k('kw', 'in '), k('fn', 'range'), k('punc', '('), k('num', '3'), k('punc', '):'), '\n',
+    '        ', k('fn', 'print'), k('punc', '('), k('str', 'f"Hi {name}"'), k('punc', ')'), '  ', k('comment', '# ✨'));
+};
+
+const openLook = () => {
+  const cards = h('div', { class: 'tgrid' });
+  const paintCards = () => {
+    cards.replaceChildren(...[{ id: 'auto' }, ...themes].map((th) => {
+      const real = resolveTheme(th.id);
+      const style = Object.entries(real.vars).map(([k, v]) => `${k}:${v}`).join(';');
+      const on = settings.theme === th.id;
+      return h('button', {
+        type: 'button',
+        class: `tcard ${on ? 'on' : ''}`,
+        style,
+        'aria-pressed': String(on),
+        dataset: { fx: real.fx.join(' ') },
+        onclick: () => { settings.theme = th.id; saveSettings(); applyTheme(true); paintCards(); },
+      },
+      h('span', { class: 'tcard-bar' }, h('i', {}), h('i', {}), h('i', {})),
+      sample(),
+      h('span', { class: 'tcard-name' }, th.id === 'auto' ? t('settings.theme.auto') : th.name[uiLang()] || th.name.en, on ? h('span', { html: icon('check') }) : null));
+    }));
+  };
+  paintCards();
+
+  const name = h('input', { type: 'text', class: 'field', value: settings.userName, maxlength: '40', placeholder: t('look.namePh'), dir: 'auto' });
+  name.addEventListener('input', () => { settings.userName = name.value.trim(); saveSettings(); });
+
+  const swatches = h('div', { class: 'swatches' });
+  const paintSwatches = () => {
+    swatches.replaceChildren(
+      h('button', { type: 'button', class: `sw sw-theme ${settings.accent ? '' : 'on'}`, title: t('look.themeAccent'), onclick: () => { settings.accent = null; saveSettings(); applyTheme(); paintSwatches(); } }, 'A'),
+      ...ACCENTS.map((c) => h('button', { type: 'button', class: `sw ${settings.accent === c ? 'on' : ''}`, style: `--c:${c}`, 'aria-label': c, onclick: () => { settings.accent = c; saveSettings(); applyTheme(); paintSwatches(); } })),
+      (() => {
+        const input = h('input', { type: 'color', class: 'sw sw-custom', value: settings.accent || '#3ddc84', 'aria-label': t('look.custom') });
+        input.addEventListener('input', () => { settings.accent = input.value; saveSettings(); applyTheme(); });
+        return input;
+      })());
+  };
+  paintSwatches();
+
+  const fxToggle = (key, after) => toggle(key, () => { after?.(); applyTheme(); editor.configure(settings); });
+  sheet({
+    title: t('look.title'),
+    className: 'wide-sheet',
+    body: h('div', {},
+      h('div', { class: 'set-group' }, t('look.themes')),
+      cards,
+      h('div', { class: 'set-group' }, t('look.you')),
+      h('label', { class: 'set col' }, h('span', {}, t('look.name'), h('small', {}, t('look.nameHelp'))), name),
+      h('div', { class: 'set col' }, h('span', {}, t('look.accent')), swatches),
+      h('div', { class: 'set-group' }, t('look.effects')),
+      setRow(t('look.power'), fxToggle('powerMode'), t('look.powerHelp')),
+      setRow(t('look.sounds'), fxToggle('sounds')),
+      setRow(t('look.rainbow'), fxToggle('rainbow')),
+      setRow(t('look.guides'), fxToggle('guides')),
+      setRow(t('look.ligatures'), fxToggle('ligatures'), '=> != >= ->'),
+      setRow(t('look.caret'), segment('caret', [['line', '|'], ['block', '█'], ['underline', '_']], () => applyTheme())),
+      h('button', { type: 'button', class: 'btn block', style: 'margin-top:12px', html: icon('image') + t('snap.title'), onclick: () => openSnap() })),
+  });
+};
+
+const openSnap = async () => {
+  file.code = editor.value;
+  let blob;
+  try {
+    blob = await renderCodeImage({
+      tokens: editor.tokens(),
+      fileName: file.name,
+      lang,
+      author: settings.userName,
+      brand: `${t('app.name')} · Barmaj`,
+    });
+  } catch (e) {
+    toast(e.message, { kind: 'bad' });
+    return;
+  }
+  const url = URL.createObjectURL(blob);
+  const name = file.name.replace(/\.[^.]+$/, '') + '.png';
+  const img = new File([blob], name, { type: 'image/png' });
+  const actions = h('div', { class: 'row-actions' },
+    h('button', { type: 'button', class: 'btn', html: icon('download') + t('snap.save'), onclick: () => {
+      const a = h('a', { href: url, download: name });
+      document.body.append(a);
+      a.click();
+      a.remove();
+    } }));
+  if (navigator.canShare?.({ files: [img] })) {
+    actions.append(h('button', { type: 'button', class: 'btn primary', html: icon('share') + t('share.native'), onclick: () => navigator.share({ files: [img], title: file.name }).catch(() => {}) }));
+  }
+  sheet({
+    title: t('snap.title'),
+    className: 'wide-sheet',
+    body: h('div', {}, h('p', { class: 'note' }, t('snap.help')), h('img', { class: 'snap-img', src: url, alt: file.name }), actions),
+    onClose: () => setTimeout(() => URL.revokeObjectURL(url), 1000),
   });
 };
 
@@ -842,11 +966,13 @@ const openMenu = () => {
     item('edit', t('files.rename'), () => renameFile()),
     item('settings', t('menu.settings'), openSettings),
     (installPrompt || (isIOS && !standalone)) ? item('install', t('menu.install'), install) : null,
+    item('sparkle', t('look.title'), openLook),
+    item('image', t('snap.title'), openSnap),
     item('info', t('menu.about'), openAbout));
   s = sheet({
     title: t('menu'),
     body: h('div', {},
-      h('div', { class: 'menu-brand' }, h('img', { src: 'icons/icon.svg', alt: '' }), h('div', {}, h('b', {}, t('app.name')), h('span', {}, t('app.tagline')))),
+      h('div', { class: 'menu-brand' }, h('img', { src: 'icons/icon.svg', alt: '' }), h('div', {}, h('b', {}, settings.userName ? `${t('app.name')} · ${settings.userName}` : t('app.name')), h('span', {}, t('app.tagline')))),
       grid),
   });
 };
@@ -870,7 +996,7 @@ const incoming = async () => {
       const existing = listFiles().map((m) => getFile(m.id)).find((f) => f.code === shared.code && f.lang === l.id);
       if (existing) openFile(existing.id);
       else newFile(l, { code: shared.code, name: shared.name, stdin: shared.stdin });
-      toast(t('toast.opened'));
+      toast(shared.author ? t('toast.from', { name: shared.author }) : t('toast.opened'));
     } catch (e) {
       toast(e.message, { kind: 'bad' });
     }
@@ -966,9 +1092,18 @@ const editor = new Editor($('#editor'), {
   },
   onRun: () => run(),
   onSave: () => { flushSave(); toast('✓'); },
+  onInput: (kind, tr) => {
+    if (settings.powerMode) power.hit(kind);
+    if (settings.sounds) {
+      let enter = false;
+      tr.changes.iterChanges((a, b, c, d, text) => { if (text.toString().includes('\n')) enter = true; });
+      keySound(enter ? 'enter' : kind);
+    }
+  },
 });
 editor.configure(settings);
 const keybar = new Keybar($('#keybar'), editor);
+power = new PowerMode($('#codePane'), () => editor.caretCoords());
 const term = new Term($('#term'));
 updateKeybar();
 coarse.addEventListener('change', updateKeybar);
@@ -1020,4 +1155,4 @@ if (!(await incoming())) {
 registerSW();
 
 // Exposed for automated tests
-self.barmaj = { run, openFile, setTab, get file() { return file; }, editor, term, settings, read, write };
+self.barmaj = { run, openFile, setTab, get file() { return file; }, editor, term, settings, read, write, applyTheme, openLook, openSnap };
