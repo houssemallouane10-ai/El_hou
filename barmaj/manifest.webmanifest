@@ -1,7 +1,7 @@
 {
   "name": "برمج · Barmaj",
   "short_name": "Barmaj",
-  "description": "Run every programming language from your phone: Python, JavaScript, SQL, Lua and HTML offline, C, C++, Java and 40 more in the cloud.",
+  "description": "Run every programming language from your phone: Python, C, C++, JavaScript, SQL, Lua and HTML offline, Java, Go, Rust and 40 more in the cloud.",
   "id": "./",
   "start_url": "./",
   "scope": "./",
