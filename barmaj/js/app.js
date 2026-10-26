@@ -1121,6 +1121,11 @@ const registerSW = async () => {
       // The first takeover only enables interactive input; later ones are updates
       if (!hadController) { hadController = true; if (!running) resetPython(); return; }
       if (reloading || running) return;
+      // At most one automatic reload per half minute, so nothing can trap the app in a loop
+      try {
+        if (Date.now() - (+sessionStorage.getItem('barmaj:reloaded') || 0) < 30000) return;
+        sessionStorage.setItem('barmaj:reloaded', String(Date.now()));
+      } catch { /* no storage: reload anyway */ }
       reloading = true;
       location.reload();
     });
