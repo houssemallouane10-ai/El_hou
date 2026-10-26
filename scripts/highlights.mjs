@@ -400,10 +400,15 @@ async function main() {
       console.log(`! ${source.name}: channel not found`);
       continue;
     }
-    // YouTube's feeds fail now and then from datacenter IPs; one retry
+    // YouTube's feeds fail now and then from datacenter IPs; on failure try
+    // the same uploads through the channel's "UU…" uploads-playlist feed
+    const feedUrls = [
+      `https://www.youtube.com/feeds/videos.xml?channel_id=${id}`,
+      `https://www.youtube.com/feeds/videos.xml?playlist_id=UU${id.slice(2)}`,
+    ];
     for (let attempt = 1; attempt <= 2; attempt++) {
       try {
-        const feed = parseFeed(await get(`https://www.youtube.com/feeds/videos.xml?channel_id=${id}`), source);
+        const feed = parseFeed(await get(feedUrls[attempt - 1]), source);
         videos.push(...feed);
         delete feedErrors[source.name];
         console.log(`  ${source.name}: ${feed.length} videos`);

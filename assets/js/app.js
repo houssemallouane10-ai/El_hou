@@ -650,8 +650,10 @@ async function renderMatch(slug, id) {
   app.innerHTML = `<div class="wrap mp"><a class="back" href="#/today">${icon('back')}<span>${t('match.back')}</span></a><div class="mp-board"><div class="empty"><span class="spin"></span>${t('empty.loading')}</div></div><div class="mp-body" hidden></div></div>`;
   if (page.match) buildMatchBody(page);
   if (page.match && (page.match.demo || page.match.source !== 'espn')) return;
-  // Details are only published from shortly before kick-off
-  if (page.match && isUpcoming(page.match) && minutesUntil(page.match) > 90) return;
+  // Details are published for live and finished matches, and from shortly
+  // before kick-off; don't ask for files that can't exist yet
+  const hasDetails = (m) => isLive(m) || isOver(m) || (isUpcoming(m) && minutesUntil(m) <= 90);
+  if (page.match && !hasDetails(page.match)) return;
 
   try {
     const summary = await loadSummary(slug, id);
