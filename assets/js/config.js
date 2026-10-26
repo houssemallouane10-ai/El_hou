@@ -7,7 +7,6 @@ export const SITE = {
 
 export const API = {
   espn: 'https://site.api.espn.com/apis/site/v2/sports/soccer',
-  sportsdb: 'https://www.thesportsdb.com/api/v1/json/123',
 };
 
 // Polling intervals (ms). The published data is refreshed every ~5 minutes,

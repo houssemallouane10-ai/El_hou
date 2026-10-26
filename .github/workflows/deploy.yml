@@ -13,6 +13,7 @@ on:
 
 permissions:
   contents: read
+  actions: read
   pages: write
   id-token: write
 
@@ -51,11 +52,21 @@ jobs:
           PREVIOUS_BASE_URL: ${{ steps.pages.outputs.base_url }}
         run: node scripts/highlights.mjs
 
-      # The repo's branch-based Pages build also runs on push; let it finish
-      # first so this deployment (with highlights) is the one that stays live
+      # GitHub's branch-based Pages build also deploys every push, without the
+      # match data. Wait until it has finished so this deployment lands last.
       - name: Wait for the branch build
         if: github.event_name == 'push'
-        run: sleep 75
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          for i in $(seq 1 40); do
+            state=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs?head_sha=$GITHUB_SHA" \
+              --jq '[.workflow_runs[] | select(.name == "pages build and deployment")][0].status // "none"')
+            echo "branch build: $state"
+            if [ "$state" = "completed" ]; then exit 0; fi
+            if [ "$state" = "none" ] && [ "$i" -gt 6 ]; then exit 0; fi
+            sleep 10
+          done
 
       - uses: actions/upload-pages-artifact@v3
         if: github.event_name != 'schedule' || steps.highlights.outputs.changed == 'true' || steps.fixtures.outputs.changed == 'true'

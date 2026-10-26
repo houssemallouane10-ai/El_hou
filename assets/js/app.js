@@ -121,11 +121,25 @@ async function fetchDay(offset, opts) {
   index(res.matches);
   state.days[offset] = res;
   // Show when the data was published, not when this tab fetched it
-  state.updatedAt = res.updatedAt ? new Date(res.updatedAt) : new Date();
+  state.updatedAt = res.updatedAt ? new Date(res.updatedAt) : null;
+  if (res.source === 'pending') retryPending();
   return res;
 }
 
 const dataSource = () => state.days[0]?.source || state.days[1]?.source || 'espn';
+
+// The data file can be missing for a minute while a deploy lands: keep
+// trying quietly instead of showing an empty schedule
+let retryTimer = null;
+function retryPending() {
+  if (retryTimer) return;
+  retryTimer = setTimeout(async () => {
+    retryTimer = null;
+    await loadFixtures({ force: true });
+    await Promise.all([-1, 0, 1].map((o) => fetchDay(o)));
+    render({ soft: true });
+  }, 15_000);
+}
 
 async function initialLoad() {
   await Promise.all([fetchDay(0), loadHighlights()]);
@@ -137,10 +151,6 @@ async function initialLoad() {
 async function pollLive() {
   const today = state.days[0];
   if (!today) return;
-  if (today.source === 'demo') {
-    await fetchDay(0, { force: true });
-    return render({ soft: true });
-  }
   if (today.source !== 'espn') return;
   const now = Date.now();
   const hot = dayMatches(0).concat(dayMatches(-1)).some(
@@ -312,7 +322,7 @@ function matchRow(m, i) {
 
 function listHtml(offset) {
   const all = dayMatches(offset);
-  if (!state.days[offset]) return `<div class="empty"><span class="spin"></span>${t('empty.loading')}</div>`;
+  if (!state.days[offset] || state.days[offset].source === 'pending') return `<div class="empty"><span class="spin"></span>${t('empty.loading')}</div>`;
   const list = filteredMatches(offset);
   if (!all.length) return `<div class="empty">${t('empty.none')}</div>`;
   if (!list.length) return `<div class="empty">${t('empty.filtered')}</div>`;
@@ -358,10 +368,10 @@ function leagueChipsHtml(offset) {
 
 function sourceNoteHtml() {
   const src = dataSource();
-  if (src === 'demo') {
-    return `<div class="srcnote warn">${icon('info')}<span>${t('source.demo')}</span><button type="button" class="btn btn-sm btn-ghost" data-retry>${icon('retry')}${t('source.retry')}</button></div>`;
+  if (src === 'pending') {
+    return `<div class="srcnote warn"><span class="spin"></span><span>${t('source.pending')}</span><button type="button" class="btn btn-sm btn-ghost" data-retry>${icon('retry')}${t('source.retry')}</button></div>`;
   }
-  return `<div class="srcnote"><span>${t(src === 'sportsdb' ? 'source.sportsdb' : 'source.espn')}${state.updatedAt ? ` · ${t('source.updated', { t: formatTime(state.updatedAt) })}` : ''} · ${t('time.local')}</span></div>`;
+  return `<div class="srcnote"><span>${t('source.espn')}${state.updatedAt ? ` · ${t('source.updated', { t: formatTime(state.updatedAt) })}` : ''} · ${t('time.local')}</span></div>`;
 }
 
 function renderHome({ soft } = {}) {
