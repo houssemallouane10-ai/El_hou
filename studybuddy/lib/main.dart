@@ -30,8 +30,13 @@ Future<void> main() async {
       ? GeminiRestClient(apiKey: AiConfig.devApiKey)
       : const UnavailableAiClient();
 
+  // `--dart-define=DEMO_MODE=true` keeps everything on the device, to try
+  // the app or take store screenshots without touching real data.
+  const forceDemo = bool.fromEnvironment('DEMO_MODE');
+
   AppDependencies deps;
   try {
+    if (forceDemo) throw StateError('DEMO_MODE');
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );
