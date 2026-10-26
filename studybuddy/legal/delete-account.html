@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>حذف الحساب · زميل الدراسة</title>
+  <meta name="description" content="احذف حسابك في تطبيق زميل الدراسة وكل بياناتك من المتصفح.">
+  <link rel="icon" href="icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <div class="wrap">
+      <img src="icon.png" alt="">
+      <div>
+        <h1>حذف الحساب</h1>
+        <p>تطبيق «زميل الدراسة» (DZ-StudyBuddy)</p>
+      </div>
+    </div>
+  </header>
+  <main class="wrap">
+    <section>
+      <h2>ما الذي يُحذف</h2>
+      <ul>
+        <li>حسابك (البريد الإلكتروني وكلمة السر).</li>
+        <li>ملفك: الاسم، الهاتف، الولاية، المستوى والشعبة.</li>
+        <li>تقدّمك في الدروس وتاريخ امتحانك.</li>
+        <li>سجل تصحيحات المصحح الذكي.</li>
+      </ul>
+      <p class="muted">الحذف فوري ونهائي. الفيديوهات التي اقترحتها وأصواتك تبقى دون أي رابط بهويتك. يمكنك أيضاً الحذف من التطبيق: الرئيسية ← حسابي ← حذف الحساب.</p>
+    </section>
+
+    <section id="signin">
+      <h2>سجّل الدخول لتأكيد هويتك</h2>
+      <form id="signin-form">
+        <label for="email">البريد الإلكتروني</label>
+        <input id="email" type="email" autocomplete="email" required>
+        <label for="password">كلمة السر</label>
+        <input id="password" type="password" autocomplete="current-password" required>
+        <button type="submit" id="signin-button">دخول</button>
+      </form>
+      <button type="button" class="link" id="reset">نسيت كلمة السر؟</button>
+    </section>
+
+    <section id="confirm" hidden>
+      <h2>تأكيد الحذف</h2>
+      <p>أنت على وشك حذف حساب <strong id="who"></strong> وكل بياناته.</p>
+      <button type="button" class="danger" id="delete">احذف حسابي نهائياً</button>
+      <button type="button" class="link" id="signout">ليس حسابي، خروج</button>
+    </section>
+
+    <div id="status" class="status" role="status" hidden></div>
+
+    <section>
+      <nav>
+        <a href="privacy.html">سياسة الخصوصية</a>
+        <a href="terms.html">شروط الاستخدام</a>
+      </nav>
+    </section>
+  </main>
+
+  <script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/13.1.0/firebase-app.js';
+    import {
+      deleteUser,
+      getAuth,
+      sendPasswordResetEmail,
+      signInWithEmailAndPassword,
+      signOut,
+    } from 'https://www.gstatic.com/firebasejs/13.1.0/firebase-auth.js';
+    import {
+      collection,
+      deleteDoc,
+      doc,
+      getDoc,
+      getDocs,
+      getFirestore,
+      serverTimestamp,
+      setDoc,
+    } from 'https://www.gstatic.com/firebasejs/13.1.0/firebase-firestore.js';
+
+    // The app's public web configuration; access is enforced by the
+    // Firestore security rules, not by these values.
+    const app = initializeApp({
+      apiKey: 'AIzaSyDP3FW_UCuNpdFfdITIEyAGhpzqShY9XZw',
+      authDomain: 'dz-studybuddy-269ab.firebaseapp.com',
+      projectId: 'dz-studybuddy-269ab',
+      storageBucket: 'dz-studybuddy-269ab.firebasestorage.app',
+      messagingSenderId: '58644723857',
+      appId: '1:58644723857:web:6ead7e893997cecfd7a730',
+    });
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    const $ = (id) => document.getElementById(id);
+    const show = (message, ok = false) => {
+      const box = $('status');
+      box.textContent = message;
+      box.className = 'status ' + (ok ? 'ok' : 'error');
+      box.hidden = false;
+    };
+
+    const messages = {
+      'auth/invalid-credential': 'البريد الإلكتروني أو كلمة السر غير صحيحة',
+      'auth/wrong-password': 'البريد الإلكتروني أو كلمة السر غير صحيحة',
+      'auth/user-not-found': 'البريد الإلكتروني أو كلمة السر غير صحيحة',
+      'auth/invalid-email': 'البريد الإلكتروني غير صحيح',
+      'auth/too-many-requests': 'محاولات كثيرة، أعد المحاولة بعد قليل',
+      'auth/network-request-failed': 'تحقق من اتصالك بالإنترنت',
+      'auth/requires-recent-login': 'سجّل الدخول من جديد ثم أعد المحاولة',
+    };
+    const explain = (e) => messages[e?.code] ?? 'حدث خطأ غير متوقع، أعد المحاولة';
+
+    $('signin-form').addEventListener('submit', async (event) => {
+      event.preventDefault();
+      $('signin-button').disabled = true;
+      $('status').hidden = true;
+      try {
+        const { user } = await signInWithEmailAndPassword(auth, $('email').value.trim(), $('password').value);
+        let name = user.email;
+        try {
+          const profile = await getDoc(doc(db, 'users', user.uid));
+          if (profile.exists()) name = `${profile.data().fullName} (${user.email})`;
+        } catch { /* The profile is optional here. */ }
+        $('who').textContent = name;
+        $('signin').hidden = true;
+        $('confirm').hidden = false;
+      } catch (e) {
+        show(explain(e));
+      } finally {
+        $('signin-button').disabled = false;
+      }
+    });
+
+    $('reset').addEventListener('click', async () => {
+      const email = $('email').value.trim();
+      if (!email) return show('اكتب بريدك الإلكتروني أولاً');
+      try {
+        await sendPasswordResetEmail(auth, email);
+        show('أرسلنا رابط إعادة تعيين كلمة السر إلى بريدك', true);
+      } catch (e) {
+        show(explain(e));
+      }
+    });
+
+    $('signout').addEventListener('click', async () => {
+      await signOut(auth);
+      $('confirm').hidden = true;
+      $('signin').hidden = false;
+      $('password').value = '';
+    });
+
+    $('delete').addEventListener('click', async () => {
+      const user = auth.currentUser;
+      if (!user || !confirm('حذف الحساب نهائي ولا يمكن التراجع عنه. متأكد؟')) return;
+      $('delete').disabled = true;
+      $('signout').disabled = true;
+      show('جارٍ الحذف…', true);
+      try {
+        // Same order as the app: data first, while still signed in.
+        const gradings = await getDocs(collection(db, 'users', user.uid, 'gradings'));
+        await Promise.all(gradings.docs.map((d) => deleteDoc(d.ref)));
+        const progress = doc(db, 'users', user.uid, 'meta', 'progress');
+        try {
+          await deleteDoc(progress);
+        } catch {
+          await setDoc(progress, { lessons: {}, updatedAt: serverTimestamp() });
+        }
+        await deleteDoc(doc(db, 'users', user.uid));
+        await deleteUser(user);
+        $('confirm').hidden = true;
+        show('حُذف حسابك وكل بياناتك. شكراً لأنك جرّبت زميل الدراسة.', true);
+      } catch (e) {
+        $('delete').disabled = false;
+        $('signout').disabled = false;
+        show(explain(e));
+      }
+    });
+  </script>
+</body>
+</html>
