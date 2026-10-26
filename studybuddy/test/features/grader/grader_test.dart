@@ -123,6 +123,21 @@ void main() {
       await cubit.close();
     });
 
+    test('an unexpected network error never leaves the spinner on', () async {
+      final cubit = GraderCubit(
+        uid: 'u1',
+        grader: AiHomeworkGrader(
+          FakeAiClient(reply: (_) => throw StateError('ClientException')),
+        ),
+        history: InMemoryGradingHistoryRepository(),
+        initialSubjectId: 'math',
+      )..addPage(page);
+      await cubit.grade(subjectName: 'الرياضيات', levelLabel: 'BAC');
+      expect(cubit.state.status, GraderStatus.editing);
+      expect(cubit.state.error, AiException.offline.message);
+      await cubit.close();
+    });
+
     test('at most four answer pages', () {
       final cubit = GraderCubit(
         uid: 'u1',

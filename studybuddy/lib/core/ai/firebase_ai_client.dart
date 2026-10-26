@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:firebase_ai/firebase_ai.dart';
 
 import 'ai_client.dart';
@@ -31,20 +33,29 @@ class FirebaseAiClient implements AiClient {
       ),
     );
     try {
-      final response = await model.generateContent([
-        Content.multi([
-          for (final image in images)
-            InlineDataPart(image.mimeType, image.bytes),
-          TextPart(prompt),
-        ]),
-      ]);
+      final response = await model
+          .generateContent([
+            Content.multi([
+              for (final image in images)
+                InlineDataPart(image.mimeType, image.bytes),
+              TextPart(prompt),
+            ]),
+          ])
+          .timeout(AiException.timeLimit);
       return parseJsonReply(response.text);
+    } on AiException {
+      rethrow;
     } on QuotaExceeded {
       throw const AiException(
         'ضغط كبير على خدمة الذكاء الاصطناعي الآن، أعد المحاولة بعد دقائق',
       );
     } on FirebaseAIException catch (e) {
       throw AiException('تعذّر الاتصال بخدمة الذكاء الاصطناعي: ${e.message}');
+    } on TimeoutException {
+      throw AiException.timedOut;
+    } catch (_) {
+      // Network failures surface as plain client errors, not AI exceptions.
+      throw AiException.offline;
     }
   }
 }

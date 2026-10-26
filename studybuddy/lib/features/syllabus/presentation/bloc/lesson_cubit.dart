@@ -123,10 +123,13 @@ class LessonCubit extends Cubit<LessonState> {
       if (!isClosed) {
         emit(state.copyWith(summary: summary, summaryLoading: false));
       }
-    } on AiException catch (e) {
+    } catch (e) {
+      final message = e is AiException
+          ? e.message
+          : AiException.offline.message;
       if (!isClosed) {
         emit(
-          state.copyWith(summaryLoading: false, summaryError: () => e.message),
+          state.copyWith(summaryLoading: false, summaryError: () => message),
         );
       }
     }

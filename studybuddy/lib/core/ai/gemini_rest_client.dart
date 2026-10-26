@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
@@ -63,16 +64,20 @@ class GeminiRestClient implements AiClient {
 
     final http.Response response;
     try {
-      response = await _http.post(
-        uri,
-        headers: {
-          'content-type': 'application/json',
-          'x-goog-api-key': _apiKey,
-        },
-        body: jsonEncode(body),
-      );
-    } on Exception {
-      throw const AiException('تحقق من اتصالك بالإنترنت');
+      response = await _http
+          .post(
+            uri,
+            headers: {
+              'content-type': 'application/json',
+              'x-goog-api-key': _apiKey,
+            },
+            body: jsonEncode(body),
+          )
+          .timeout(AiException.timeLimit);
+    } on TimeoutException {
+      throw AiException.timedOut;
+    } catch (_) {
+      throw AiException.offline;
     }
     if (response.statusCode == 429) {
       throw const AiException(
@@ -84,8 +89,13 @@ class GeminiRestClient implements AiClient {
         'تعذّر الاتصال بخدمة الذكاء الاصطناعي (${response.statusCode})',
       );
     }
-    final text = _replyText(jsonDecode(utf8.decode(response.bodyBytes)));
-    return parseJsonReply(text);
+    final Object? decoded;
+    try {
+      decoded = jsonDecode(utf8.decode(response.bodyBytes));
+    } on FormatException {
+      throw AiException.offline;
+    }
+    return parseJsonReply(_replyText(decoded));
   }
 
   static String? _replyText(Object? decoded) {

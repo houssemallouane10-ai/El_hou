@@ -12,6 +12,16 @@ class AiImage {
 class AiException implements Exception {
   const AiException(this.message);
 
+  /// Grading a few photographed pages takes 10–30 s; past this, give up.
+  static const timeLimit = Duration(seconds: 90);
+
+  static const offline = AiException(
+    'تعذّر الاتصال بخدمة الذكاء الاصطناعي، تحقق من اتصالك وأعد المحاولة',
+  );
+  static const timedOut = AiException(
+    'استغرقت الإجابة وقتاً طويلاً، أعد المحاولة',
+  );
+
   final String message;
 
   @override

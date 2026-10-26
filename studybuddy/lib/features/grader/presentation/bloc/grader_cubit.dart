@@ -155,10 +155,14 @@ class GraderCubit extends Cubit<GraderState> {
           );
         } catch (_) {}
       }
-    } on AiException catch (e) {
+    } catch (e) {
+      // Any failure returns to the form; a spinner must never be left on.
+      final message = e is AiException
+          ? e.message
+          : AiException.offline.message;
       if (!isClosed) {
         emit(
-          state.copyWith(status: GraderStatus.editing, error: () => e.message),
+          state.copyWith(status: GraderStatus.editing, error: () => message),
         );
       }
     }

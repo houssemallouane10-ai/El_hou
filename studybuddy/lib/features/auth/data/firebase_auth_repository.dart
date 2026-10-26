@@ -10,6 +10,11 @@ class FirebaseAuthRepository implements AuthRepository {
 
   final FirebaseAuth _auth;
 
+  /// Names typed at sign-up, by email. Firebase announces a new account
+  /// before updateDisplayName lands, so onboarding would otherwise start
+  /// with an empty name.
+  final _signUpNames = <String, String>{};
+
   @override
   Stream<AppUser?> get userChanges => _auth.authStateChanges().map(_toAppUser);
 
@@ -31,6 +36,7 @@ class FirebaseAuthRepository implements AuthRepository {
     required String email,
     required String password,
   }) => _guard(() async {
+    _signUpNames[email.trim().toLowerCase()] = fullName.trim();
     final credential = await _auth.createUserWithEmailAndPassword(
       email: email.trim(),
       password: password,
@@ -46,12 +52,14 @@ class FirebaseAuthRepository implements AuthRepository {
   @override
   Future<void> signOut() => _auth.signOut();
 
-  static AppUser? _toAppUser(User? user) => user == null
+  AppUser? _toAppUser(User? user) => user == null
       ? null
       : AppUser(
           uid: user.uid,
           email: user.email ?? '',
-          displayName: user.displayName,
+          displayName: (user.displayName?.isNotEmpty ?? false)
+              ? user.displayName
+              : _signUpNames[user.email?.toLowerCase()],
         );
 
   static Future<void> _guard(Future<void> Function() action) async {

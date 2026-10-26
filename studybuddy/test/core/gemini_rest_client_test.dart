@@ -66,6 +66,18 @@ void main() {
         c.generateJson(systemPrompt: '', prompt: '', jsonSchema: const {});
     await expectLater(call(withStatus(429)), throwsA(isA<AiException>()));
     await expectLater(call(withStatus(500)), throwsA(isA<AiException>()));
+
+    // A dropped connection or a proxy page instead of JSON.
+    final dropped = GeminiRestClient(
+      apiKey: 'k',
+      httpClient: MockClient((_) async => throw http.ClientException('reset')),
+    );
+    await expectLater(call(dropped), throwsA(AiException.offline));
+    final html = GeminiRestClient(
+      apiKey: 'k',
+      httpClient: MockClient((_) async => http.Response('<html>', 200)),
+    );
+    await expectLater(call(html), throwsA(AiException.offline));
   });
 
   test('parseJsonReply tolerates code fences and rejects garbage', () {

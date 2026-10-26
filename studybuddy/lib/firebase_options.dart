@@ -6,20 +6,16 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
 
 class DefaultFirebaseOptions {
-  /// Throws for platforms not registered yet, which starts the app in demo
-  /// mode there.
+  /// Throws for platforms not registered yet (iOS), which starts the app in
+  /// demo mode there.
   static FirebaseOptions get currentPlatform {
     if (kIsWeb) return web;
-    final options = switch (defaultTargetPlatform) {
+    return switch (defaultTargetPlatform) {
       TargetPlatform.android => android,
-      _ => null,
-    };
-    if (options == null) {
-      throw UnsupportedError(
+      _ => throw UnsupportedError(
         'Firebase is not configured for $defaultTargetPlatform yet.',
-      );
-    }
-    return options;
+      ),
+    };
   }
 
   static const _apiKey = 'AIzaSyDP3FW_UCuNpdFfdITIEyAGhpzqShY9XZw';
@@ -40,6 +36,12 @@ class DefaultFirebaseOptions {
     measurementId: 'G-86V1XMRMF2',
   );
 
-  /// Null until the Android app is registered in the Firebase console.
-  static const FirebaseOptions? android = null;
+  static const android = FirebaseOptions(
+    apiKey: _apiKey,
+    appId: '1:58644723857:android:f19f0414a83c19cdd7a730',
+    messagingSenderId: _senderId,
+    projectId: _projectId,
+    databaseURL: _databaseUrl,
+    storageBucket: _storageBucket,
+  );
 }
