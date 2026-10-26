@@ -374,24 +374,46 @@ async function main() {
   const previous = await previousData('highlights.json', { matches: {}, latest: [] });
   const cache = await previousData('yt-channels.json', {});
   const embeds = await previousData('yt-embed.json', {});
+
+  // Checked recently: carry the published files over unchanged
+  const minGap = Number(process.env.HIGHLIGHTS_MIN_INTERVAL_MIN || 0) * 60_000;
+  const lastRun = minGap ? await previousData('hl-status.json', {}) : {};
+  if (minGap && lastRun.at && previous.latest?.length && Date.now() - Date.parse(lastRun.at) < minGap) {
+    await writeFile(OUT, `${JSON.stringify(previous)}\n`);
+    await writeFile(CHANNEL_CACHE, `${JSON.stringify(cache, null, 2)}\n`);
+    await writeFile(EMBED_CACHE, `${JSON.stringify(embeds)}\n`);
+    await writeFile(new URL('hl-status.json', DATA_DIR), `${JSON.stringify(lastRun)}\n`);
+    await setOutput('changed', false);
+    console.log(`Highlights checked at ${lastRun.at}; carrying the published files over`);
+    return;
+  }
   // Compare against what's live, before blocked videos are cleaned out below
   const published = JSON.stringify({ m: previous.matches, l: previous.latest });
   const cacheBefore = JSON.stringify(cache);
 
   const videos = [];
+  const feedErrors = {};
   for (const source of SOURCES) {
     const id = await resolveChannelId(source, cache);
     if (!id) {
+      feedErrors[source.name] = 'channel not found';
       console.log(`! ${source.name}: channel not found`);
       continue;
     }
-    try {
-      const feed = parseFeed(await get(`https://www.youtube.com/feeds/videos.xml?channel_id=${id}`), source);
-      videos.push(...feed);
-      console.log(`  ${source.name}: ${feed.length} videos`);
-      if (source.lang) feed.slice(0, 3).forEach((v) => console.log(`      · ${v.title.slice(0, 90)}`));
-    } catch (err) {
-      console.log(`! ${source.name}: feed failed (${err.message})`);
+    // YouTube's feeds fail now and then from datacenter IPs; one retry
+    for (let attempt = 1; attempt <= 2; attempt++) {
+      try {
+        const feed = parseFeed(await get(`https://www.youtube.com/feeds/videos.xml?channel_id=${id}`), source);
+        videos.push(...feed);
+        delete feedErrors[source.name];
+        console.log(`  ${source.name}: ${feed.length} videos`);
+        if (source.lang) feed.slice(0, 3).forEach((v) => console.log(`      · ${v.title.slice(0, 90)}`));
+        break;
+      } catch (err) {
+        feedErrors[source.name] = err.message;
+        console.log(`! ${source.name}: feed failed (${err.message})`);
+        if (attempt === 1) await new Promise((r) => setTimeout(r, 2000));
+      }
     }
   }
 
@@ -427,7 +449,7 @@ async function main() {
   await writeFile(OUT, `${JSON.stringify({ updatedAt: changed ? new Date().toISOString() : previous.updatedAt || null, ...out })}\n`);
   // Run diagnostics, published so the site check can read them
   const feeds = Object.fromEntries(SOURCES.map((src) => [src.name, videos.filter((v) => v.source === src.key).length]));
-  await writeFile(new URL('hl-status.json', DATA_DIR), `${JSON.stringify({ at: new Date().toISOString(), feeds, embedStatuses })}\n`);
+  await writeFile(new URL('hl-status.json', DATA_DIR), `${JSON.stringify({ at: new Date().toISOString(), feeds, feedErrors, embedStatuses })}\n`);
   await setOutput('changed', changed);
   const arabic = Object.values(out.matches).filter((h) => h.ar).length;
   console.log(changed ? `Found ${Object.keys(out.matches).length} matched highlights (${arabic} in Arabic), ${out.latest.length} latest videos` : 'No new highlights');

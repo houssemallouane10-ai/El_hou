@@ -46,10 +46,13 @@ jobs:
           PREVIOUS_BASE_URL: ${{ steps.pages.outputs.base_url }}
         run: node scripts/fixtures.mjs
 
+      # Highlights change slowly and YouTube throttles frequent polling, so
+      # scheduled runs only look for new ones every ~20 minutes
       - id: highlights
         name: Find highlights
         env:
           PREVIOUS_BASE_URL: ${{ steps.pages.outputs.base_url }}
+          HIGHLIGHTS_MIN_INTERVAL_MIN: ${{ github.event_name == 'schedule' && '18' || '0' }}
         run: node scripts/highlights.mjs
 
       # GitHub's branch-based Pages build also deploys every push, without the
