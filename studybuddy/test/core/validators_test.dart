@@ -1,7 +1,14 @@
 import 'package:dz_studybuddy/core/utils/validators.dart';
+import 'package:dz_studybuddy/features/auth/domain/auth_failure.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  test('a project without email sign-up enabled says so', () {
+    for (final code in ['configuration-not-found', 'operation-not-allowed']) {
+      expect(AuthFailure.fromCode(code).message, contains('Email/Password'));
+    }
+  });
+
   group('normalizePhone', () {
     test('accepts Algerian mobile numbers in every common form', () {
       for (final raw in [

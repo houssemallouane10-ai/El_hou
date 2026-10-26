@@ -16,6 +16,9 @@ class AuthFailure implements Exception {
       'weak-password' => 'كلمة السر ضعيفة، اختر كلمة أطول',
       'too-many-requests' => 'محاولات كثيرة، أعد المحاولة بعد قليل',
       'network-request-failed' => 'تحقق من اتصالك بالإنترنت',
+      'operation-not-allowed' || 'configuration-not-found' =>
+        'التسجيل بالبريد غير مفعّل بعد في Firebase '
+            '(Authentication ← Email/Password)',
       _ => 'حدث خطأ غير متوقع، أعد المحاولة',
     });
   }
