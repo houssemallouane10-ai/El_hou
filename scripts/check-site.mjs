@@ -47,6 +47,7 @@ async function dataCheck() {
   console.log(`fixtures: ${fx.matches?.length || 0} matches, updated ${fx.updatedAt}`);
   console.log(`highlights: ${matched.length} matches (${matched.filter((h) => h.ar).length} in Arabic), ${hl.latest?.length || 0} latest`);
   console.log(`embedding: ${embeds.filter((v) => v === true).length} videos can play on the site, ${embeds.filter((v) => v === false).length} blocked by their owners`);
+  console.log(`last highlights run: ${JSON.stringify(await get('data/hl-status.json').catch(() => null))}`);
 }
 
 const browser = await chromium.launch({ channel: 'chrome' });

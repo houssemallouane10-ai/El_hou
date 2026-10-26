@@ -650,6 +650,8 @@ async function renderMatch(slug, id) {
   app.innerHTML = `<div class="wrap mp"><a class="back" href="#/today">${icon('back')}<span>${t('match.back')}</span></a><div class="mp-board"><div class="empty"><span class="spin"></span>${t('empty.loading')}</div></div><div class="mp-body" hidden></div></div>`;
   if (page.match) buildMatchBody(page);
   if (page.match && (page.match.demo || page.match.source !== 'espn')) return;
+  // Details are only published from shortly before kick-off
+  if (page.match && isUpcoming(page.match) && minutesUntil(page.match) > 90) return;
 
   try {
     const summary = await loadSummary(slug, id);

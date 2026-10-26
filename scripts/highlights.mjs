@@ -268,7 +268,7 @@ async function resolveChannelId(source, cache) {
  * answers 401/403 when the owner turned embedding off and 404 when the video
  * is gone; those videos would only show a "Watch on YouTube" link.
  */
-async function checkEmbeddable(ids, cache) {
+async function checkEmbeddable(ids, cache, statuses = {}) {
   const unknown = [...new Set(ids)].filter((id) => !(id in cache));
   for (let i = 0; i < unknown.length; i += 8) {
     await Promise.all(
@@ -276,10 +276,12 @@ async function checkEmbeddable(ids, cache) {
         try {
           const url = `https://www.youtube.com/oembed?format=json&url=${encodeURIComponent(`https://www.youtube.com/watch?v=${id}`)}`;
           const res = await fetch(url, { headers: { 'user-agent': 'Mozilla/5.0 (compatible; MudarrajHighlights/1.0)' } });
+          statuses[res.status] = (statuses[res.status] || 0) + 1;
           if (res.ok) cache[id] = true;
           else if ([401, 403, 404].includes(res.status)) cache[id] = false;
-        } catch {
-          /* unknown for now; checked again next run */
+        } catch (err) {
+          // unknown for now; checked again next run
+          statuses[err.name] = (statuses[err.name] || 0) + 1;
         }
       }),
     );
@@ -394,7 +396,9 @@ async function main() {
   }
 
   // Only keep videos that can play inside the site
-  await checkEmbeddable(videos.map((v) => v.videoId), embeds);
+  const embedStatuses = {};
+  await checkEmbeddable(videos.map((v) => v.videoId), embeds, embedStatuses);
+  console.log(`  embed check responses: ${JSON.stringify(embedStatuses)}`);
   const blockedBy = {};
   videos.forEach((v) => embeds[v.videoId] === false && (blockedBy[v.channel] = (blockedBy[v.channel] || 0) + 1));
   Object.entries(blockedBy).forEach(([ch, n]) => console.log(`  ${ch}: ${n} videos can't be embedded, skipped`));
@@ -421,6 +425,9 @@ async function main() {
   const keep = new Set([...videos.map((v) => v.videoId), ...Object.values(out.matches).flatMap((h) => [h.videoId, h.ar?.videoId]), ...out.latest.map((v) => v.videoId)]);
   await writeFile(EMBED_CACHE, `${JSON.stringify(Object.fromEntries(Object.entries(embeds).filter(([id]) => keep.has(id))))}\n`);
   await writeFile(OUT, `${JSON.stringify({ updatedAt: changed ? new Date().toISOString() : previous.updatedAt || null, ...out })}\n`);
+  // Run diagnostics, published so the site check can read them
+  const feeds = Object.fromEntries(SOURCES.map((src) => [src.name, videos.filter((v) => v.source === src.key).length]));
+  await writeFile(new URL('hl-status.json', DATA_DIR), `${JSON.stringify({ at: new Date().toISOString(), feeds, embedStatuses })}\n`);
   await setOutput('changed', changed);
   const arabic = Object.values(out.matches).filter((h) => h.ar).length;
   console.log(changed ? `Found ${Object.keys(out.matches).length} matched highlights (${arabic} in Arabic), ${out.latest.length} latest videos` : 'No new highlights');
