@@ -1,14 +1,24 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/constants/app_colors.dart';
+import '../../../../core/reports/content_report.dart';
+import '../../../../core/reports/report_sheet.dart';
 import '../../domain/grading.dart';
 
 /// The examiner's verdict: mark, methodology, step-by-step corrections,
 /// model solution and an encouraging tip.
 class GradingResultView extends StatelessWidget {
-  const GradingResultView({super.key, required this.result, this.footer});
+  const GradingResultView({
+    super.key,
+    required this.result,
+    this.reportId = 'latest',
+    this.footer,
+  });
 
   final GradingResult result;
+
+  /// The history record id, sent with a report on this grading.
+  final String reportId;
   final Widget? footer;
 
   @override
@@ -123,7 +133,21 @@ class GradingResultView extends StatelessWidget {
           textAlign: TextAlign.center,
           style: text.bodySmall?.copyWith(color: Colors.grey.shade600),
         ),
-        const SizedBox(height: 12),
+        Center(
+          child: ReportButton(
+            kind: ReportKind.aiGrading,
+            targetId: reportId,
+            label: 'أبلغ عن خطأ في هذا التصحيح',
+            excerpt: [
+              result.markLabel,
+              result.methodology,
+              for (final s in result.steps)
+                '${s.title} (${s.verdict.label}): ${s.comment} ${s.correction}',
+              result.correctSolution,
+            ].join('\n'),
+          ),
+        ),
+        const SizedBox(height: 4),
         ?footer,
       ],
     );

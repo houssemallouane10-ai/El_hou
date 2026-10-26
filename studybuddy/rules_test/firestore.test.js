@@ -8,6 +8,8 @@ import {
   initializeTestEnvironment,
 } from '@firebase/rules-unit-testing';
 import {
+  addDoc,
+  collection,
   deleteDoc,
   deleteField,
   doc,
@@ -102,6 +104,12 @@ describe('users/{uid}/meta/progress', () => {
       }, { merge: true }),
     );
     await assertSucceeds(getDoc(doc(db('sara'), path)));
+  });
+
+  test('the student can delete it with their account', async () => {
+    await setDoc(doc(db('sara'), path), { lessons: {}, updatedAt: serverTimestamp() });
+    await assertFails(deleteDoc(doc(db('amine'), path)));
+    await assertSucceeds(deleteDoc(doc(db('sara'), path)));
   });
 
   test('no one else, and no other documents or fields', async () => {
@@ -228,5 +236,36 @@ describe('videos and votes', () => {
     batch.update(doc(store, videoPath), { up: 0, score: 0 });
     await assertFails(batch.commit());
     await assertFails(deleteDoc(doc(db('sara'), videoPath)));
+  });
+});
+
+describe('reports', () => {
+  const report = (uid, o = {}) => ({
+    uid,
+    kind: 'ai_summary',
+    targetId: 'bac_math_core_01',
+    reason: 'wrong',
+    details: 'التعريف ناقص',
+    excerpt: 'النقطة الأولى',
+    createdAt: serverTimestamp(),
+    ...o,
+  });
+
+  test('a student can file a report but not read any', async () => {
+    const ref = await assertSucceeds(addDoc(collection(db('sara'), 'reports'), report('sara')));
+    await assertFails(getDoc(doc(db('sara'), `reports/${ref.id}`)));
+    await assertFails(updateDoc(doc(db('sara'), `reports/${ref.id}`), { reason: 'other' }));
+    await assertSucceeds(getDoc(doc(db('editor', { admin: true }), `reports/${ref.id}`)));
+  });
+
+  test('reports are validated', async () => {
+    const add = (r, uid = 'sara') => addDoc(collection(db(uid), 'reports'), r);
+    await assertFails(add(report('amine')));
+    await assertFails(add(report('sara', { kind: 'spam' })));
+    await assertFails(add(report('sara', { reason: 'boring' })));
+    await assertFails(add(report('sara', { excerpt: 'x'.repeat(4001) })));
+    await assertFails(add(report('sara', { extra: true })));
+    await assertFails(addDoc(collection(anon(), 'reports'), report('sara')));
+    await assertSucceeds(add(report('sara', { kind: 'video', targetId: 'l1/dQw4w9WgXcQ', reason: 'offensive' })));
   });
 });

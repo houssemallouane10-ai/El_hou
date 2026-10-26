@@ -52,6 +52,22 @@ class FirebaseAuthRepository implements AuthRepository {
   @override
   Future<void> signOut() => _auth.signOut();
 
+  @override
+  Future<void> reauthenticate(String password) => _guard(() async {
+    final user = _auth.currentUser;
+    if (user == null || user.email == null) {
+      throw FirebaseAuthException(code: 'user-not-found');
+    }
+    await user.reauthenticateWithCredential(
+      EmailAuthProvider.credential(email: user.email!, password: password),
+    );
+  });
+
+  @override
+  Future<void> deleteAccount() => _guard(() async {
+    await _auth.currentUser?.delete();
+  });
+
   AppUser? _toAppUser(User? user) => user == null
       ? null
       : AppUser(

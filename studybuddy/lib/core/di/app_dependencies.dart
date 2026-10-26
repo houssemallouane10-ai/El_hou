@@ -18,6 +18,8 @@ import '../../features/syllabus/domain/curriculum.dart';
 import '../../features/syllabus/domain/repositories.dart';
 import '../ai/ai_client.dart';
 import '../audio/playback.dart';
+import '../reports/content_report.dart';
+import '../reports/report_repositories.dart';
 
 /// Every service the app uses, built once at startup: Firebase-backed in
 /// production, device-only in demo mode and tests.
@@ -32,6 +34,7 @@ class AppDependencies {
     required this.gradingHistory,
     required this.presence,
     required this.audioLibrary,
+    required this.reports,
     required this.playback,
     required this.loadCurriculum,
     this.demoMode = false,
@@ -54,6 +57,7 @@ class AppDependencies {
         FirestoreAudioLibrary(),
         AssetAudioLibrary(),
       ]),
+      reports: FirestoreReportRepository(),
       playback: playback,
       loadCurriculum: _cachedCurriculum(),
     );
@@ -74,6 +78,7 @@ class AppDependencies {
       gradingHistory: InMemoryGradingHistoryRepository(),
       presence: InMemoryPresenceRepository(),
       audioLibrary: AssetAudioLibrary(),
+      reports: InMemoryReportRepository(),
       playback: playback,
       loadCurriculum: _cachedCurriculum(),
       demoMode: true,
@@ -89,6 +94,7 @@ class AppDependencies {
   final GradingHistoryRepository gradingHistory;
   final PresenceRepository presence;
   final AudioLibraryRepository audioLibrary;
+  final ReportRepository reports;
   final PlaybackService playback;
   final Future<Curriculum> Function() loadCurriculum;
   final bool demoMode;

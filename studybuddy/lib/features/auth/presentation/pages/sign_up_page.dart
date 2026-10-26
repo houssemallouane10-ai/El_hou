@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../../core/constants/app_links.dart';
 import '../../../../core/constants/app_strings.dart';
+import '../../../../core/utils/open_link.dart';
 import '../../../../core/utils/validators.dart';
 import '../bloc/credentials_cubit.dart';
 import '../widgets/auth_scaffold.dart';
@@ -108,7 +110,9 @@ class _SignUpPageState extends State<SignUpPage> {
                 loading: loading,
                 onPressed: _submit,
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 8),
+              const _Consent(),
+              const SizedBox(height: 8),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -123,6 +127,41 @@ class _SignUpPageState extends State<SignUpPage> {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// Creating an account accepts the terms, which also cover the videos and
+/// reports students share.
+class _Consent extends StatelessWidget {
+  const _Consent();
+
+  @override
+  Widget build(BuildContext context) {
+    final small = Theme.of(context).textTheme.bodySmall;
+    final link = TextButton.styleFrom(
+      padding: const EdgeInsets.symmetric(horizontal: 4),
+      minimumSize: const Size(0, 32),
+      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+      textStyle: small?.copyWith(fontWeight: FontWeight.w700),
+    );
+    return Wrap(
+      alignment: WrapAlignment.center,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      children: [
+        Text('بإنشاء حساب، أنت توافق على', style: small),
+        TextButton(
+          style: link,
+          onPressed: () => openExternal(context, AppLinks.terms),
+          child: const Text('شروط الاستخدام'),
+        ),
+        Text('و', style: small),
+        TextButton(
+          style: link,
+          onPressed: () => openExternal(context, AppLinks.privacy),
+          child: const Text('سياسة الخصوصية'),
+        ),
+      ],
     );
   }
 }

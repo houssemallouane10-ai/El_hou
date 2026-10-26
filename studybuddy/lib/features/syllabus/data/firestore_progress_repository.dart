@@ -55,4 +55,17 @@ class FirestoreProgressRepository implements ProgressRepository {
     'examDate': Timestamp.fromDate(date),
     'updatedAt': FieldValue.serverTimestamp(),
   }, SetOptions(merge: true));
+
+  @override
+  Future<void> deleteAll(String uid) async {
+    try {
+      await _doc(uid).delete();
+    } on FirebaseException {
+      // Rules published before deletion was allowed: empty it instead.
+      await _doc(uid).set({
+        'lessons': <String, Object?>{},
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+    }
+  }
 }

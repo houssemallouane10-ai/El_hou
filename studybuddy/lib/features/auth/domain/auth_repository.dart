@@ -21,6 +21,14 @@ abstract interface class AuthRepository {
   Future<void> sendPasswordReset(String email);
 
   Future<void> signOut();
+
+  /// Confirms the password of the signed-in student, as required before
+  /// deleting an account. Throws [AuthFailure].
+  Future<void> reauthenticate(String password);
+
+  /// Deletes the signed-in account, which signs it out. Call after
+  /// [reauthenticate] and after its data is gone. Throws [AuthFailure].
+  Future<void> deleteAccount();
 }
 
 abstract interface class ProfileRepository {
@@ -28,4 +36,6 @@ abstract interface class ProfileRepository {
   Future<StudentProfile?> fetch(String uid);
 
   Future<void> save(StudentProfile profile);
+
+  Future<void> delete(String uid);
 }

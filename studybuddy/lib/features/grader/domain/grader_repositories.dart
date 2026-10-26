@@ -36,4 +36,6 @@ abstract interface class GradingHistoryRepository {
   Stream<List<GradingRecord>> watch(String uid, {int limit = 30});
 
   Future<void> save(String uid, GradingRecord record);
+
+  Future<void> deleteAll(String uid);
 }

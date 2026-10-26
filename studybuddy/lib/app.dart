@@ -35,6 +35,7 @@ class StudyBuddyApp extends StatelessWidget {
         RepositoryProvider.value(value: deps.gradingHistory),
         RepositoryProvider.value(value: deps.presence),
         RepositoryProvider.value(value: deps.audioLibrary),
+        RepositoryProvider.value(value: deps.reports),
       ],
       child: MultiBlocProvider(
         providers: [

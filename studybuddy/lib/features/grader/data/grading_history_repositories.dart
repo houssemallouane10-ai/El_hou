@@ -47,6 +47,12 @@ class FirestoreGradingHistoryRepository implements GradingHistoryRepository {
         'createdAt': FieldValue.serverTimestamp(),
         'result': record.result.toJson(),
       });
+
+  @override
+  Future<void> deleteAll(String uid) async {
+    final docs = await _col(uid).get();
+    await Future.wait([for (final d in docs.docs) d.reference.delete()]);
+  }
 }
 
 class InMemoryGradingHistoryRepository implements GradingHistoryRepository {
@@ -65,6 +71,12 @@ class InMemoryGradingHistoryRepository implements GradingHistoryRepository {
   @override
   Future<void> save(String uid, GradingRecord record) async {
     _records.putIfAbsent(uid, () => []).insert(0, record);
+    _changes.add(uid);
+  }
+
+  @override
+  Future<void> deleteAll(String uid) async {
+    _records.remove(uid);
     _changes.add(uid);
   }
 }

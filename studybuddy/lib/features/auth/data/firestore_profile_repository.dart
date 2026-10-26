@@ -28,4 +28,7 @@ class FirestoreProfileRepository implements ProfileRepository {
       'updatedAt': FieldValue.serverTimestamp(),
     }, SetOptions(merge: true));
   }
+
+  @override
+  Future<void> delete(String uid) => _users.doc(uid).delete();
 }

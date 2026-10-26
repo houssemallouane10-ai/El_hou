@@ -41,7 +41,7 @@ class InMemoryAuthRepository implements AuthRepository {
       throw AuthFailure.fromCode('email-already-in-use');
     }
     final user = AppUser(
-      uid: 'local-${_accounts.length + 1}',
+      uid: 'local-${++_created}',
       email: email.trim(),
       displayName: fullName.trim(),
     );
@@ -49,11 +49,27 @@ class InMemoryAuthRepository implements AuthRepository {
     _emit(user);
   }
 
+  var _created = 0;
+
   @override
   Future<void> sendPasswordReset(String email) async {}
 
   @override
   Future<void> signOut() async => _emit(null);
+
+  @override
+  Future<void> reauthenticate(String password) async {
+    final account = _accounts[_current?.email.toLowerCase()];
+    if (account == null || account.password != password) {
+      throw AuthFailure.fromCode('invalid-credential');
+    }
+  }
+
+  @override
+  Future<void> deleteAccount() async {
+    _accounts.remove(_current?.email.toLowerCase());
+    _emit(null);
+  }
 
   void _emit(AppUser? user) {
     _current = user;
@@ -70,4 +86,7 @@ class InMemoryProfileRepository implements ProfileRepository {
   @override
   Future<void> save(StudentProfile profile) async =>
       _profiles[profile.uid] = profile;
+
+  @override
+  Future<void> delete(String uid) async => _profiles.remove(uid);
 }

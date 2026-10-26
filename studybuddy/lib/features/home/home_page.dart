@@ -3,13 +3,13 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_strings.dart';
-import '../auth/presentation/bloc/auth_bloc.dart';
 import '../grader/presentation/bloc/grading_history_cubit.dart';
 import '../syllabus/domain/progress.dart';
 import '../syllabus/domain/study_plan.dart';
 import '../syllabus/presentation/bloc/study_cubit.dart';
 import '../syllabus/presentation/pages/lesson_page.dart';
 import '../syllabus/presentation/widgets/subject_visuals.dart';
+import 'account/account_page.dart';
 import 'home_shell.dart';
 
 /// The dashboard: overall progress, days to the exam and today's plan.
@@ -54,10 +54,16 @@ class HomePage extends StatelessWidget {
         title: const Text(AppStrings.appName),
         actions: [
           IconButton(
-            tooltip: AppStrings.signOut,
-            icon: const Icon(Icons.logout),
-            onPressed: () =>
-                context.read<AuthBloc>().add(const AuthSignOutRequested()),
+            tooltip: 'حسابي',
+            icon: const Icon(Icons.account_circle_outlined),
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => BlocProvider.value(
+                  value: context.read<StudyCubit>(),
+                  child: const AccountPage(),
+                ),
+              ),
+            ),
           ),
         ],
       ),

@@ -431,7 +431,7 @@ class _History extends StatelessWidget {
                 MaterialPageRoute<void>(
                   builder: (_) => Scaffold(
                     appBar: AppBar(title: Text(r.subjectName)),
-                    body: GradingResultView(result: r.result),
+                    body: GradingResultView(result: r.result, reportId: r.id),
                   ),
                 ),
               ),

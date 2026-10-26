@@ -36,6 +36,12 @@ class InMemoryProgressRepository implements ProgressRepository {
     );
     _controller.add(uid);
   }
+
+  @override
+  Future<void> deleteAll(String uid) async {
+    _progress.remove(uid);
+    _controller.add(uid);
+  }
 }
 
 class InMemoryLessonContentRepository implements LessonContentRepository {

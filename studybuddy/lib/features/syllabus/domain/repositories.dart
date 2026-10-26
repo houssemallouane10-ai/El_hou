@@ -5,6 +5,9 @@ abstract interface class ProgressRepository {
   Stream<StudyProgress> watch(String uid);
   Future<void> setStatus(String uid, String lessonId, LessonStatus status);
   Future<void> setExamDate(String uid, DateTime date);
+
+  /// Removes every status and the exam date, when the account is deleted.
+  Future<void> deleteAll(String uid);
 }
 
 abstract interface class LessonContentRepository {

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../core/constants/app_colors.dart';
+import '../../../../core/utils/open_link.dart';
 import '../../../auth/domain/student_profile.dart';
 import '../../domain/curriculum.dart';
 import '../../domain/lesson_content.dart';
@@ -11,6 +11,8 @@ import '../../domain/progress.dart';
 import '../../domain/repositories.dart';
 import '../bloc/lesson_cubit.dart';
 import '../bloc/study_cubit.dart';
+import '../../../../core/reports/content_report.dart';
+import '../../../../core/reports/report_sheet.dart';
 import '../widgets/add_video_sheet.dart';
 import '../widgets/subject_visuals.dart';
 
@@ -35,14 +37,6 @@ String levelLabelOf(StudentProfile profile) => [
   profile.level.label,
   if (profile.stream != null) 'شعبة ${profile.stream!.name}',
 ].join('، ');
-
-Future<void> openExternal(BuildContext context, Uri url) async {
-  final ok = await launchUrl(url, mode: LaunchMode.externalApplication);
-  if (!ok && context.mounted) {
-    ScaffoldMessenger.of(context)
-        .showSnackBar(const SnackBar(content: Text('تعذّر فتح الرابط')));
-  }
-}
 
 class LessonPage extends StatelessWidget {
   const LessonPage({super.key, required this.lesson, this.initialResource});
@@ -227,6 +221,17 @@ class _SummaryTab extends StatelessWidget {
               : () => cubit.summarize(refresh: true),
           icon: const Icon(Icons.refresh),
           label: const Text('أعد توليد الملخص'),
+        ),
+        ReportButton(
+          kind: ReportKind.aiSummary,
+          targetId: cubit.lesson.id,
+          excerpt: [
+            ...summary.keyPoints,
+            for (final d in summary.definitions) '${d.term}: ${d.meaning}',
+            ...summary.formulas,
+            ...summary.examTips,
+            ...summary.commonMistakes,
+          ].join('\n'),
         ),
       ]);
     } else if (content.summary == null) {
@@ -436,6 +441,7 @@ class _VideosTab extends StatelessWidget {
           for (final (i, video) in videos.indexed)
             _VideoCard(
               rank: i + 1,
+              lessonId: lesson.id,
               video: video,
               myVote: state.myVotes[video.id] ?? 0,
               onVote: (v) => cubit.vote(video, v),
@@ -459,12 +465,14 @@ class _VideosTab extends StatelessWidget {
 class _VideoCard extends StatelessWidget {
   const _VideoCard({
     required this.rank,
+    required this.lessonId,
     required this.video,
     required this.myVote,
     required this.onVote,
   });
 
   final int rank;
+  final String lessonId;
   final LessonVideo video;
   final int myVote;
   final ValueChanged<int> onVote;
@@ -562,6 +570,13 @@ class _VideoCard extends StatelessWidget {
                         : Icons.thumb_down_alt_outlined,
                     color: myVote == -1 ? AppColors.error : null,
                   ),
+                ),
+                ReportButton(
+                  kind: ReportKind.video,
+                  targetId: '$lessonId/${video.id}',
+                  excerpt:
+                      '${video.title}\n${video.channel}\n${video.watchUrl}',
+                  compact: true,
                 ),
               ],
             ),
