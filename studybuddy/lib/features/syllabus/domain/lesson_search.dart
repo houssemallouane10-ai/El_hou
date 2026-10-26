@@ -97,11 +97,13 @@ List<LessonMatch> searchLessons({
     final name = normalizeArabic(
       stream.name.split(' · ').last.split(' (').first,
     );
+    // "شعبة رياضيات" and "شعبة الرياضيات" both name the stream.
     if (normalizedQuery.contains('شعبه $name') ||
-        normalizedQuery.contains('شعبه ${_stem(name)}')) {
+        normalizedQuery.contains('شعبه ال$name')) {
       track = stream.id;
       namedTrack = true;
-      tokens.removeWhere((t) => name.split(' ').contains(t));
+      final words = name.split(' ');
+      tokens.removeWhere((t) => words.contains(t) || words.contains(_stem(t)));
     }
   }
 

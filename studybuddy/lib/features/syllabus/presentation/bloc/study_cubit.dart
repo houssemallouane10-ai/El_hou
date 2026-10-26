@@ -119,7 +119,13 @@ class StudyCubit extends Cubit<StudyState> {
 
   Future<void> setExamDate(DateTime date) async {
     emit(state.copyWith(progress: state.progress.withExamDate(date)));
-    await _progress.setExamDate(profile.uid, date);
+    try {
+      await _progress.setExamDate(profile.uid, date);
+    } catch (_) {
+      if (!isClosed) {
+        emit(state.copyWith(error: 'لم يُحفظ التاريخ، تحقق من الاتصال'));
+      }
+    }
   }
 
   @override

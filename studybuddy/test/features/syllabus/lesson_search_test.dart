@@ -25,6 +25,16 @@ void main() {
     expect(results.first.trackKey, 'math');
   });
 
+  test('the stream can be named with or without the article', () {
+    final results = search('حوليات الموافقات شعبة الرياضيات');
+    expect(results.first.lesson.title, 'الموافقات في Z');
+    expect(results.first.trackKey, 'math');
+    expect(
+      search('الأعداد المركبة شعبة علوم تجريبية', track: 'math').first.trackKey,
+      'sciences',
+    );
+  });
+
   test('finds lessons whatever the spelling of hamza and taa marbuta', () {
     expect(
       search('شرح المنعكس العضلى').first.lesson.title,
