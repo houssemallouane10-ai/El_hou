@@ -66,5 +66,18 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<key>NSCameraUsageDescription</key>
+	<string>نستعمل الكاميرا لتصوير ورقة إجابتك وتصحيحها.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>اختر صورة ورقة إجابتك من معرض الصور لتصحيحها.</string>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>audio</string>
+	</array>
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<string>https</string>
+		<string>youtube</string>
+	</array>
 </dict>
 </plist>

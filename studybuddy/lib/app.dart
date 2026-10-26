@@ -5,40 +5,47 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'core/constants/app_colors.dart';
 import 'core/constants/app_strings.dart';
 import 'core/constants/app_theme.dart';
-import 'features/auth/domain/auth_repository.dart';
+import 'core/audio/playback_cubit.dart';
+import 'core/di/app_dependencies.dart';
 import 'features/auth/presentation/bloc/auth_bloc.dart';
 import 'features/auth/presentation/pages/onboarding_page.dart';
 import 'features/auth/presentation/pages/welcome_flow.dart';
-import 'features/home/home_page.dart';
+import 'features/home/home_shell.dart';
 
 class StudyBuddyApp extends StatelessWidget {
   const StudyBuddyApp({
     super.key,
-    required this.authRepository,
-    required this.profileRepository,
-    this.demoMode = false,
+    required this.deps,
     this.useGoogleFonts = true,
   });
 
-  final AuthRepository authRepository;
-  final ProfileRepository profileRepository;
-
-  /// True when running on the in-memory repositories.
-  final bool demoMode;
+  final AppDependencies deps;
   final bool useGoogleFonts;
 
   @override
   Widget build(BuildContext context) {
     return MultiRepositoryProvider(
       providers: [
-        RepositoryProvider.value(value: authRepository),
-        RepositoryProvider.value(value: profileRepository),
+        RepositoryProvider.value(value: deps),
+        RepositoryProvider.value(value: deps.auth),
+        RepositoryProvider.value(value: deps.profiles),
+        RepositoryProvider.value(value: deps.lessonContent),
+        RepositoryProvider.value(value: deps.summaries),
+        RepositoryProvider.value(value: deps.grader),
+        RepositoryProvider.value(value: deps.gradingHistory),
+        RepositoryProvider.value(value: deps.presence),
+        RepositoryProvider.value(value: deps.audioLibrary),
       ],
-      child: BlocProvider(
-        create: (_) => AuthBloc(
-          authRepository: authRepository,
-          profileRepository: profileRepository,
-        ),
+      child: MultiBlocProvider(
+        providers: [
+          BlocProvider(
+            create: (_) => AuthBloc(
+              authRepository: deps.auth,
+              profileRepository: deps.profiles,
+            ),
+          ),
+          BlocProvider(create: (_) => PlaybackCubit(deps.playback)),
+        ],
         child: MaterialApp(
           title: AppStrings.appName,
           debugShowCheckedModeBanner: false,
@@ -47,7 +54,7 @@ class StudyBuddyApp extends StatelessWidget {
           supportedLocales: const [Locale('ar', 'DZ'), Locale('fr', 'DZ')],
           localizationsDelegates: GlobalMaterialLocalizations.delegates,
           builder: (context, child) =>
-              demoMode ? _DemoNotice(child: child!) : child!,
+              deps.demoMode ? _DemoNotice(child: child!) : child!,
           home: const AuthGate(),
         ),
       ),
@@ -69,7 +76,10 @@ class AuthGate extends StatelessWidget {
           key: ValueKey(state.user!.uid),
           user: state.user!,
         ),
-        AuthStatus.authenticated => HomePage(profile: state.profile!),
+        AuthStatus.authenticated => HomeShell(
+          key: ValueKey(state.profile!.uid),
+          profile: state.profile!,
+        ),
         AuthStatus.profileError => const _ProfileError(),
       },
     );

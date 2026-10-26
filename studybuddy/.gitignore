@@ -46,3 +46,7 @@ app.*.map.json
 
 # Widget Preview related
 .widget_preview/
+
+# Firebase emulators and the rules test suite
+*-debug.log
+rules_test/node_modules/

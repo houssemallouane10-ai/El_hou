@@ -1,10 +1,17 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+    <uses-permission android:name="android.permission.INTERNET"/>
+    <!-- Background playback for the audio bank and focus-room ambience. -->
+    <uses-permission android:name="android.permission.WAKE_LOCK"/>
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK"/>
+
     <application
         android:label="زميل الدراسة"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity
-            android:name=".MainActivity"
+            android:name="com.ryanheise.audioservice.AudioServiceActivity"
             android:exported="true"
             android:launchMode="singleTop"
             android:taskAffinity=""
@@ -25,6 +32,19 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
+        <service android:name="com.ryanheise.audioservice.AudioService"
+            android:foregroundServiceType="mediaPlayback"
+            android:exported="true" tools:ignore="Instantiatable">
+            <intent-filter>
+                <action android:name="android.media.browse.MediaBrowserService" />
+            </intent-filter>
+        </service>
+        <receiver android:name="com.ryanheise.audioservice.MediaButtonReceiver"
+            android:exported="true" tools:ignore="Instantiatable">
+            <intent-filter>
+                <action android:name="android.intent.action.MEDIA_BUTTON" />
+            </intent-filter>
+        </receiver>
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
         <meta-data
@@ -37,6 +57,15 @@
 
          In particular, this is used by the Flutter engine in io.flutter.plugin.text.ProcessTextPlugin. -->
     <queries>
+        <!-- url_launcher: YouTube videos and past-paper PDFs. -->
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="https" />
+        </intent>
+        <!-- flutter_tts: reading text-only audio-bank cards aloud. -->
+        <intent>
+            <action android:name="android.intent.action.TTS_SERVICE" />
+        </intent>
         <intent>
             <action android:name="android.intent.action.PROCESS_TEXT"/>
             <data android:mimeType="text/plain"/>

@@ -2,6 +2,21 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(uid) {
+      return signedIn() && request.auth.uid == uid;
+    }
+
+    // Content editors get the custom claim {admin: true} with the Admin SDK.
+    function isAdmin() {
+      return signedIn() && request.auth.token.admin == true;
+    }
+
+    // ---------------------------------------------------------------- users
     // A student's profile: only they can read or write it, and writes must
     // keep the shape the app expects.
     match /users/{uid} {
@@ -10,23 +25,126 @@ service cloud.firestore {
         && request.resource.data.createdAt == request.time;
       allow update: if isOwner(uid) && validProfile()
         && request.resource.data.createdAt == resource.data.createdAt;
+
+      function validProfile() {
+        let d = request.resource.data;
+        return d.keys().hasOnly(['fullName', 'email', 'phone', 'wilayaCode',
+            'wilayaName', 'level', 'streamId', 'createdAt', 'updatedAt'])
+          && d.fullName is string && d.fullName.size() >= 3 && d.fullName.size() <= 80
+          && d.email == request.auth.token.email
+          && d.phone is string && d.phone.matches('^\\+213[567][0-9]{8}$')
+          && d.wilayaCode is int && d.wilayaCode >= 1 && d.wilayaCode <= 58
+          && d.level in ['bem', 'bac', 'university']
+          && (d.level == 'bem' ? d.streamId == null : d.streamId is string)
+          && d.updatedAt == request.time;
+      }
+
+      // Lesson statuses and exam date: users/{uid}/meta/progress.
+      match /meta/{doc} {
+        allow read: if isOwner(uid);
+        allow write: if isOwner(uid) && doc == 'progress'
+          && request.resource.data.keys().hasOnly(['lessons', 'examDate', 'updatedAt'])
+          && (!('lessons' in request.resource.data)
+              || (request.resource.data.lessons is map
+                  && request.resource.data.lessons.size() <= 1000))
+          && (!('examDate' in request.resource.data)
+              || request.resource.data.examDate is timestamp)
+          && request.resource.data.updatedAt == request.time;
+      }
+
+      // AI grader verdicts; immutable once written.
+      match /gradings/{id} {
+        allow read, delete: if isOwner(uid);
+        allow create: if isOwner(uid)
+          && request.resource.data.keys().hasOnly(['subjectId', 'subjectName',
+              'lessonTitle', 'createdAt', 'result'])
+          && request.resource.data.subjectId is string
+          && request.resource.data.subjectId.size() <= 64
+          && request.resource.data.subjectName is string
+          && request.resource.data.createdAt == request.time
+          && request.resource.data.result is map
+          && request.resource.data.result.estimatedMark is number
+          && request.resource.data.result.maxMark is number
+          && request.resource.data.result.estimatedMark >= 0
+          && request.resource.data.result.estimatedMark <= request.resource.data.result.maxMark;
+      }
     }
 
-    function isOwner(uid) {
-      return request.auth != null && request.auth.uid == uid;
+    // -------------------------------------------------------------- lessons
+    // Curated summaries and past papers, edited by admins only.
+    match /lessons/{lessonId} {
+      allow read: if signedIn();
+      allow write: if isAdmin();
+
+      // Student-suggested YouTube explanations, ranked by votes. The doc id
+      // is the YouTube id, so a video is suggested once per lesson.
+      match /videos/{videoId} {
+        allow read: if signedIn();
+        allow delete: if isAdmin();
+
+        allow create: if signedIn()
+          && videoId.matches('^[A-Za-z0-9_-]{11}$')
+          && request.resource.data.keys().hasOnly(['youtubeId', 'title',
+              'channel', 'addedBy', 'addedAt', 'up', 'down', 'score'])
+          && request.resource.data.youtubeId == videoId
+          && request.resource.data.title is string
+          && request.resource.data.title.size() >= 3
+          && request.resource.data.title.size() <= 200
+          && request.resource.data.channel is string
+          && request.resource.data.channel.size() <= 100
+          && request.resource.data.addedBy == request.auth.uid
+          && request.resource.data.addedAt == request.time
+          && request.resource.data.up == 0
+          && request.resource.data.down == 0
+          && request.resource.data.score == 0;
+
+        // Counters may only move by the caller's own vote change, written
+        // in the same transaction (see votes below).
+        allow update: if signedIn()
+          && request.resource.data.diff(resource.data).affectedKeys()
+              .hasOnly(['up', 'down', 'score'])
+          && request.resource.data.up == resource.data.up
+              + (voteAfter() == 1 ? 1 : 0) - (voteBefore() == 1 ? 1 : 0)
+          && request.resource.data.down == resource.data.down
+              + (voteAfter() == -1 ? 1 : 0) - (voteBefore() == -1 ? 1 : 0)
+          && request.resource.data.score
+              == request.resource.data.up - request.resource.data.down;
+
+        function votePath() {
+          return /databases/$(database)/documents/lessons/$(lessonId)/videos/$(videoId)/votes/$(request.auth.uid);
+        }
+        function voteBefore() {
+          return exists(votePath()) ? get(votePath()).data.value : 0;
+        }
+        function voteAfter() {
+          return existsAfter(votePath()) ? getAfter(votePath()).data.value : 0;
+        }
+
+        match /votes/{voter} {
+          allow read: if isOwner(voter);
+          allow create, update: if isOwner(voter)
+            && request.resource.data.keys().hasOnly(['value'])
+            && request.resource.data.value in [1, -1]
+            && countersMoved();
+          allow delete: if isOwner(voter) && countersMoved();
+
+          function videoPath() {
+            return /databases/$(database)/documents/lessons/$(lessonId)/videos/$(videoId);
+          }
+          // Every real vote change moves the score, so a vote written
+          // without its counter update is refused.
+          function countersMoved() {
+            return getAfter(videoPath()).data.score != get(videoPath()).data.score;
+          }
+        }
+      }
     }
 
-    function validProfile() {
-      let d = request.resource.data;
-      return d.keys().hasOnly(['fullName', 'email', 'phone', 'wilayaCode',
-          'wilayaName', 'level', 'streamId', 'createdAt', 'updatedAt'])
-        && d.fullName is string && d.fullName.size() >= 3 && d.fullName.size() <= 80
-        && d.email == request.auth.token.email
-        && d.phone is string && d.phone.matches('^\\+213[567][0-9]{8}$')
-        && d.wilayaCode is int && d.wilayaCode >= 1 && d.wilayaCode <= 58
-        && d.level in ['bem', 'bac', 'university']
-        && (d.level == 'bem' ? d.streamId == null : d.streamId is string)
-        && d.updatedAt == request.time;
+    // ---------------------------------------------------------- audio bank
+    // Recorded episodes, published by admins.
+    match /audio_tracks/{id} {
+      allow read: if signedIn();
+      allow write: if isAdmin();
     }
   }
 }
