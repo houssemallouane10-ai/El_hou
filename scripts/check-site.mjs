@@ -38,7 +38,19 @@ async function visit(browser, path, viewport) {
   return page;
 }
 
+async function dataCheck() {
+  const get = async (path) => (await fetch(`${SITE}${path}?t=${Date.now()}`)).json();
+  const fx = await get('data/fixtures.json');
+  const hl = await get('data/highlights.json');
+  const embeds = Object.values(await get('data/yt-embed.json').catch(() => ({})));
+  const matched = Object.values(hl.matches || {});
+  console.log(`fixtures: ${fx.matches?.length || 0} matches, updated ${fx.updatedAt}`);
+  console.log(`highlights: ${matched.length} matches (${matched.filter((h) => h.ar).length} in Arabic), ${hl.latest?.length || 0} latest`);
+  console.log(`embedding: ${embeds.filter((v) => v === true).length} videos can play on the site, ${embeds.filter((v) => v === false).length} blocked by their owners`);
+}
+
 const browser = await chromium.launch({ channel: 'chrome' });
+await dataCheck().catch((e) => console.log(`data check failed: ${e.message}`));
 await corsCheck().catch((e) => console.log(`ESPN check failed: ${e.message}`));
 const home = await visit(browser, '', { width: 1280, height: 900 });
 const firstMatch = await home.getAttribute('.mrow', 'href').catch(() => null);
