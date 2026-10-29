@@ -1,0 +1,116 @@
+name: StudyBuddy
+
+# Checks the DZ-StudyBuddy Flutter app (studybuddy/): analysis and tests,
+# the Firestore and Realtime Database security rules against the
+# emulators, and a debug Android build. The APK is kept as an artifact.
+on:
+  push:
+    paths:
+      - 'studybuddy/**'
+      - '.github/workflows/studybuddy.yml'
+  pull_request:
+    paths:
+      - 'studybuddy/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: studybuddy-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    working-directory: studybuddy
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.47.8
+          channel: stable
+          cache: true
+      - run: flutter pub get
+      - run: dart format --output=none --set-exit-if-changed lib test
+      - run: flutter analyze
+      - run: flutter test
+
+  rules:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - name: Security rules on the emulators
+        working-directory: studybuddy/rules_test
+        run: |
+          npm ci
+          npm test
+
+  android:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.47.8
+          channel: stable
+          cache: true
+      - run: flutter pub get
+
+      # The upload key is committed encrypted; the STUDYBUDDY_SIGNING_KEY
+      # secret decrypts it. Without the secret, the builds below are signed
+      # with the debug key, which Google Play refuses.
+      - name: Unlock the Google Play upload key
+        id: key
+        env:
+          STUDYBUDDY_SIGNING_KEY: ${{ secrets.STUDYBUDDY_SIGNING_KEY }}
+        run: |
+          if [ -z "$STUDYBUDDY_SIGNING_KEY" ]; then
+            echo "::warning::STUDYBUDDY_SIGNING_KEY is not set: the AAB is signed with the debug key and Google Play will refuse it."
+            echo "artifact=studybuddy-NOT-FOR-PLAY-debug-signed" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 \
+            -in android/upload-keystore.jks.enc -out android/upload-keystore.jks \
+            -pass env:STUDYBUDDY_SIGNING_KEY
+          {
+            echo "storeFile=../upload-keystore.jks"
+            echo "storePassword=$STUDYBUDDY_SIGNING_KEY"
+            echo "keyAlias=upload"
+            echo "keyPassword=$STUDYBUDDY_SIGNING_KEY"
+          } > android/key.properties
+          echo "artifact=studybuddy-google-play" >> "$GITHUB_OUTPUT"
+
+      - run: flutter build appbundle --release
+      - run: flutter build apk --release
+
+      - name: Collect the builds
+        run: |
+          version=$(grep '^version:' pubspec.yaml | cut -d' ' -f2 | tr '+' '-')
+          mkdir -p "$RUNNER_TEMP/out"
+          cp build/app/outputs/bundle/release/app-release.aab "$RUNNER_TEMP/out/zamil-addirasa-$version.aab"
+          cp build/app/outputs/flutter-apk/app-release.apk "$RUNNER_TEMP/out/zamil-addirasa-$version.apk"
+          rm -f android/key.properties android/upload-keystore.jks
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.key.outputs.artifact }}
+          path: ${{ runner.temp }}/out/
+          retention-days: 30

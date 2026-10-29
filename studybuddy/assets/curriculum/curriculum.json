@@ -1,0 +1,3271 @@
+{
+ "version": 1,
+ "note": "المعاملات والدروس استرشادية حسب المنهاج الرسمي؛ تُراجَع مع آخر منشور وزاري.",
+ "subjects": {
+  "math": {
+   "name": "الرياضيات",
+   "icon": "math"
+  },
+  "physics": {
+   "name": "العلوم الفيزيائية",
+   "icon": "physics"
+  },
+  "svt": {
+   "name": "علوم الطبيعة والحياة",
+   "icon": "biology"
+  },
+  "arabic": {
+   "name": "اللغة العربية وآدابها",
+   "icon": "language"
+  },
+  "philosophy": {
+   "name": "الفلسفة",
+   "icon": "philosophy"
+  },
+  "history_geo": {
+   "name": "التاريخ والجغرافيا",
+   "icon": "history"
+  },
+  "islamic": {
+   "name": "العلوم الإسلامية",
+   "icon": "islamic"
+  },
+  "french": {
+   "name": "اللغة الفرنسية",
+   "icon": "language"
+  },
+  "english": {
+   "name": "اللغة الإنجليزية",
+   "icon": "language"
+  },
+  "lang3": {
+   "name": "اللغة الأجنبية الثالثة",
+   "icon": "language"
+  },
+  "civic": {
+   "name": "التربية المدنية",
+   "icon": "civic"
+  },
+  "tech_civil": {
+   "name": "التكنولوجيا: هندسة مدنية",
+   "icon": "engineering"
+  },
+  "tech_mech": {
+   "name": "التكنولوجيا: هندسة ميكانيكية",
+   "icon": "engineering"
+  },
+  "tech_elec": {
+   "name": "التكنولوجيا: هندسة كهربائية",
+   "icon": "engineering"
+  },
+  "tech_proc": {
+   "name": "التكنولوجيا: هندسة الطرائق",
+   "icon": "chemistry"
+  },
+  "accounting": {
+   "name": "التسيير المحاسبي والمالي",
+   "icon": "finance"
+  },
+  "economics": {
+   "name": "الاقتصاد والمناجمنت",
+   "icon": "finance"
+  },
+  "law": {
+   "name": "القانون",
+   "icon": "law"
+  },
+  "arts": {
+   "name": "المادة الفنية",
+   "icon": "arts"
+  },
+  "u_analysis": {
+   "name": "التحليل (Analyse)",
+   "icon": "math"
+  },
+  "u_algebra": {
+   "name": "الجبر (Algèbre)",
+   "icon": "math"
+  },
+  "u_physics": {
+   "name": "الفيزياء",
+   "icon": "physics"
+  },
+  "u_chemistry": {
+   "name": "الكيمياء",
+   "icon": "chemistry"
+  },
+  "u_computing": {
+   "name": "الإعلام الآلي",
+   "icon": "computer"
+  },
+  "u_algo": {
+   "name": "الخوارزميات وهياكل المعطيات",
+   "icon": "computer"
+  },
+  "u_machine": {
+   "name": "بنية الآلة",
+   "icon": "computer"
+  },
+  "u_proba": {
+   "name": "الاحتمالات والإحصاء",
+   "icon": "math"
+  },
+  "u_method": {
+   "name": "المنهجية والمصطلحات",
+   "icon": "civic"
+  },
+  "u_biology": {
+   "name": "علم الخلية",
+   "icon": "biology"
+  },
+  "u_geology": {
+   "name": "علوم الأرض",
+   "icon": "biology"
+  },
+  "u_zoobot": {
+   "name": "علم الحيوان والنبات",
+   "icon": "biology"
+  },
+  "u_anatomy": {
+   "name": "التشريح",
+   "icon": "biology"
+  },
+  "u_biochem": {
+   "name": "الكيمياء الحيوية",
+   "icon": "chemistry"
+  },
+  "u_histo": {
+   "name": "علم الأنسجة والأجنة",
+   "icon": "biology"
+  },
+  "u_biophys": {
+   "name": "الفيزياء الحيوية والإحصاء الحيوي",
+   "icon": "physics"
+  },
+  "u_studio": {
+   "name": "ورشة المشروع المعماري",
+   "icon": "arts"
+  },
+  "u_archi_hist": {
+   "name": "تاريخ العمارة",
+   "icon": "history"
+  },
+  "u_archi_tech": {
+   "name": "الهندسة الوصفية والمواد",
+   "icon": "engineering"
+  },
+  "u_econ": {
+   "name": "الاقتصاد",
+   "icon": "finance"
+  },
+  "u_accounting": {
+   "name": "المحاسبة المالية",
+   "icon": "finance"
+  },
+  "u_management": {
+   "name": "مدخل لعلم الإدارة",
+   "icon": "finance"
+  },
+  "u_law_intro": {
+   "name": "مدخل للعلوم القانونية",
+   "icon": "law"
+  },
+  "u_constitutional": {
+   "name": "القانون الدستوري والنظم",
+   "icon": "law"
+  },
+  "u_politics": {
+   "name": "العلوم السياسية والعلاقات الدولية",
+   "icon": "law"
+  },
+  "u_sociology": {
+   "name": "علم الاجتماع",
+   "icon": "civic"
+  },
+  "u_psychology": {
+   "name": "علم النفس",
+   "icon": "philosophy"
+  },
+  "u_civilisation": {
+   "name": "تاريخ الحضارات",
+   "icon": "history"
+  },
+  "u_linguistics": {
+   "name": "اللسانيات والصوتيات",
+   "icon": "language"
+  },
+  "u_grammar": {
+   "name": "القواعد والتعبير",
+   "icon": "language"
+  },
+  "u_literature": {
+   "name": "الأدب والحضارة",
+   "icon": "language"
+  }
+ },
+ "programs": {
+  "bac_math_core": [
+   {
+    "unit": "التحليل",
+    "lessons": [
+     [
+      "bac_math_core_01",
+      "النهايات والاستمرارية"
+     ],
+     [
+      "bac_math_core_02",
+      "الاشتقاقية ودراسة الدوال"
+     ],
+     [
+      "bac_math_core_03",
+      "الدالة الأسية"
+     ],
+     [
+      "bac_math_core_04",
+      "الدالة اللوغاريتمية"
+     ],
+     [
+      "bac_math_core_05",
+      "الدوال الأصلية والحساب التكاملي"
+     ],
+     [
+      "bac_math_core_06",
+      "المتتاليات العددية"
+     ]
+    ]
+   },
+   {
+    "unit": "الجبر والهندسة",
+    "lessons": [
+     [
+      "bac_math_core_07",
+      "الأعداد المركبة"
+     ],
+     [
+      "bac_math_core_08",
+      "الهندسة في الفضاء"
+     ]
+    ]
+   },
+   {
+    "unit": "الاحتمالات",
+    "lessons": [
+     [
+      "bac_math_core_09",
+      "الاحتمالات الشرطية والمتغير العشوائي"
+     ]
+    ]
+   }
+  ],
+  "bac_math_arith": [
+   {
+    "unit": "الحسابيات",
+    "lessons": [
+     [
+      "bac_math_arith_01",
+      "القسمة في Z"
+     ],
+     [
+      "bac_math_arith_02",
+      "القاسم المشترك الأكبر ومبرهنة بيزو"
+     ],
+     [
+      "bac_math_arith_03",
+      "الموافقات في Z"
+     ],
+     [
+      "bac_math_arith_04",
+      "الأعداد الأولية"
+     ]
+    ]
+   },
+   {
+    "unit": "مكمّلات",
+    "lessons": [
+     [
+      "bac_math_arith_05",
+      "الأعداد المركبة والتحويلات النقطية (التشابه)"
+     ],
+     [
+      "bac_math_arith_06",
+      "المعادلات التفاضلية"
+     ]
+    ]
+   }
+  ],
+  "bac_math_gestion": [
+   {
+    "unit": "التحليل",
+    "lessons": [
+     [
+      "bac_math_gestion_01",
+      "الدوال العددية (الأسية واللوغاريتمية)"
+     ],
+     [
+      "bac_math_gestion_02",
+      "المتتاليات العددية والحساب المالي"
+     ],
+     [
+      "bac_math_gestion_03",
+      "الحساب التكاملي"
+     ]
+    ]
+   },
+   {
+    "unit": "الإحصاء والاحتمالات",
+    "lessons": [
+     [
+      "bac_math_gestion_04",
+      "السلاسل الإحصائية ذات متغيرين (التعديل الخطي)"
+     ],
+     [
+      "bac_math_gestion_05",
+      "الاحتمالات"
+     ]
+    ]
+   }
+  ],
+  "bac_math_lettres": [
+   {
+    "unit": "الرياضيات",
+    "lessons": [
+     [
+      "bac_math_lettres_01",
+      "المتتاليات العددية"
+     ],
+     [
+      "bac_math_lettres_02",
+      "الدوال العددية"
+     ],
+     [
+      "bac_math_lettres_03",
+      "الإحصاء"
+     ]
+    ]
+   }
+  ],
+  "bac_phys_core": [
+   {
+    "unit": "الكيمياء",
+    "lessons": [
+     [
+      "bac_phys_core_01",
+      "المتابعة الزمنية لتحول كيميائي"
+     ],
+     [
+      "bac_phys_core_02",
+      "تطور جملة كيميائية نحو حالة التوازن (الأحماض والأسس)"
+     ],
+     [
+      "bac_phys_core_03",
+      "مراقبة تطور جملة كيميائية (الأسترة والإماهة)"
+     ]
+    ]
+   },
+   {
+    "unit": "الفيزياء",
+    "lessons": [
+     [
+      "bac_phys_core_04",
+      "التحولات النووية"
+     ],
+     [
+      "bac_phys_core_05",
+      "الظواهر الكهربائية (ثنائي القطب RC وRL)"
+     ],
+     [
+      "bac_phys_core_06",
+      "تطور جملة ميكانيكية (قوانين نيوتن)"
+     ],
+     [
+      "bac_phys_core_07",
+      "حركة الكواكب والأقمار الاصطناعية"
+     ],
+     [
+      "bac_phys_core_08",
+      "السقوط الشاقولي وحركة القذائف"
+     ]
+    ]
+   }
+  ],
+  "bac_phys_osc": [
+   {
+    "unit": "الاهتزازات",
+    "lessons": [
+     [
+      "bac_phys_osc_01",
+      "الاهتزازات الكهربائية الحرة (الدارة RLC)"
+     ],
+     [
+      "bac_phys_osc_02",
+      "الاهتزازات الميكانيكية الحرة (النواس المرن والبسيط)"
+     ]
+    ]
+   }
+  ],
+  "bac_svt_core": [
+   {
+    "unit": "التخصص الوظيفي للبروتينات",
+    "lessons": [
+     [
+      "bac_svt_core_01",
+      "تركيب البروتين"
+     ],
+     [
+      "bac_svt_core_02",
+      "العلاقة بين بنية ووظيفة البروتين"
+     ],
+     [
+      "bac_svt_core_03",
+      "النشاط الإنزيمي للبروتينات"
+     ],
+     [
+      "bac_svt_core_04",
+      "دور البروتينات في الدفاع عن الذات (المناعة)"
+     ],
+     [
+      "bac_svt_core_05",
+      "دور البروتينات في الاتصال العصبي: المنعكس العضلي"
+     ],
+     [
+      "bac_svt_core_06",
+      "النقل المشبكي"
+     ]
+    ]
+   },
+   {
+    "unit": "التحولات الطاقوية",
+    "lessons": [
+     [
+      "bac_svt_core_07",
+      "التركيب الضوئي: تحويل الطاقة الضوئية إلى طاقة كيميائية"
+     ],
+     [
+      "bac_svt_core_08",
+      "التنفس والتخمر: تحويل الطاقة الكامنة إلى ATP"
+     ]
+    ]
+   }
+  ],
+  "bac_svt_geo": [
+   {
+    "unit": "التكتونية العامة",
+    "lessons": [
+     [
+      "bac_svt_geo_01",
+      "النشاط التكتوني للصفائح"
+     ]
+    ]
+   }
+  ],
+  "bac_arabic": [
+   {
+    "unit": "الشعر",
+    "lessons": [
+     [
+      "bac_arabic_01",
+      "أدب عصر الضعف (المماليك والعثمانيين)"
+     ],
+     [
+      "bac_arabic_02",
+      "شعر الإحياء والبعث"
+     ],
+     [
+      "bac_arabic_03",
+      "الشعر الوجداني وأدب المهجر"
+     ],
+     [
+      "bac_arabic_04",
+      "الشعر الحر (شعر التفعيلة)"
+     ],
+     [
+      "bac_arabic_05",
+      "الالتزام في الشعر: الثورة الجزائرية وفلسطين"
+     ]
+    ]
+   },
+   {
+    "unit": "النثر",
+    "lessons": [
+     [
+      "bac_arabic_06",
+      "فنون النثر الحديث: المقال والقصة والمسرحية"
+     ]
+    ]
+   },
+   {
+    "unit": "اللغة والمنهجية",
+    "lessons": [
+     [
+      "bac_arabic_07",
+      "قواعد اللغة والإعراب"
+     ],
+     [
+      "bac_arabic_08",
+      "البلاغة والعروض"
+     ],
+     [
+      "bac_arabic_09",
+      "منهجية تحليل النص الأدبي"
+     ]
+    ]
+   }
+  ],
+  "bac_philo_sci": [
+   {
+    "unit": "المشكلات الفلسفية",
+    "lessons": [
+     [
+      "bac_philo_sci_01",
+      "السؤال بين المشكلة والإشكالية"
+     ],
+     [
+      "bac_philo_sci_02",
+      "الرياضيات والمطلقية"
+     ],
+     [
+      "bac_philo_sci_03",
+      "المنهج التجريبي في العلوم"
+     ],
+     [
+      "bac_philo_sci_04",
+      "البيولوجيا والتجريب"
+     ],
+     [
+      "bac_philo_sci_05",
+      "العلوم الإنسانية: التاريخ وعلم النفس"
+     ],
+     [
+      "bac_philo_sci_06",
+      "الشعور واللاشعور"
+     ],
+     [
+      "bac_philo_sci_07",
+      "الذاكرة"
+     ],
+     [
+      "bac_philo_sci_08",
+      "اللغة والفكر"
+     ]
+    ]
+   },
+   {
+    "unit": "المنهجية",
+    "lessons": [
+     [
+      "bac_philo_sci_09",
+      "منهجية المقالة الفلسفية (الجدلية، المقارنة، الاستقصاء)"
+     ]
+    ]
+   }
+  ],
+  "bac_philo_lettres": [
+   {
+    "unit": "مشكلات إضافية",
+    "lessons": [
+     [
+      "bac_philo_lettres_01",
+      "الإحساس والإدراك"
+     ],
+     [
+      "bac_philo_lettres_02",
+      "العادة والإرادة"
+     ],
+     [
+      "bac_philo_lettres_03",
+      "الحرية والمسؤولية"
+     ],
+     [
+      "bac_philo_lettres_04",
+      "العدل والمساواة"
+     ],
+     [
+      "bac_philo_lettres_05",
+      "الأخلاق بين النسبي والمطلق"
+     ],
+     [
+      "bac_philo_lettres_06",
+      "المنطق الصوري والمنطق المادي"
+     ],
+     [
+      "bac_philo_lettres_07",
+      "الأنظمة الاقتصادية والسياسية"
+     ],
+     [
+      "bac_philo_lettres_08",
+      "الحقيقة بين المطلق والنسبي"
+     ]
+    ]
+   }
+  ],
+  "bac_history_geo": [
+   {
+    "unit": "التاريخ",
+    "lessons": [
+     [
+      "bac_history_geo_01",
+      "تطور العالم في ظل الثنائية القطبية (1945-1989)"
+     ],
+     [
+      "bac_history_geo_02",
+      "مساعي الانفراج الدولي والتعايش السلمي"
+     ],
+     [
+      "bac_history_geo_03",
+      "العالم الثالث وحركات التحرر"
+     ],
+     [
+      "bac_history_geo_04",
+      "الثورة التحريرية الجزائرية (1954-1962)"
+     ],
+     [
+      "bac_history_geo_05",
+      "بناء الدولة الجزائرية بعد الاستقلال"
+     ],
+     [
+      "bac_history_geo_06",
+      "من الثنائية إلى الأحادية القطبية"
+     ]
+    ]
+   },
+   {
+    "unit": "الجغرافيا",
+    "lessons": [
+     [
+      "bac_history_geo_07",
+      "المبادلات والتنقلات في العالم"
+     ],
+     [
+      "bac_history_geo_08",
+      "التنمية والتخلف"
+     ],
+     [
+      "bac_history_geo_09",
+      "الولايات المتحدة الأمريكية قوة اقتصادية"
+     ],
+     [
+      "bac_history_geo_10",
+      "الاتحاد الأوروبي قوة اقتصادية"
+     ],
+     [
+      "bac_history_geo_11",
+      "شرق وجنوب شرق آسيا (الصين واليابان)"
+     ],
+     [
+      "bac_history_geo_12",
+      "الجزائر في الاقتصاد العالمي"
+     ]
+    ]
+   }
+  ],
+  "bac_islamic": [
+   {
+    "unit": "العقيدة والقيم",
+    "lessons": [
+     [
+      "bac_islamic_01",
+      "وسائل القرآن الكريم في تثبيت العقيدة"
+     ],
+     [
+      "bac_islamic_02",
+      "العقل في القرآن الكريم"
+     ],
+     [
+      "bac_islamic_03",
+      "القيم في القرآن الكريم"
+     ],
+     [
+      "bac_islamic_04",
+      "الصحة النفسية والجسمية في القرآن الكريم"
+     ]
+    ]
+   },
+   {
+    "unit": "التشريع",
+    "lessons": [
+     [
+      "bac_islamic_05",
+      "مصادر التشريع الإسلامي (الإجماع، القياس، المصالح المرسلة)"
+     ],
+     [
+      "bac_islamic_06",
+      "مقاصد الشريعة الإسلامية"
+     ],
+     [
+      "bac_islamic_07",
+      "الأسرة في الإسلام"
+     ],
+     [
+      "bac_islamic_08",
+      "الربا ومشكلة الفائدة"
+     ],
+     [
+      "bac_islamic_09",
+      "الحرية الشخصية ومدى ارتباطها بحقوق الإنسان"
+     ],
+     [
+      "bac_islamic_10",
+      "الإسلام والرسالات السابقة"
+     ]
+    ]
+   }
+  ],
+  "bac_french": [
+   {
+    "unit": "Projets",
+    "lessons": [
+     [
+      "bac_french_01",
+      "Le fait historique (texte d'histoire)"
+     ],
+     [
+      "bac_french_02",
+      "Le débat d'idées et l'argumentation"
+     ],
+     [
+      "bac_french_03",
+      "L'appel"
+     ],
+     [
+      "bac_french_04",
+      "La nouvelle fantastique"
+     ]
+    ]
+   },
+   {
+    "unit": "Langue et méthodologie",
+    "lessons": [
+     [
+      "bac_french_05",
+      "Le compte rendu objectif et critique"
+     ],
+     [
+      "bac_french_06",
+      "Le résumé de texte"
+     ]
+    ]
+   }
+  ],
+  "bac_english": [
+   {
+    "unit": "Units",
+    "lessons": [
+     [
+      "bac_english_01",
+      "Ethics in Business"
+     ],
+     [
+      "bac_english_02",
+      "Safety First (Advertising & Consumers)"
+     ],
+     [
+      "bac_english_03",
+      "Astronomy and the Solar System"
+     ],
+     [
+      "bac_english_04",
+      "Feelings and Emotions"
+     ],
+     [
+      "bac_english_05",
+      "Ancient Civilizations"
+     ],
+     [
+      "bac_english_06",
+      "Education in the World"
+     ]
+    ]
+   },
+   {
+    "unit": "Skills",
+    "lessons": [
+     [
+      "bac_english_07",
+      "Grammar: tenses, passive voice, reported speech"
+     ],
+     [
+      "bac_english_08",
+      "Written expression"
+     ]
+    ]
+   }
+  ],
+  "bac_lang3": [
+   {
+    "unit": "المحاور",
+    "lessons": [
+     [
+      "bac_lang3_01",
+      "فهم المكتوب"
+     ],
+     [
+      "bac_lang3_02",
+      "قواعد اللغة"
+     ],
+     [
+      "bac_lang3_03",
+      "التعبير الكتابي"
+     ]
+    ]
+   }
+  ],
+  "bac_tech_civil": [
+   {
+    "unit": "الهندسة المدنية",
+    "lessons": [
+     [
+      "bac_tech_civil_01",
+      "مقاومة المواد: الشد والانضغاط والانحناء"
+     ],
+     [
+      "bac_tech_civil_02",
+      "الخرسانة المسلحة"
+     ],
+     [
+      "bac_tech_civil_03",
+      "الطبوغرافيا"
+     ],
+     [
+      "bac_tech_civil_04",
+      "المنشآت الفنية والطرق"
+     ],
+     [
+      "bac_tech_civil_05",
+      "الأساسات والتربة"
+     ]
+    ]
+   }
+  ],
+  "bac_tech_mech": [
+   {
+    "unit": "الهندسة الميكانيكية",
+    "lessons": [
+     [
+      "bac_tech_mech_01",
+      "التحليل الوظيفي والبنيوي"
+     ],
+     [
+      "bac_tech_mech_02",
+      "مقاومة المواد: القص والانحناء والالتواء"
+     ],
+     [
+      "bac_tech_mech_03",
+      "نقل الحركة (المسننات، البكرات والسيور)"
+     ],
+     [
+      "bac_tech_mech_04",
+      "الرسم الصناعي"
+     ],
+     [
+      "bac_tech_mech_05",
+      "تقنيات التصنيع"
+     ],
+     [
+      "bac_tech_mech_06",
+      "الآليات المبرمجة (GRAFCET)"
+     ]
+    ]
+   }
+  ],
+  "bac_tech_elec": [
+   {
+    "unit": "الهندسة الكهربائية",
+    "lessons": [
+     [
+      "bac_tech_elec_01",
+      "الآليات المبرمجة (GRAFCET)"
+     ],
+     [
+      "bac_tech_elec_02",
+      "المنطق التوافقي والتعاقبي"
+     ],
+     [
+      "bac_tech_elec_03",
+      "المحولات الكهربائية"
+     ],
+     [
+      "bac_tech_elec_04",
+      "المحرك اللاتزامني"
+     ],
+     [
+      "bac_tech_elec_05",
+      "المضخم العملي والملتقطات"
+     ],
+     [
+      "bac_tech_elec_06",
+      "التغذية والتقويم"
+     ]
+    ]
+   }
+  ],
+  "bac_tech_proc": [
+   {
+    "unit": "هندسة الطرائق",
+    "lessons": [
+     [
+      "bac_tech_proc_01",
+      "الكيمياء العضوية: الوظائف العضوية"
+     ],
+     [
+      "bac_tech_proc_02",
+      "السكريات"
+     ],
+     [
+      "bac_tech_proc_03",
+      "الأحماض الأمينية والبروتينات"
+     ],
+     [
+      "bac_tech_proc_04",
+      "الدسم (الليبيدات)"
+     ],
+     [
+      "bac_tech_proc_05",
+      "الحركية الكيميائية"
+     ],
+     [
+      "bac_tech_proc_06",
+      "الترموديناميك الكيميائي"
+     ]
+    ]
+   }
+  ],
+  "bac_accounting": [
+   {
+    "unit": "أعمال نهاية الدورة",
+    "lessons": [
+     [
+      "bac_accounting_01",
+      "الاهتلاكات"
+     ],
+     [
+      "bac_accounting_02",
+      "تسوية المخزونات"
+     ],
+     [
+      "bac_accounting_03",
+      "تسوية الحقوق (خسائر القيمة)"
+     ],
+     [
+      "bac_accounting_04",
+      "تسوية الأعباء والنواتج"
+     ]
+    ]
+   },
+   {
+    "unit": "التحليل المالي",
+    "lessons": [
+     [
+      "bac_accounting_05",
+      "إعداد الكشوف المالية (الميزانية وحساب النتائج)"
+     ],
+     [
+      "bac_accounting_06",
+      "التحليل الوظيفي للميزانية"
+     ],
+     [
+      "bac_accounting_07",
+      "جدول سيولة الخزينة"
+     ]
+    ]
+   },
+   {
+    "unit": "المحاسبة التحليلية والاستثمار",
+    "lessons": [
+     [
+      "bac_accounting_08",
+      "التكاليف الكلية وسعر التكلفة"
+     ],
+     [
+      "bac_accounting_09",
+      "اختيار وتمويل الاستثمارات"
+     ]
+    ]
+   }
+  ],
+  "bac_economics": [
+   {
+    "unit": "الاقتصاد",
+    "lessons": [
+     [
+      "bac_economics_01",
+      "النقود"
+     ],
+     [
+      "bac_economics_02",
+      "السوق والأسعار"
+     ],
+     [
+      "bac_economics_03",
+      "البنوك"
+     ],
+     [
+      "bac_economics_04",
+      "التجارة الخارجية والصرف"
+     ],
+     [
+      "bac_economics_05",
+      "البطالة"
+     ],
+     [
+      "bac_economics_06",
+      "التضخم"
+     ]
+    ]
+   },
+   {
+    "unit": "المناجمنت",
+    "lessons": [
+     [
+      "bac_economics_07",
+      "الإدارة والتنظيم"
+     ],
+     [
+      "bac_economics_08",
+      "القيادة والتحفيز"
+     ],
+     [
+      "bac_economics_09",
+      "الاتصال في المؤسسة"
+     ],
+     [
+      "bac_economics_10",
+      "الرقابة"
+     ]
+    ]
+   }
+  ],
+  "bac_law": [
+   {
+    "unit": "القانون",
+    "lessons": [
+     [
+      "bac_law_01",
+      "عقد البيع"
+     ],
+     [
+      "bac_law_02",
+      "عقد العمل"
+     ],
+     [
+      "bac_law_03",
+      "الشركات التجارية"
+     ],
+     [
+      "bac_law_04",
+      "الضرائب على الدخل والأرباح"
+     ]
+    ]
+   }
+  ],
+  "bac_arts": [
+   {
+    "unit": "المادة الفنية",
+    "lessons": [
+     [
+      "bac_arts_01",
+      "تاريخ الفنون"
+     ],
+     [
+      "bac_arts_02",
+      "تحليل عمل فني"
+     ],
+     [
+      "bac_arts_03",
+      "التقنيات والممارسة الفنية"
+     ]
+    ]
+   }
+  ],
+  "bem_math": [
+   {
+    "unit": "الأنشطة العددية",
+    "lessons": [
+     [
+      "bem_math_01",
+      "الأعداد الطبيعية والأعداد الناطقة (القاسم المشترك الأكبر)"
+     ],
+     [
+      "bem_math_02",
+      "الجذور التربيعية"
+     ],
+     [
+      "bem_math_03",
+      "الحساب الحرفي والمتطابقات الشهيرة"
+     ],
+     [
+      "bem_math_04",
+      "المعادلات والمتراجحات من الدرجة الأولى"
+     ],
+     [
+      "bem_math_05",
+      "جملة معادلتين من الدرجة الأولى بمجهولين"
+     ]
+    ]
+   },
+   {
+    "unit": "الدوال وتنظيم المعطيات",
+    "lessons": [
+     [
+      "bem_math_06",
+      "الدالة الخطية والدالة التآلفية"
+     ],
+     [
+      "bem_math_07",
+      "الإحصاء"
+     ]
+    ]
+   },
+   {
+    "unit": "الأنشطة الهندسية",
+    "lessons": [
+     [
+      "bem_math_08",
+      "خاصية طالس"
+     ],
+     [
+      "bem_math_09",
+      "حساب المثلثات في المثلث القائم"
+     ],
+     [
+      "bem_math_10",
+      "الأشعة والانسحاب"
+     ],
+     [
+      "bem_math_11",
+      "المعلم"
+     ],
+     [
+      "bem_math_12",
+      "الزوايا والدوران"
+     ],
+     [
+      "bem_math_13",
+      "الهندسة في الفضاء (الكرة والجلة)"
+     ]
+    ]
+   }
+  ],
+  "bem_physics": [
+   {
+    "unit": "الميادين",
+    "lessons": [
+     [
+      "bem_physics_01",
+      "الظواهر الميكانيكية: القوة والتأثير المتبادل"
+     ],
+     [
+      "bem_physics_02",
+      "الظواهر الكهربائية: التيار المتناوب والطاقة"
+     ],
+     [
+      "bem_physics_03",
+      "المادة وتحولاتها: المحاليل الشاردية"
+     ],
+     [
+      "bem_physics_04",
+      "الظواهر الضوئية: العدسات والانكسار"
+     ]
+    ]
+   }
+  ],
+  "bem_svt": [
+   {
+    "unit": "الميادين",
+    "lessons": [
+     [
+      "bem_svt_01",
+      "الاتصال العصبي والحركة الإرادية"
+     ],
+     [
+      "bem_svt_02",
+      "الاتصال الهرموني (تنظيم نسبة السكر)"
+     ],
+     [
+      "bem_svt_03",
+      "الاستجابة المناعية"
+     ],
+     [
+      "bem_svt_04",
+      "انتقال الصفات الوراثية"
+     ],
+     [
+      "bem_svt_05",
+      "الزلازل والبراكين وتكتونية الصفائح"
+     ]
+    ]
+   }
+  ],
+  "bem_arabic": [
+   {
+    "unit": "اللغة",
+    "lessons": [
+     [
+      "bem_arabic_01",
+      "النحو والإعراب"
+     ],
+     [
+      "bem_arabic_02",
+      "الصرف"
+     ],
+     [
+      "bem_arabic_03",
+      "البلاغة (التشبيه، الاستعارة، الكناية)"
+     ]
+    ]
+   },
+   {
+    "unit": "الفهم والإنتاج",
+    "lessons": [
+     [
+      "bem_arabic_04",
+      "فهم المكتوب"
+     ],
+     [
+      "bem_arabic_05",
+      "الإنتاج الكتابي (الحجاج والوصف والسرد)"
+     ]
+    ]
+   }
+  ],
+  "bem_history_geo": [
+   {
+    "unit": "التاريخ",
+    "lessons": [
+     [
+      "bem_history_geo_01",
+      "المقاومة الشعبية للاستعمار الفرنسي"
+     ],
+     [
+      "bem_history_geo_02",
+      "الحركة الوطنية الجزائرية (1919-1954)"
+     ],
+     [
+      "bem_history_geo_03",
+      "الثورة التحريرية (1954-1962)"
+     ]
+    ]
+   },
+   {
+    "unit": "الجغرافيا",
+    "lessons": [
+     [
+      "bem_history_geo_04",
+      "السكان والتنمية في الجزائر"
+     ],
+     [
+      "bem_history_geo_05",
+      "الفلاحة في الجزائر"
+     ],
+     [
+      "bem_history_geo_06",
+      "الصناعة في الجزائر"
+     ],
+     [
+      "bem_history_geo_07",
+      "السياحة والتجارة"
+     ]
+    ]
+   }
+  ],
+  "bem_islamic": [
+   {
+    "unit": "المحاور",
+    "lessons": [
+     [
+      "bem_islamic_01",
+      "العقيدة"
+     ],
+     [
+      "bem_islamic_02",
+      "العبادات"
+     ],
+     [
+      "bem_islamic_03",
+      "السيرة النبوية"
+     ],
+     [
+      "bem_islamic_04",
+      "الأخلاق والمعاملات"
+     ]
+    ]
+   }
+  ],
+  "bem_civic": [
+   {
+    "unit": "المحاور",
+    "lessons": [
+     [
+      "bem_civic_01",
+      "المواطنة والديمقراطية"
+     ],
+     [
+      "bem_civic_02",
+      "حقوق الإنسان"
+     ],
+     [
+      "bem_civic_03",
+      "المؤسسات الدستورية"
+     ]
+    ]
+   }
+  ],
+  "bem_french": [
+   {
+    "unit": "Projets",
+    "lessons": [
+     [
+      "bem_french_01",
+      "Le texte argumentatif"
+     ],
+     [
+      "bem_french_02",
+      "Le plaidoyer et le réquisitoire"
+     ],
+     [
+      "bem_french_03",
+      "Grammaire et conjugaison"
+     ]
+    ]
+   }
+  ],
+  "bem_english": [
+   {
+    "unit": "Units",
+    "lessons": [
+     [
+      "bem_english_01",
+      "Me, my personality and my life experiences"
+     ],
+     [
+      "bem_english_02",
+      "Me, my community and citizenship"
+     ],
+     [
+      "bem_english_03",
+      "Me, scientific and technological innovations"
+     ]
+    ]
+   }
+  ],
+  "u_analysis": [
+   {
+    "unit": "السداسي الأول والثاني",
+    "lessons": [
+     [
+      "u_analysis_01",
+      "المجموعات والتطبيقات"
+     ],
+     [
+      "u_analysis_02",
+      "المتتاليات الحقيقية"
+     ],
+     [
+      "u_analysis_03",
+      "النهايات والاستمرارية"
+     ],
+     [
+      "u_analysis_04",
+      "الاشتقاق ونظريات القيمة الوسطى"
+     ],
+     [
+      "u_analysis_05",
+      "النشر المحدود"
+     ],
+     [
+      "u_analysis_06",
+      "التكاملات"
+     ],
+     [
+      "u_analysis_07",
+      "المعادلات التفاضلية"
+     ]
+    ]
+   }
+  ],
+  "u_algebra": [
+   {
+    "unit": "السداسي الأول والثاني",
+    "lessons": [
+     [
+      "u_algebra_01",
+      "المنطق والمجموعات"
+     ],
+     [
+      "u_algebra_02",
+      "العلاقات الثنائية"
+     ],
+     [
+      "u_algebra_03",
+      "البنى الجبرية (الزمر، الحلقات، الحقول)"
+     ],
+     [
+      "u_algebra_04",
+      "كثيرات الحدود"
+     ],
+     [
+      "u_algebra_05",
+      "الفضاءات الشعاعية"
+     ],
+     [
+      "u_algebra_06",
+      "التطبيقات الخطية والمصفوفات"
+     ],
+     [
+      "u_algebra_07",
+      "المحددات وجمل المعادلات الخطية"
+     ]
+    ]
+   }
+  ],
+  "u_physics_st": [
+   {
+    "unit": "الفيزياء",
+    "lessons": [
+     [
+      "u_physics_st_01",
+      "التحليل البعدي والحساب الشعاعي"
+     ],
+     [
+      "u_physics_st_02",
+      "الحركيات (Cinématique)"
+     ],
+     [
+      "u_physics_st_03",
+      "التحريك (Dynamique)"
+     ],
+     [
+      "u_physics_st_04",
+      "العمل والطاقة"
+     ],
+     [
+      "u_physics_st_05",
+      "الكهرباء الساكنة"
+     ],
+     [
+      "u_physics_st_06",
+      "الكهرباء المتحركة (الدارات)"
+     ]
+    ]
+   }
+  ],
+  "u_chemistry_st": [
+   {
+    "unit": "الكيمياء",
+    "lessons": [
+     [
+      "u_chemistry_st_01",
+      "بنية الذرة"
+     ],
+     [
+      "u_chemistry_st_02",
+      "الجدول الدوري"
+     ],
+     [
+      "u_chemistry_st_03",
+      "الروابط الكيميائية"
+     ],
+     [
+      "u_chemistry_st_04",
+      "الترموديناميك: المبدأ الأول"
+     ],
+     [
+      "u_chemistry_st_05",
+      "الترموديناميك: المبدأ الثاني"
+     ]
+    ]
+   }
+  ],
+  "u_computing": [
+   {
+    "unit": "الإعلام الآلي",
+    "lessons": [
+     [
+      "u_computing_01",
+      "مدخل للحاسوب وأنظمة التشغيل"
+     ],
+     [
+      "u_computing_02",
+      "الخوارزميات الأساسية"
+     ],
+     [
+      "u_computing_03",
+      "البرمجة (المتغيرات، الشروط، الحلقات)"
+     ],
+     [
+      "u_computing_04",
+      "الجداول والدوال"
+     ]
+    ]
+   }
+  ],
+  "u_algo": [
+   {
+    "unit": "الخوارزميات",
+    "lessons": [
+     [
+      "u_algo_01",
+      "المتغيرات والتعليمات الشرطية"
+     ],
+     [
+      "u_algo_02",
+      "الحلقات"
+     ],
+     [
+      "u_algo_03",
+      "الجداول والسلاسل"
+     ],
+     [
+      "u_algo_04",
+      "الإجراءات والدوال"
+     ],
+     [
+      "u_algo_05",
+      "التسجيلات والملفات"
+     ],
+     [
+      "u_algo_06",
+      "المؤشرات والقوائم المتصلة"
+     ]
+    ]
+   }
+  ],
+  "u_machine": [
+   {
+    "unit": "بنية الآلة",
+    "lessons": [
+     [
+      "u_machine_01",
+      "أنظمة العد والتمثيل"
+     ],
+     [
+      "u_machine_02",
+      "تمثيل المعلومات"
+     ],
+     [
+      "u_machine_03",
+      "الجبر البولياني"
+     ],
+     [
+      "u_machine_04",
+      "الدارات التوافقية"
+     ],
+     [
+      "u_machine_05",
+      "الدارات التعاقبية"
+     ]
+    ]
+   }
+  ],
+  "u_proba": [
+   {
+    "unit": "الاحتمالات والإحصاء",
+    "lessons": [
+     [
+      "u_proba_01",
+      "الإحصاء الوصفي"
+     ],
+     [
+      "u_proba_02",
+      "التحليل التوافقي"
+     ],
+     [
+      "u_proba_03",
+      "الاحتمالات"
+     ],
+     [
+      "u_proba_04",
+      "المتغيرات العشوائية"
+     ]
+    ]
+   }
+  ],
+  "u_method": [
+   {
+    "unit": "المنهجية",
+    "lessons": [
+     [
+      "u_method_01",
+      "منهجية العمل الجامعي"
+     ],
+     [
+      "u_method_02",
+      "المصطلحات العلمية"
+     ],
+     [
+      "u_method_03",
+      "تقنيات التعبير والتواصل"
+     ]
+    ]
+   }
+  ],
+  "u_physics_sm": [
+   {
+    "unit": "الفيزياء",
+    "lessons": [
+     [
+      "u_physics_sm_01",
+      "ميكانيك النقطة المادية"
+     ],
+     [
+      "u_physics_sm_02",
+      "الكهرباء"
+     ],
+     [
+      "u_physics_sm_03",
+      "الاهتزازات والأمواج"
+     ]
+    ]
+   }
+  ],
+  "u_chemistry_sm": [
+   {
+    "unit": "الكيمياء",
+    "lessons": [
+     [
+      "u_chemistry_sm_01",
+      "بنية المادة"
+     ],
+     [
+      "u_chemistry_sm_02",
+      "الترموديناميك"
+     ],
+     [
+      "u_chemistry_sm_03",
+      "الحركية الكيميائية"
+     ],
+     [
+      "u_chemistry_sm_04",
+      "المحاليل المائية"
+     ]
+    ]
+   }
+  ],
+  "u_biology": [
+   {
+    "unit": "علم الخلية",
+    "lessons": [
+     [
+      "u_biology_01",
+      "الخلية بدائية وحقيقية النواة"
+     ],
+     [
+      "u_biology_02",
+      "الغشاء الهيولي"
+     ],
+     [
+      "u_biology_03",
+      "العضيات الخلوية"
+     ],
+     [
+      "u_biology_04",
+      "النواة والانقسام الخلوي"
+     ]
+    ]
+   }
+  ],
+  "u_chemistry_snv": [
+   {
+    "unit": "الكيمياء",
+    "lessons": [
+     [
+      "u_chemistry_snv_01",
+      "الكيمياء العامة: بنية المادة"
+     ],
+     [
+      "u_chemistry_snv_02",
+      "الكيمياء العضوية: الوظائف والتسمية"
+     ],
+     [
+      "u_chemistry_snv_03",
+      "المحاليل والتوازنات"
+     ]
+    ]
+   }
+  ],
+  "u_math_snv": [
+   {
+    "unit": "الرياضيات والإحصاء",
+    "lessons": [
+     [
+      "u_math_snv_01",
+      "الدوال والنهايات"
+     ],
+     [
+      "u_math_snv_02",
+      "الاشتقاق والتكامل"
+     ],
+     [
+      "u_math_snv_03",
+      "الإحصاء الوصفي"
+     ],
+     [
+      "u_math_snv_04",
+      "الاحتمالات"
+     ]
+    ]
+   }
+  ],
+  "u_physics_snv": [
+   {
+    "unit": "الفيزياء",
+    "lessons": [
+     [
+      "u_physics_snv_01",
+      "البصريات"
+     ],
+     [
+      "u_physics_snv_02",
+      "الموائع"
+     ],
+     [
+      "u_physics_snv_03",
+      "الكهرباء"
+     ]
+    ]
+   }
+  ],
+  "u_geology": [
+   {
+    "unit": "علوم الأرض",
+    "lessons": [
+     [
+      "u_geology_01",
+      "بنية الكرة الأرضية"
+     ],
+     [
+      "u_geology_02",
+      "المعادن والصخور"
+     ],
+     [
+      "u_geology_03",
+      "الجيولوجيا الخارجية والداخلية"
+     ]
+    ]
+   }
+  ],
+  "u_zoobot": [
+   {
+    "unit": "علم الحيوان والنبات",
+    "lessons": [
+     [
+      "u_zoobot_01",
+      "تصنيف الكائنات الحية"
+     ],
+     [
+      "u_zoobot_02",
+      "علم الحيوان"
+     ],
+     [
+      "u_zoobot_03",
+      "علم النبات"
+     ]
+    ]
+   }
+  ],
+  "u_anatomy": [
+   {
+    "unit": "التشريح",
+    "lessons": [
+     [
+      "u_anatomy_01",
+      "التشريح العام"
+     ],
+     [
+      "u_anatomy_02",
+      "العظام والمفاصل"
+     ],
+     [
+      "u_anatomy_03",
+      "العضلات"
+     ],
+     [
+      "u_anatomy_04",
+      "الجهاز القلبي الوعائي"
+     ]
+    ]
+   }
+  ],
+  "u_biochem": [
+   {
+    "unit": "الكيمياء الحيوية",
+    "lessons": [
+     [
+      "u_biochem_01",
+      "السكريات"
+     ],
+     [
+      "u_biochem_02",
+      "الدسم"
+     ],
+     [
+      "u_biochem_03",
+      "الأحماض الأمينية والبروتينات"
+     ],
+     [
+      "u_biochem_04",
+      "الإنزيمات"
+     ]
+    ]
+   }
+  ],
+  "u_histo": [
+   {
+    "unit": "علم الأنسجة والأجنة",
+    "lessons": [
+     [
+      "u_histo_01",
+      "الأنسجة الظهارية"
+     ],
+     [
+      "u_histo_02",
+      "الأنسجة الضامة"
+     ],
+     [
+      "u_histo_03",
+      "تكوين الأمشاج"
+     ],
+     [
+      "u_histo_04",
+      "الأسابيع الأولى للنمو الجنيني"
+     ]
+    ]
+   }
+  ],
+  "u_biophys": [
+   {
+    "unit": "الفيزياء الحيوية والإحصاء الحيوي",
+    "lessons": [
+     [
+      "u_biophys_01",
+      "المحاليل والضغط الأسموزي"
+     ],
+     [
+      "u_biophys_02",
+      "الإشعاعات"
+     ],
+     [
+      "u_biophys_03",
+      "الإحصاء الحيوي"
+     ]
+    ]
+   }
+  ],
+  "u_chemistry_med": [
+   {
+    "unit": "الكيمياء",
+    "lessons": [
+     [
+      "u_chemistry_med_01",
+      "الكيمياء العامة"
+     ],
+     [
+      "u_chemistry_med_02",
+      "الكيمياء العضوية"
+     ]
+    ]
+   }
+  ],
+  "u_studio": [
+   {
+    "unit": "الورشة",
+    "lessons": [
+     [
+      "u_studio_01",
+      "مبادئ التصميم المعماري"
+     ],
+     [
+      "u_studio_02",
+      "الرسم والفنون التشكيلية"
+     ],
+     [
+      "u_studio_03",
+      "النماذج المصغرة"
+     ]
+    ]
+   }
+  ],
+  "u_archi_hist": [
+   {
+    "unit": "تاريخ العمارة",
+    "lessons": [
+     [
+      "u_archi_hist_01",
+      "العمارة القديمة"
+     ],
+     [
+      "u_archi_hist_02",
+      "العمارة الإسلامية"
+     ],
+     [
+      "u_archi_hist_03",
+      "العمارة في الجزائر"
+     ]
+    ]
+   }
+  ],
+  "u_archi_tech": [
+   {
+    "unit": "التقنيات",
+    "lessons": [
+     [
+      "u_archi_tech_01",
+      "الهندسة الوصفية"
+     ],
+     [
+      "u_archi_tech_02",
+      "مواد البناء"
+     ],
+     [
+      "u_archi_tech_03",
+      "مبادئ الإنشاء"
+     ]
+    ]
+   }
+  ],
+  "u_econ": [
+   {
+    "unit": "الاقتصاد",
+    "lessons": [
+     [
+      "u_econ_01",
+      "مدخل للاقتصاد"
+     ],
+     [
+      "u_econ_02",
+      "الاقتصاد الجزئي: المستهلك والمنتج"
+     ],
+     [
+      "u_econ_03",
+      "الاقتصاد الكلي: المجمعات الاقتصادية"
+     ]
+    ]
+   }
+  ],
+  "u_accounting": [
+   {
+    "unit": "المحاسبة المالية",
+    "lessons": [
+     [
+      "u_accounting_01",
+      "مبادئ المحاسبة والنظام المحاسبي المالي"
+     ],
+     [
+      "u_accounting_02",
+      "الميزانية وحساب النتائج"
+     ],
+     [
+      "u_accounting_03",
+      "تسجيل العمليات الجارية"
+     ]
+    ]
+   }
+  ],
+  "u_management": [
+   {
+    "unit": "الإدارة",
+    "lessons": [
+     [
+      "u_management_01",
+      "مدخل لعلم الإدارة"
+     ],
+     [
+      "u_management_02",
+      "وظائف الإدارة"
+     ],
+     [
+      "u_management_03",
+      "المؤسسة ومحيطها"
+     ]
+    ]
+   }
+  ],
+  "u_math_eco": [
+   {
+    "unit": "الرياضيات والإحصاء",
+    "lessons": [
+     [
+      "u_math_eco_01",
+      "رياضيات المؤسسة"
+     ],
+     [
+      "u_math_eco_02",
+      "الإحصاء الوصفي"
+     ],
+     [
+      "u_math_eco_03",
+      "الرياضيات المالية"
+     ]
+    ]
+   }
+  ],
+  "u_law_intro": [
+   {
+    "unit": "مدخل للعلوم القانونية",
+    "lessons": [
+     [
+      "u_law_intro_01",
+      "نظرية القانون"
+     ],
+     [
+      "u_law_intro_02",
+      "نظرية الحق"
+     ],
+     [
+      "u_law_intro_03",
+      "مصادر القانون"
+     ]
+    ]
+   }
+  ],
+  "u_constitutional": [
+   {
+    "unit": "القانون الدستوري",
+    "lessons": [
+     [
+      "u_constitutional_01",
+      "النظرية العامة للدولة"
+     ],
+     [
+      "u_constitutional_02",
+      "الدساتير"
+     ],
+     [
+      "u_constitutional_03",
+      "النظم السياسية"
+     ],
+     [
+      "u_constitutional_04",
+      "تاريخ النظم القانونية"
+     ]
+    ]
+   }
+  ],
+  "u_politics": [
+   {
+    "unit": "العلوم السياسية",
+    "lessons": [
+     [
+      "u_politics_01",
+      "مدخل للعلوم السياسية"
+     ],
+     [
+      "u_politics_02",
+      "المجتمع الدولي"
+     ],
+     [
+      "u_politics_03",
+      "مدخل للعلاقات الدولية"
+     ]
+    ]
+   }
+  ],
+  "u_sociology": [
+   {
+    "unit": "علم الاجتماع",
+    "lessons": [
+     [
+      "u_sociology_01",
+      "مدخل لعلم الاجتماع"
+     ],
+     [
+      "u_sociology_02",
+      "رواد علم الاجتماع"
+     ],
+     [
+      "u_sociology_03",
+      "المجتمع والثقافة"
+     ]
+    ]
+   }
+  ],
+  "u_psychology": [
+   {
+    "unit": "علم النفس",
+    "lessons": [
+     [
+      "u_psychology_01",
+      "مدخل لعلم النفس"
+     ],
+     [
+      "u_psychology_02",
+      "مدارس علم النفس"
+     ],
+     [
+      "u_psychology_03",
+      "الإدراك والتعلم"
+     ]
+    ]
+   }
+  ],
+  "u_civilisation": [
+   {
+    "unit": "الحضارات",
+    "lessons": [
+     [
+      "u_civilisation_01",
+      "الحضارات القديمة"
+     ],
+     [
+      "u_civilisation_02",
+      "الحضارة الإسلامية"
+     ],
+     [
+      "u_civilisation_03",
+      "تاريخ الجزائر"
+     ]
+    ]
+   }
+  ],
+  "u_method_shs": [
+   {
+    "unit": "المنهجية",
+    "lessons": [
+     [
+      "u_method_shs_01",
+      "منهجية البحث العلمي"
+     ],
+     [
+      "u_method_shs_02",
+      "الإحصاء الوصفي"
+     ],
+     [
+      "u_method_shs_03",
+      "تقنيات التحرير"
+     ]
+    ]
+   }
+  ],
+  "u_linguistics": [
+   {
+    "unit": "اللسانيات",
+    "lessons": [
+     [
+      "u_linguistics_01",
+      "مدخل للسانيات"
+     ],
+     [
+      "u_linguistics_02",
+      "الصوتيات"
+     ],
+     [
+      "u_linguistics_03",
+      "علم الدلالة"
+     ]
+    ]
+   }
+  ],
+  "u_grammar": [
+   {
+    "unit": "اللغة",
+    "lessons": [
+     [
+      "u_grammar_01",
+      "القواعد"
+     ],
+     [
+      "u_grammar_02",
+      "فهم المكتوب والتعبير"
+     ],
+     [
+      "u_grammar_03",
+      "الترجمة"
+     ]
+    ]
+   }
+  ],
+  "u_literature": [
+   {
+    "unit": "الأدب",
+    "lessons": [
+     [
+      "u_literature_01",
+      "مدخل للأدب"
+     ],
+     [
+      "u_literature_02",
+      "تحليل النصوص"
+     ],
+     [
+      "u_literature_03",
+      "الحضارة والثقافة"
+     ]
+    ]
+   }
+  ]
+ },
+ "streams": {
+  "sciences": [
+   {
+    "subject": "svt",
+    "coefficient": 6,
+    "programs": [
+     "bac_svt_core",
+     "bac_svt_geo"
+    ]
+   },
+   {
+    "subject": "physics",
+    "coefficient": 5,
+    "programs": [
+     "bac_phys_core"
+    ]
+   },
+   {
+    "subject": "math",
+    "coefficient": 5,
+    "programs": [
+     "bac_math_core"
+    ]
+   },
+   {
+    "subject": "arabic",
+    "coefficient": 3,
+    "programs": [
+     "bac_arabic"
+    ]
+   },
+   {
+    "subject": "philosophy",
+    "coefficient": 2,
+    "programs": [
+     "bac_philo_sci"
+    ]
+   },
+   {
+    "subject": "history_geo",
+    "coefficient": 2,
+    "programs": [
+     "bac_history_geo"
+    ]
+   },
+   {
+    "subject": "islamic",
+    "coefficient": 2,
+    "programs": [
+     "bac_islamic"
+    ]
+   },
+   {
+    "subject": "french",
+    "coefficient": 2,
+    "programs": [
+     "bac_french"
+    ]
+   },
+   {
+    "subject": "english",
+    "coefficient": 2,
+    "programs": [
+     "bac_english"
+    ]
+   }
+  ],
+  "math": [
+   {
+    "subject": "math",
+    "coefficient": 7,
+    "programs": [
+     "bac_math_core",
+     "bac_math_arith"
+    ]
+   },
+   {
+    "subject": "physics",
+    "coefficient": 6,
+    "programs": [
+     "bac_phys_core",
+     "bac_phys_osc"
+    ]
+   },
+   {
+    "subject": "svt",
+    "coefficient": 2,
+    "programs": [
+     "bac_svt_core"
+    ]
+   },
+   {
+    "subject": "arabic",
+    "coefficient": 3,
+    "programs": [
+     "bac_arabic"
+    ]
+   },
+   {
+    "subject": "philosophy",
+    "coefficient": 2,
+    "programs": [
+     "bac_philo_sci"
+    ]
+   },
+   {
+    "subject": "history_geo",
+    "coefficient": 2,
+    "programs": [
+     "bac_history_geo"
+    ]
+   },
+   {
+    "subject": "islamic",
+    "coefficient": 2,
+    "programs": [
+     "bac_islamic"
+    ]
+   },
+   {
+    "subject": "french",
+    "coefficient": 2,
+    "programs": [
+     "bac_french"
+    ]
+   },
+   {
+    "subject": "english",
+    "coefficient": 2,
+    "programs": [
+     "bac_english"
+    ]
+   }
+  ],
+  "tech_civil": [
+   {
+    "subject": "tech_civil",
+    "coefficient": 7,
+    "programs": [
+     "bac_tech_civil"
+    ]
+   },
+   {
+    "subject": "math",
+    "coefficient": 6,
+    "programs": [
+     "bac_math_core"
+    ]
+   },
+   {
+    "subject": "physics",
+    "coefficient": 6,
+    "programs": [
+     "bac_phys_core",
+     "bac_phys_osc"
+    ]
+   },
+   {
+    "subject": "arabic",
+    "coefficient": 3,
+    "programs": [
+     "bac_arabic"
+    ]
+   },
+   {
+    "subject": "philosophy",
+    "coefficient": 2,
+    "programs": [
+     "bac_philo_sci"
+    ]
+   },
+   {
+    "subject": "history_geo",
+    "coefficient": 2,
+    "programs": [
+     "bac_history_geo"
+    ]
+   },
+   {
+    "subject": "islamic",
+    "coefficient": 2,
+    "programs": [
+     "bac_islamic"
+    ]
+   },
+   {
+    "subject": "french",
+    "coefficient": 2,
+    "programs": [
+     "bac_french"
+    ]
+   },
+   {
+    "subject": "english",
+    "coefficient": 2,
+    "programs": [
+     "bac_english"
+    ]
+   }
+  ],
+  "tech_mech": [
+   {
+    "subject": "tech_mech",
+    "coefficient": 7,
+    "programs": [
+     "bac_tech_mech"
+    ]
+   },
+   {
+    "subject": "math",
+    "coefficient": 6,
+    "programs": [
+     "bac_math_core"
+    ]
+   },
+   {
+    "subject": "physics",
+    "coefficient": 6,
+    "programs": [
+     "bac_phys_core",
+     "bac_phys_osc"
+    ]
+   },
+   {
+    "subject": "arabic",
+    "coefficient": 3,
+    "programs": [
+     "bac_arabic"
+    ]
+   },
+   {
+    "subject": "philosophy",
+    "coefficient": 2,
+    "programs": [
+     "bac_philo_sci"
+    ]
+   },
+   {
+    "subject": "history_geo",
+    "coefficient": 2,
+    "programs": [
+     "bac_history_geo"
+    ]
+   },
+   {
+    "subject": "islamic",
+    "coefficient": 2,
+    "programs": [
+     "bac_islamic"
+    ]
+   },
+   {
+    "subject": "french",
+    "coefficient": 2,
+    "programs": [
+     "bac_french"
+    ]
+   },
+   {
+    "subject": "english",
+    "coefficient": 2,
+    "programs": [
+     "bac_english"
+    ]
+   }
+  ],
+  "tech_elec": [
+   {
+    "subject": "tech_elec",
+    "coefficient": 7,
+    "programs": [
+     "bac_tech_elec"
+    ]
+   },
+   {
+    "subject": "math",
+    "coefficient": 6,
+    "programs": [
+     "bac_math_core"
+    ]
+   },
+   {
+    "subject": "physics",
+    "coefficient": 6,
+    "programs": [
+     "bac_phys_core",
+     "bac_phys_osc"
+    ]
+   },
+   {
+    "subject": "arabic",
+    "coefficient": 3,
+    "programs": [
+     "bac_arabic"
+    ]
+   },
+   {
+    "subject": "philosophy",
+    "coefficient": 2,
+    "programs": [
+     "bac_philo_sci"
+    ]
+   },
+   {
+    "subject": "history_geo",
+    "coefficient": 2,
+    "programs": [
+     "bac_history_geo"
+    ]
+   },
+   {
+    "subject": "islamic",
+    "coefficient": 2,
+    "programs": [
+     "bac_islamic"
+    ]
+   },
+   {
+    "subject": "french",
+    "coefficient": 2,
+    "programs": [
+     "bac_french"
+    ]
+   },
+   {
+    "subject": "english",
+    "coefficient": 2,
+    "programs": [
+     "bac_english"
+    ]
+   }
+  ],
+  "tech_proc": [
+   {
+    "subject": "tech_proc",
+    "coefficient": 7,
+    "programs": [
+     "bac_tech_proc"
+    ]
+   },
+   {
+    "subject": "math",
+    "coefficient": 6,
+    "programs": [
+     "bac_math_core"
+    ]
+   },
+   {
+    "subject": "physics",
+    "coefficient": 6,
+    "programs": [
+     "bac_phys_core",
+     "bac_phys_osc"
+    ]
+   },
+   {
+    "subject": "arabic",
+    "coefficient": 3,
+    "programs": [
+     "bac_arabic"
+    ]
+   },
+   {
+    "subject": "philosophy",
+    "coefficient": 2,
+    "programs": [
+     "bac_philo_sci"
+    ]
+   },
+   {
+    "subject": "history_geo",
+    "coefficient": 2,
+    "programs": [
+     "bac_history_geo"
+    ]
+   },
+   {
+    "subject": "islamic",
+    "coefficient": 2,
+    "programs": [
+     "bac_islamic"
+    ]
+   },
+   {
+    "subject": "french",
+    "coefficient": 2,
+    "programs": [
+     "bac_french"
+    ]
+   },
+   {
+    "subject": "english",
+    "coefficient": 2,
+    "programs": [
+     "bac_english"
+    ]
+   }
+  ],
+  "gestion": [
+   {
+    "subject": "accounting",
+    "coefficient": 6,
+    "programs": [
+     "bac_accounting"
+    ]
+   },
+   {
+    "subject": "economics",
+    "coefficient": 5,
+    "programs": [
+     "bac_economics"
+    ]
+   },
+   {
+    "subject": "math",
+    "coefficient": 5,
+    "programs": [
+     "bac_math_gestion"
+    ]
+   },
+   {
+    "subject": "history_geo",
+    "coefficient": 4,
+    "programs": [
+     "bac_history_geo"
+    ]
+   },
+   {
+    "subject": "law",
+    "coefficient": 2,
+    "programs": [
+     "bac_law"
+    ]
+   },
+   {
+    "subject": "arabic",
+    "coefficient": 3,
+    "programs": [
+     "bac_arabic"
+    ]
+   },
+   {
+    "subject": "philosophy",
+    "coefficient": 2,
+    "programs": [
+     "bac_philo_sci"
+    ]
+   },
+   {
+    "subject": "islamic",
+    "coefficient": 2,
+    "programs": [
+     "bac_islamic"
+    ]
+   },
+   {
+    "subject": "french",
+    "coefficient": 2,
+    "programs": [
+     "bac_french"
+    ]
+   },
+   {
+    "subject": "english",
+    "coefficient": 2,
+    "programs": [
+     "bac_english"
+    ]
+   }
+  ],
+  "lettres": [
+   {
+    "subject": "arabic",
+    "coefficient": 6,
+    "programs": [
+     "bac_arabic"
+    ]
+   },
+   {
+    "subject": "philosophy",
+    "coefficient": 6,
+    "programs": [
+     "bac_philo_sci",
+     "bac_philo_lettres"
+    ]
+   },
+   {
+    "subject": "history_geo",
+    "coefficient": 4,
+    "programs": [
+     "bac_history_geo"
+    ]
+   },
+   {
+    "subject": "french",
+    "coefficient": 3,
+    "programs": [
+     "bac_french"
+    ]
+   },
+   {
+    "subject": "english",
+    "coefficient": 3,
+    "programs": [
+     "bac_english"
+    ]
+   },
+   {
+    "subject": "math",
+    "coefficient": 2,
+    "programs": [
+     "bac_math_lettres"
+    ]
+   },
+   {
+    "subject": "islamic",
+    "coefficient": 2,
+    "programs": [
+     "bac_islamic"
+    ]
+   }
+  ],
+  "langues": [
+   {
+    "subject": "arabic",
+    "coefficient": 5,
+    "programs": [
+     "bac_arabic"
+    ]
+   },
+   {
+    "subject": "french",
+    "coefficient": 5,
+    "programs": [
+     "bac_french"
+    ]
+   },
+   {
+    "subject": "english",
+    "coefficient": 5,
+    "programs": [
+     "bac_english"
+    ]
+   },
+   {
+    "subject": "lang3",
+    "coefficient": 4,
+    "programs": [
+     "bac_lang3"
+    ]
+   },
+   {
+    "subject": "history_geo",
+    "coefficient": 3,
+    "programs": [
+     "bac_history_geo"
+    ]
+   },
+   {
+    "subject": "philosophy",
+    "coefficient": 2,
+    "programs": [
+     "bac_philo_sci",
+     "bac_philo_lettres"
+    ]
+   },
+   {
+    "subject": "math",
+    "coefficient": 2,
+    "programs": [
+     "bac_math_lettres"
+    ]
+   },
+   {
+    "subject": "islamic",
+    "coefficient": 2,
+    "programs": [
+     "bac_islamic"
+    ]
+   }
+  ],
+  "arts": [
+   {
+    "subject": "arts",
+    "coefficient": 6,
+    "programs": [
+     "bac_arts"
+    ]
+   },
+   {
+    "subject": "arabic",
+    "coefficient": 3,
+    "programs": [
+     "bac_arabic"
+    ]
+   },
+   {
+    "subject": "philosophy",
+    "coefficient": 2,
+    "programs": [
+     "bac_philo_sci"
+    ]
+   },
+   {
+    "subject": "history_geo",
+    "coefficient": 2,
+    "programs": [
+     "bac_history_geo"
+    ]
+   },
+   {
+    "subject": "french",
+    "coefficient": 2,
+    "programs": [
+     "bac_french"
+    ]
+   },
+   {
+    "subject": "english",
+    "coefficient": 2,
+    "programs": [
+     "bac_english"
+    ]
+   },
+   {
+    "subject": "math",
+    "coefficient": 2,
+    "programs": [
+     "bac_math_lettres"
+    ]
+   },
+   {
+    "subject": "islamic",
+    "coefficient": 2,
+    "programs": [
+     "bac_islamic"
+    ]
+   }
+  ],
+  "bem": [
+   {
+    "subject": "arabic",
+    "coefficient": 5,
+    "programs": [
+     "bem_arabic"
+    ]
+   },
+   {
+    "subject": "math",
+    "coefficient": 4,
+    "programs": [
+     "bem_math"
+    ]
+   },
+   {
+    "subject": "french",
+    "coefficient": 3,
+    "programs": [
+     "bem_french"
+    ]
+   },
+   {
+    "subject": "english",
+    "coefficient": 2,
+    "programs": [
+     "bem_english"
+    ]
+   },
+   {
+    "subject": "history_geo",
+    "coefficient": 3,
+    "programs": [
+     "bem_history_geo"
+    ]
+   },
+   {
+    "subject": "svt",
+    "coefficient": 2,
+    "programs": [
+     "bem_svt"
+    ]
+   },
+   {
+    "subject": "physics",
+    "coefficient": 2,
+    "programs": [
+     "bem_physics"
+    ]
+   },
+   {
+    "subject": "islamic",
+    "coefficient": 2,
+    "programs": [
+     "bem_islamic"
+    ]
+   },
+   {
+    "subject": "civic",
+    "coefficient": 1,
+    "programs": [
+     "bem_civic"
+    ]
+   }
+  ],
+  "st": [
+   {
+    "subject": "u_analysis",
+    "coefficient": 4,
+    "programs": [
+     "u_analysis"
+    ]
+   },
+   {
+    "subject": "u_algebra",
+    "coefficient": 3,
+    "programs": [
+     "u_algebra"
+    ]
+   },
+   {
+    "subject": "u_physics",
+    "coefficient": 3,
+    "programs": [
+     "u_physics_st"
+    ]
+   },
+   {
+    "subject": "u_chemistry",
+    "coefficient": 3,
+    "programs": [
+     "u_chemistry_st"
+    ]
+   },
+   {
+    "subject": "u_computing",
+    "coefficient": 2,
+    "programs": [
+     "u_computing"
+    ]
+   },
+   {
+    "subject": "u_method",
+    "coefficient": 1,
+    "programs": [
+     "u_method"
+    ]
+   }
+  ],
+  "mi": [
+   {
+    "subject": "u_analysis",
+    "coefficient": 4,
+    "programs": [
+     "u_analysis"
+    ]
+   },
+   {
+    "subject": "u_algebra",
+    "coefficient": 3,
+    "programs": [
+     "u_algebra"
+    ]
+   },
+   {
+    "subject": "u_algo",
+    "coefficient": 4,
+    "programs": [
+     "u_algo"
+    ]
+   },
+   {
+    "subject": "u_machine",
+    "coefficient": 3,
+    "programs": [
+     "u_machine"
+    ]
+   },
+   {
+    "subject": "u_proba",
+    "coefficient": 2,
+    "programs": [
+     "u_proba"
+    ]
+   },
+   {
+    "subject": "u_method",
+    "coefficient": 1,
+    "programs": [
+     "u_method"
+    ]
+   }
+  ],
+  "sm": [
+   {
+    "subject": "u_analysis",
+    "coefficient": 3,
+    "programs": [
+     "u_analysis"
+    ]
+   },
+   {
+    "subject": "u_algebra",
+    "coefficient": 3,
+    "programs": [
+     "u_algebra"
+    ]
+   },
+   {
+    "subject": "u_physics",
+    "coefficient": 4,
+    "programs": [
+     "u_physics_sm"
+    ]
+   },
+   {
+    "subject": "u_chemistry",
+    "coefficient": 4,
+    "programs": [
+     "u_chemistry_sm"
+    ]
+   },
+   {
+    "subject": "u_computing",
+    "coefficient": 2,
+    "programs": [
+     "u_computing"
+    ]
+   }
+  ],
+  "snv": [
+   {
+    "subject": "u_biology",
+    "coefficient": 3,
+    "programs": [
+     "u_biology"
+    ]
+   },
+   {
+    "subject": "u_chemistry",
+    "coefficient": 3,
+    "programs": [
+     "u_chemistry_snv"
+    ]
+   },
+   {
+    "subject": "u_analysis",
+    "coefficient": 2,
+    "programs": [
+     "u_math_snv"
+    ]
+   },
+   {
+    "subject": "u_physics",
+    "coefficient": 2,
+    "programs": [
+     "u_physics_snv"
+    ]
+   },
+   {
+    "subject": "u_geology",
+    "coefficient": 2,
+    "programs": [
+     "u_geology"
+    ]
+   },
+   {
+    "subject": "u_zoobot",
+    "coefficient": 2,
+    "programs": [
+     "u_zoobot"
+    ]
+   }
+  ],
+  "medecine": [
+   {
+    "subject": "u_anatomy",
+    "coefficient": 4,
+    "programs": [
+     "u_anatomy"
+    ]
+   },
+   {
+    "subject": "u_biology",
+    "coefficient": 3,
+    "programs": [
+     "u_biology"
+    ]
+   },
+   {
+    "subject": "u_biochem",
+    "coefficient": 3,
+    "programs": [
+     "u_biochem"
+    ]
+   },
+   {
+    "subject": "u_histo",
+    "coefficient": 3,
+    "programs": [
+     "u_histo"
+    ]
+   },
+   {
+    "subject": "u_biophys",
+    "coefficient": 2,
+    "programs": [
+     "u_biophys"
+    ]
+   },
+   {
+    "subject": "u_chemistry",
+    "coefficient": 2,
+    "programs": [
+     "u_chemistry_med"
+    ]
+   }
+  ],
+  "archi": [
+   {
+    "subject": "u_studio",
+    "coefficient": 6,
+    "programs": [
+     "u_studio"
+    ]
+   },
+   {
+    "subject": "u_archi_hist",
+    "coefficient": 2,
+    "programs": [
+     "u_archi_hist"
+    ]
+   },
+   {
+    "subject": "u_archi_tech",
+    "coefficient": 3,
+    "programs": [
+     "u_archi_tech"
+    ]
+   },
+   {
+    "subject": "u_analysis",
+    "coefficient": 2,
+    "programs": [
+     "u_math_eco"
+    ]
+   }
+  ],
+  "eco": [
+   {
+    "subject": "u_econ",
+    "coefficient": 4,
+    "programs": [
+     "u_econ"
+    ]
+   },
+   {
+    "subject": "u_accounting",
+    "coefficient": 3,
+    "programs": [
+     "u_accounting"
+    ]
+   },
+   {
+    "subject": "u_management",
+    "coefficient": 2,
+    "programs": [
+     "u_management"
+    ]
+   },
+   {
+    "subject": "u_proba",
+    "coefficient": 3,
+    "programs": [
+     "u_math_eco"
+    ]
+   },
+   {
+    "subject": "u_law_intro",
+    "coefficient": 1,
+    "programs": [
+     "u_law_intro"
+    ]
+   }
+  ],
+  "droit": [
+   {
+    "subject": "u_law_intro",
+    "coefficient": 4,
+    "programs": [
+     "u_law_intro"
+    ]
+   },
+   {
+    "subject": "u_constitutional",
+    "coefficient": 4,
+    "programs": [
+     "u_constitutional"
+    ]
+   },
+   {
+    "subject": "u_politics",
+    "coefficient": 2,
+    "programs": [
+     "u_politics"
+    ]
+   },
+   {
+    "subject": "u_method",
+    "coefficient": 1,
+    "programs": [
+     "u_method"
+    ]
+   }
+  ],
+  "shs": [
+   {
+    "subject": "u_sociology",
+    "coefficient": 3,
+    "programs": [
+     "u_sociology"
+    ]
+   },
+   {
+    "subject": "u_psychology",
+    "coefficient": 3,
+    "programs": [
+     "u_psychology"
+    ]
+   },
+   {
+    "subject": "u_civilisation",
+    "coefficient": 2,
+    "programs": [
+     "u_civilisation"
+    ]
+   },
+   {
+    "subject": "u_method",
+    "coefficient": 2,
+    "programs": [
+     "u_method_shs"
+    ]
+   }
+  ],
+  "lang_univ": [
+   {
+    "subject": "u_linguistics",
+    "coefficient": 3,
+    "programs": [
+     "u_linguistics"
+    ]
+   },
+   {
+    "subject": "u_grammar",
+    "coefficient": 3,
+    "programs": [
+     "u_grammar"
+    ]
+   },
+   {
+    "subject": "u_literature",
+    "coefficient": 3,
+    "programs": [
+     "u_literature"
+    ]
+   },
+   {
+    "subject": "u_method",
+    "coefficient": 1,
+    "programs": [
+     "u_method"
+    ]
+   }
+  ]
+ }
+}

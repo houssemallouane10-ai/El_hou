@@ -1,0 +1,22 @@
+{
+  "rules": {
+    "presence": {
+      ".read": "auth != null",
+      "$room": {
+        "$uid": {
+          ".write": "auth != null && auth.uid === $uid && $room.matches(/^(math|physics|svt|philosophy|memorize|languages|technology|gestion|general)$/)",
+          ".validate": "newData.hasChildren(['wilaya', 'joinedAt'])",
+          "wilaya": {
+            ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 58"
+          },
+          "joinedAt": {
+            ".validate": "newData.val() === now"
+          },
+          "$other": {
+            ".validate": false
+          }
+        }
+      }
+    }
+  }
+}
